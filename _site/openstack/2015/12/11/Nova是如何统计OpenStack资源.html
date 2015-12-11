@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Nova是如何统计OpenStack资源</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2015/12/11/Nova%E6%98%AF%E5%A6%82%E4%BD%95%E7%BB%9F%E8%AE%A1OpenStack%E8%B5%84%E6%BA%90.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">Nova是如何统计OpenStack资源</h1>
+    <p class="post-meta"><time datetime="2015-12-11T00:00:00+08:00" itemprop="datePublished">Dec 11, 2015</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <hr />
+
+<h1 id="section">引言</h1>
+<p>运维的同事常常遇到这么四个问题：</p>
+
+<ul>
+  <li>Nova 如何统计 OpenStack 计算资源？</li>
+  <li>为什么 free_ram_mb,  free_disk_gb 有时会是负数？</li>
+  <li>即使 free_ram_mb, free_disk_gb 为负，为什么虚拟机依旧能创建成功？</li>
+  <li>资源不足会导致虚拟机创建失败，但指定了 host 有时却能创建成功？</li>
+</ul>
+
+<p>本文以以上四个问题为切入点，结合 Kilo 版本 Nova 源码，在默认 Hypervisor 为 Qemu-kvm 的前提下(不同 Hypervisor 的资源统计方式差别较大 )，揭开 OpenStack 统计资源和资源调度的面纱。</p>
+
+<hr />
+
+<h1 id="nova-">Nova 需统计哪些资源</h1>
+<p>云计算的本质在于将硬件资源软件化，以达到快速按需交付的效果，最基本的计算、存储和网络基础元素并没有因此改变。就计算而言，CPU、RAM 和 DISK等依旧是必不可少的核心资源。</p>
+
+<p>从源码和数据库相关表可以得出，Nova 统计计算节点的四类计算资源：</p>
+
+<ul>
+  <li>CPU: 包括 vcpus(节点物理 cpu 总线程数),  vcpus_used(该节点虚拟机的 vcpu 总和)</li>
+  <li>RAM: 包括 memory_mb(该节点总 ram)，memory_mb_used(该节点虚拟机的 ram 总和)，free_ram_mb(可用 ram)
+ Note: memory_mb = memory_mb_used + free_ram_mb</li>
+  <li>DISK：local_gb(该节点虚拟机的总可用 disk)，local_gb_used（该节点虚拟机 disk 总和），free_disk_gb(可用 disk)
+ Note：local_gb = local_gb_used + free_disk_gb*</li>
+  <li>其它：PCI 设备、CPU 拓扑、NUMA 拓扑和 Hypervisor 等信息</li>
+</ul>
+
+<p>本文重点关注 CPU、RAM 和 DISK 三类资源。</p>
+
+<hr />
+
+<h1 id="nova--1">Nova 如何收集资源</h1>
+<p>从 <a href="https://github.com/openstack/nova/blob/master/nova/virt/libvirt/driver.py#L4878">源码</a>  可以看出，Nova 每分钟统计一次资源，方式如下：</p>
+
+<ul>
+  <li>CPU
+    <ul>
+      <li>vcpus: libvirt 中 get_Info()</li>
+      <li>vcpu_used: 通过 libvirt 中 dom.vcpus() 从而统计该节点上所有虚拟机 vcpu 总和</li>
+    </ul>
+  </li>
+  <li>RAM
+    <ul>
+      <li>memory: libvirt 中 get_Info()</li>
+      <li>memory_mb_used：先通过 /proc/meminfo 统计可用内存， 再用总内存减去可用内存得出<strong>(资源再统计时会重新计算该值)</strong></li>
+    </ul>
+  </li>
+  <li>DISK
+    <ul>
+      <li>local_gb: os.statvfs(CONF.instances_path)</li>
+      <li>local_gb_used: os.statvfs(CONF.instances_path)<strong>(资源再统计时会重新计算该值)</strong></li>
+    </ul>
+  </li>
+  <li>其它
+    <ul>
+      <li>hypervisor 相关信息：均通过 libvirt 获取</li>
+      <li>PCI: libvirt 中 listDevices(‘pci’, 0)</li>
+      <li>NUMA: livirt 中 getCapabilities()</li>
+    </ul>
+  </li>
+</ul>
+
+<p>那么问题来了，按照上述收集资源的方式，free_ram_mb, free_disk_gb 不可能为负数啊！别急，Nova-compute 在上报资源至数据库前，还根据该节点上的虚拟机又做了一次资源统计。</p>
+
+<hr />
+
+<h1 id="nova--2">Nova 资源再统计</h1>
+<p>首先分析为什么需要再次统计资源以及统计哪些资源。从 <a href="https://github.com/openstack/nova/blob/master/nova/compute/resource_tracker.py#L365">源码</a>  可以发现，Nova 根据该节点上的虚拟机再次统计了 RAM、DISK 和 PCI 资源。</p>
+
+<p>为什么需再次统计 RAM 资源？以启动一个 4G 内存的虚拟机为例，虚拟机启动前后，对比宿主机上可用内存，发现宿主机上的 free memory 虽有所减少(本次测试减少 600 MB)，却没有减少到 4G，如果虚拟机运行很吃内存的应用，可发现宿主机上的可用内存迅速减少 3G多。试想，以 64G 的服务器为例，假设每个 4G 内存的虚拟机启动后，宿主机仅减少 1G 内存，服务器可以成功创建 64 个虚拟机，但是当这些虚拟机在跑大量业务时，服务器的内存迅速不足，轻着影响虚拟机效率，重者导致虚拟机 shutdown等。除此以外，宿主机上的内存并不是完全分给虚拟机，系统和其它应用程序也需要内存资源。因此必须重新统计 RAM 资源，统计的方式为：</p>
+
+<pre><code>free_memory = total_memory - CONF.reserved_host_memory_mb - 虚拟机理论内存总和
+CONF.reserved_host_memory_mb：内存预留，比如预留给系统或其它应用
+虚拟机理论内存总和：即所有虚拟机 flavor 中的内存总和
+</code></pre>
+
+<p>为什么要重新统计 DISK 资源？原因与 RAM 大致相同。为了节省空间， qemu-kvm 常用 <a href="https://people.gnome.org/~markmc/qcow-image-format.html">QCOW2</a> 格式镜像，以创建 DISK 大小为 100G 的虚拟机为例，虚拟机创建后，其镜像文件往往只有几百 KB，当有大量数据写入时磁盘时，宿主机上对应的虚拟机镜像文件会迅速增大。而 os.statvfs 统计的是虚拟机磁盘当前使用量，并不能反映潜在使用量。因此必须重新统计 DISK 资源，统计的方式为：</p>
+
+<pre><code>free_disk_gb = local_gb - CONF.reserved_host_disk_mb / 1024 - 虚拟机理论磁盘总和
+CONF.reserved_host_disk_mb：磁盘预留
+虚拟机理论磁盘总和：即所有虚拟机  flavor 中得磁盘总和
+</code></pre>
+
+<p>当允许资源超配(见下节)时，采用上述统计方式就有可能出现 free_ram_mb,  free_disk_gb 为负。</p>
+
+<hr />
+
+<h1 id="section-1">资源超配与调度</h1>
+<p>即使 free_ram_mb 或 free_disk_gb 为负，虚拟机依旧有可能创建成功。事实上，当 nova-scheduler 在调度过程中，某些 filter 允许资源超配，比如 CPU、RAM 和 DISK 等 filter，它们默认的超配比为：</p>
+
+<ul>
+  <li>CPU: CONF.cpu_allocation_ratio = 16</li>
+  <li>RAM: CONF.ram_allocation_ratio = 1.5</li>
+  <li>DISK: CONF.disk_allocation_ratio = 1.0</li>
+</ul>
+
+<p>以 ram_filter 为例，在根据 RAM 过滤宿主机时，过滤的原则为：</p>
+
+<pre><code>memory_limit = total_memory * ram_allocation_ratio
+used_memory = total_memory - free_memory
+memory_limit - used_memory &lt; flavor['ram']，表示内存不足，过滤该宿主机；否则保留该宿主机。 
+</code></pre>
+
+<p>相关代码如下(稍有精简)：</p>
+
+<pre><code>def host_passes(self, host_state, instance_type):
+
+    """Only return hosts with sufficient available RAM."""
+
+    requested_ram = instance_type['memory_mb']
+    free_ram_mb = host_state.free_ram_mb
+    total_usable_ram_mb = host_state.total_usable_ram_mb
+
+    memory_mb_limit = total_usable_ram_mb * CONF.ram_allocation_ratio
+    used_ram_mb = total_usable_ram_mb - free_ram_mb
+    usable_ram = memory_mb_limit - used_ram_mb
+
+    if not usable_ram &gt;= requested_ram:
+        LOG.debug("host does not have requested_ram")
+        return False
+</code></pre>
+
+<p>宿主机 RAM 和 DISK 的使用率往往要小于虚拟机理论使用的 RAM 和 DISK，在剩余资源充足的条件下，libvirt 将成功创建虚拟机。</p>
+
+<p>随想：内存和磁盘超配虽然能提供更多数量的虚拟机，当该宿主机上大量虚拟机的负载都很高时，轻着影响虚拟机性能，重则引起 qemu-kvm  相关进程被杀，即虚拟机被关机。因此对于线上稳定性要求高的业务，建议不要超配 RAM 和 DISK，但可适当超配 CPU。建议这几个参数设置为：</p>
+
+<ul>
+  <li>CPU: CONF.cpu_allocation_ratio = 4</li>
+  <li>RAM: CONF.ram_allocation_ratio = 1.0</li>
+  <li>DISK: CONF.disk_allocation_ratio = 1.0</li>
+  <li>RAM-Reserve: CONF.reserved_host_memory_mb = 2048</li>
+  <li>DISK-Reserve: CONF.reserved_host_disk_mb = 20480</li>
+</ul>
+
+<hr />
+
+<h1 id="host-">指定 host 创建虚拟机</h1>
+<p>本节用于回答问题四，当所有宿主机的资源使用过多，即超出限定的超配值时(total_resource * allocation_ratio)，nova-scheduler 将过滤这些宿主机，若未找到符合要求的宿主机，虚拟机创建失败。</p>
+
+<p>创建虚拟机的 API 支持指定 host 创建虚拟机，指定 host 时，nova-scheduler 采取特别的处理方式：不再判断该 host 上的资源是否满足需求，而是直接将请求发给该 host 上的 nova-compute。
+相关代码如下(稍有精简)：</p>
+
+<pre><code>def get_filtered_hosts(self, hosts, filter_properties,
+            filter_class_names=None, index=0):
+    '''Filter hosts and return only ones passing all filters.'''
+    ...
+    if ignore_hosts or force_hosts or force_nodes:
+        ...
+        if force_hosts or force_nodes:
+            # NOTE(deva): Skip filters when forcing host or node
+            if name_to_cls_map:
+                return name_to_cls_map.values()
+
+        return self.filter_handler.get_filtered_objects()
+</code></pre>
+
+<p>当该 host 上实际可用资源时满足要求时，libvirt 依旧能成功创建虚拟机。最后，一图蔽之
+ <img src="http://img.blog.csdn.net/20150501235350782" alt="这里写图片描述" /></p>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
