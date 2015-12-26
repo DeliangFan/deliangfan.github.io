@@ -66,20 +66,20 @@
 
 <h1 id="token-是什么">Token 是什么</h1>
 
-<p>通俗的讲，token 是用户的一种凭证，需拿正确的用户名/密码向 keystone 申请才能得到。如果用户每次都采用用户名/密码访问 OpenStack API，容易泄露用户信息，带来安全隐患。所以 OpenStack 要求用户访问其 API 前，必须先获取 token，然后用 token 作为用户凭据访问 OpenStack API。
+<p>通俗的讲，token 是用户的一种凭证，需拿正确的用户名/密码向 Keystone 申请才能得到。如果用户每次都采用用户名/密码访问 OpenStack API，容易泄露用户信息，带来安全隐患。所以 OpenStack 要求用户访问其 API 前，必须先获取 token，然后用 token 作为用户凭据访问 OpenStack API。
 <img src="http://7xp2eu.com1.z0.glb.clouddn.com/uuid.png" alt="P1"></p>
 
 <hr>
 
 <h1 id="四种-token-的由来">四种 Token 的由来</h1>
 
-<p>D 版本时，仅有 UUID 类型的 Token，UUID token 简单易用，却容易给 Keystone 带来性能问题，从图一的步骤 4 可看出，每当 OpenStack API 收到用户请求，都需要向 Keystone 验证该 token 是否有&gt;效。随着集群规模的扩大，Keystone 需处理大量验证 token 的请求，在高并发下容易出现性能问题。</p>
+<p>D 版本时，仅有 UUID 类型的 Token，UUID token 简单易用，却容易给 Keystone 带来性能问题，从图一的步骤 4 可看出，每当 OpenStack API 收到用户请求，都需要向 Keystone 验证该 token 是否有效。随着集群规模的扩大，Keystone 需处理大量验证 token 的请求，在高并发下容易出现性能问题。</p>
 
-<p>于是，PKI(<a href="https://wiki.openstack.org/wiki/PKI">Public Key Infrastructrue</a>) token 在 G 版本运用而生，和 UUID 相比，PKI token 携带更多用户信息的同时还附上了数字签名，以支持本地认证，从而避免了步骤 4。因为 PKI token 携带了更多的信息，这些信息就包括 service catalog，随着 OpenStack 的 Region 数增多，service catalog 携带的 endpoint 数量越多，PKI token 也相应增大，&gt;很容易超出 HTTP Server 允许的最大 HTTP Header(默认为 8 KB)，导致 HTTP 请求失败。</p>
+<p>于是 PKI(<a href="https://wiki.openstack.org/wiki/PKI">Public Key Infrastructrue</a>) token 在 G 版本运用而生，和 UUID 相比，PKI token 携带更多用户信息的同时还附上了数字签名，以支持本地认证，从而避免了步骤 4。因为 PKI token 携带了更多的信息，这些信息就包括 service catalog，随着 OpenStack 的 Region 数增多，service catalog 携带的 endpoint 数量越多，PKI token 也相应增大，很容易超出 HTTP Server 允许的最大 HTTP Header(默认为 8 KB)，导致 HTTP 请求失败。</p>
 
 <p>顾名思义，<a href="https://blueprints.launchpad.net/keystone/+spec/compress-tokens">PKIZ token</a> 就是 PKI token 的压缩版，但压缩效果有限，无法良好的处理 token size 过大问题。</p>
 
-<p>前三种 token 都会持久性存于数据库，大量与日俱增的 token 引起数据库性能下降，所以用户需经常清理数据库的 token。为了避免该问题，社区提出了 Fernet token，它携带了少量的用户信息，大小约为 255 Byte，采用了对称加密，无需存于数据库中。</p>
+<p>前三种 token 都会持久性存于数据库，与日俱增积累的大量 token 引起数据库性能下降，所以用户需经常清理数据库的 token。为了避免该问题，社区提出了 Fernet token，它携带了少量的用户信息，大小约为 255 Byte，采用了对称加密，无需存于数据库中。</p>
 
 <hr>
 
@@ -89,10 +89,10 @@
 <div class="highlight"><pre><code class="language-python" data-lang="python">    <span class="k">def</span> <span class="nf">_get_token_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token_data</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
 </code></pre></div>
-<p>但是因 UUID token 不携带其它信息，OpenStack API 收到该 token 后，既不能判断该 token 是否有效，更无法得知该 token 携带的用户信息，所以需经图一步骤 4 向 Keystone 校验 token，并获用户&gt;相关的信息。其样例如下：</p>
+<p>但是因 UUID token 不携带其它信息，OpenStack API 收到该 token 后，既不能判断该 token 是否有效，更无法得知该 token 携带的用户信息，所以需经图一步骤 4 向 Keystone 校验 token，并获用户相关的信息。其样例如下：</p>
 <div class="highlight"><pre><code class="language-text" data-lang="text">144d8a99a42447379ac37f78bf0ef608
 </code></pre></div>
-<p>UUID token 简单美观，不携带其它信息，因此 Keystone 必须实现 token 的存储和认证，随着集群的规模增大，Keystone 将很有可能成为性能瓶颈。</p>
+<p>UUID token 简单美观，不携带其它信息，因此 Keystone 必须实现 token 的存储和认证，随着集群的规模增大，Keystone 将成为性能瓶颈。</p>
 
 <hr>
 
@@ -106,11 +106,11 @@
 A = D(B, P)</p>
 </blockquote>
 
-<p>其中加密函数 C(x), 解密函数 D(x) 以及公钥 P 均是公开的。上面两个公式的意思是公钥加密的密文只能用私钥解密，采用私钥加密的密文只能用公钥解密。非对称加密广泛运用在安全领域，诸如常见的 HTTPS，SSH 登录等。</p>
+<p>其中加密函数 C(x), 解密函数 D(x) 以及公钥 P 均是公开的。采用公钥加密的密文只能用私钥解密，采用私钥加密的密文只能用公钥解密。非对称加密广泛运用在安全领域，诸如常见的 HTTPS，SSH 登录等。</p>
 
-<p>数字签名又称为公钥数字签名，首先采用 Hash 函数对消息生成摘要，摘要经私钥加密后称为数字签名。接收方用公钥解密该数字签名，并与接收消息生成的摘要做对比，如果二者一致，便可以确认该消息&gt;的完整性和真实性。</p>
+<p>数字签名又称为公钥数字签名，首先采用 Hash 函数对消息生成摘要，摘要经私钥加密后称为数字签名。接收方用公钥解密该数字签名，并与接收消息生成的摘要做对比，如果二者一致，便可以确认该消息的完整性和真实性。</p>
 
-<p>PKI 的本质就是基于数字签名，keystone 用私钥对 token 进行数字签名，各个 API server 用公钥在本地验证该 token。相关代码简化如下：</p>
+<p>PKI 的本质就是基于数字签名，Keystone 用私钥对 token 进行数字签名，各个 API server 用公钥在本地验证该 token。相关代码简化如下：</p>
 <div class="highlight"><pre><code class="language-python" data-lang="python">    <span class="k">def</span> <span class="nf">_get_token_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token_data</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">token_json</span> <span class="o">=</span> <span class="n">jsonutils</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">token_data</span><span class="p">,</span> <span class="n">cls</span><span class="o">=</span><span class="n">utils</span><span class="o">.</span><span class="n">PKIEncoder</span><span class="p">)</span>
@@ -119,7 +119,7 @@ A = D(B, P)</p>
                                               <span class="n">CONF</span><span class="o">.</span><span class="n">signing</span><span class="o">.</span><span class="n">keyfile</span><span class="p">))</span>
             <span class="k">return</span> <span class="n">token_id</span>
 </code></pre></div>
-<p>其中 cms.cms<u>sign</u>token 调用 openssl cms --sign 对 token<u>data 进行签名，token</u>data 的样式如下：</p>
+<p>其中 cms.cms_sign_token 调用 openssl cms --sign 对 token_data 进行签名，token_data 的样式如下：</p>
 <div class="highlight"><pre><code class="language-json" data-lang="json">    <span class="p">{</span>
       <span class="nt">&quot;token&quot;</span><span class="p">:</span> <span class="p">{</span>
         <span class="nt">&quot;methods&quot;</span><span class="p">:</span> <span class="p">[</span> <span class="s2">&quot;password&quot;</span> <span class="p">],</span>
@@ -139,7 +139,7 @@ A = D(B, P)</p>
                 <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;3837de623efd4af799e050d4d8d1f307&quot;</span>
               <span class="p">},</span>
               <span class="err">......</span>
-        <span class="p">],</span>
+          <span class="p">]}],</span>
         <span class="nt">&quot;extras&quot;</span><span class="p">:</span> <span class="p">{},</span>
         <span class="nt">&quot;user&quot;</span><span class="p">:</span> <span class="p">{</span>
           <span class="nt">&quot;domain&quot;</span><span class="p">:</span> <span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Default&quot;</span><span class="p">},</span>
@@ -147,9 +147,9 @@ A = D(B, P)</p>
         <span class="nt">&quot;audit_ids&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;ZCvZW2TtTgiaAsVA8qmc3A&quot;</span><span class="p">],</span>
         <span class="nt">&quot;issued_at&quot;</span><span class="p">:</span> <span class="s2">&quot;2015-12-25T08:57:28.404304Z&quot;</span>
       <span class="p">}</span>
-    <span class="err">}</span>
+    <span class="p">}</span>
 </code></pre></div>
-<p>token<u>data 经 cms.cms</u>sign<u>token 签名生成的 token</u>id 如下，共 1932 Byte：</p>
+<p>token_data 经 cms.cms_sign_token 签名生成的 token_id 如下，共 1932 Byte：</p>
 <div class="highlight"><pre><code class="language-text" data-lang="text">MIIKoZIhvcNAQcCoIIFljCCBZICAQExDTALBglghkgBZQMEAgEwggPzBgkqhkiG9w0B
 ......
 rhr0acV3bMKzmqvViHf-fPVnLDMJajOWSuhimqfLZHRdr+ck0WVQosB6+M6iAvrEF7v
@@ -168,7 +168,7 @@ PKIZ 在 PKI 的基础上做了压缩处理，但是压缩的效果极其有限�
                                          <span class="n">CONF</span><span class="o">.</span><span class="n">signing</span><span class="o">.</span><span class="n">keyfile</span><span class="p">))</span>
             <span class="k">return</span> <span class="n">token_id</span>
 </code></pre></div>
-<p>其中 cms.pkiz<u>sign() 比 cms.pki</u>sign() 多了如下一行代码，由 zlib 对签名后的消息进行压缩级别为 6 的压缩。</p>
+<p>其中 cms.pkiz_sign() 中的以下代码调用 zlib 对签名后的消息进行压缩级别为 6 的压缩。</p>
 <div class="highlight"><pre><code class="language-python" data-lang="python">    <span class="n">compressed</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">token_id</span><span class="p">,</span> <span class="n">compression_level</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
 </code></pre></div>
 <p>PKIZ token 样例如下，共 1645 Byte，比 PKI token 减小 14.86 %：</p>
@@ -181,8 +181,8 @@ W4fRaxrbNtinojheVICXYrEk0oPX6TSnP71IYj2e3nm4MLy7S84PtIPDz4_03IsOb2Q=
 <h1 id="fernet">Fernet</h1>
 
 <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/fernet.png" alt="P4">
-用户可能会碰上这么一个问题，当集群运行较长一段时间后，访问其 API 会变得奇慢无比，究其原因在于 Keystone 数据库存储了大量的 token 导致性能太差，解决的办法是经常清理 token。为了避免上&gt;述问题，社区提出了<a href="https://github.com/openstack/keystone-specs/blob/master/specs/kilo/klwt.rst">Fernet token</a>，它采用 <a href="http://cryptography.readthedocs.org/en/latest/fernet/">cryptography</a> 对称加密库(symmetric cryptography，加密密钥和解密密钥相同) 加密 token，具体由 AES-CBC 加密和散列函数 SHA256 签名。^N<a href="http://cryptography.readthedocs.org/en/latest/fernet/">Fernet</a>
-是专为 API token 设计的一种轻量级安全消息格式，不需要存储于数据库，减少了磁盘的 IO，带来了一定的<a href="http://dolphm.com/benchmarking-openstack-keystone-token-formats/">性能提升</a>。为了提&gt;高安全性，需要采用 <a href="http://lbragstad.com/fernet-tokens-and-key-rotation/">Key Rotation</a> 更换密钥。</p>
+用户可能会碰上这么一个问题，当集群运行较长一段时间后，访问其 API 会变得奇慢无比，究其原因在于 Keystone 数据库存储了大量的 token 导致性能太差，解决的办法是经常清理 token。为了避免上述问题，社区提出了<a href="https://github.com/openstack/keystone-specs/blob/master/specs/kilo/klwt.rst">Fernet token</a>，它采用 <a href="http://cryptography.readthedocs.org/en/latest/fernet/">cryptography</a> 对称加密库(symmetric cryptography，加密密钥和解密密钥相同) 加密 token，具体由 AES-CBC 加密和散列函数 SHA256 签名。<a href="http://cryptography.readthedocs.org/en/latest/fernet/">Fernet</a>
+是专为 API token 设计的一种轻量级安全消息格式，不需要存储于数据库，减少了磁盘的 IO，带来了一定的<a href="http://dolphm.com/benchmarking-openstack-keystone-token-formats/">性能提升</a>。为了提高安全性，需要采用 <a href="http://lbragstad.com/fernet-tokens-and-key-rotation/">Key Rotation</a> 更换密钥。</p>
 <div class="highlight"><pre><code class="language-python" data-lang="python">    <span class="k">def</span> <span class="nf">create_token</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_id</span><span class="p">,</span> <span class="n">expires_at</span><span class="p">,</span> <span class="n">audit_ids</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
                      <span class="n">domain_id</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">project_id</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">trust_id</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
                      <span class="n">federated_info</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -206,7 +206,7 @@ W4fRaxrbNtinojheVICXYrEk0oPX6TSnP71IYj2e3nm4MLy7S84PtIPDz4_03IsOb2Q=
 
         <span class="k">return</span> <span class="n">token</span>
 </code></pre></div>
-<p>以上代码表明，token 包含了 user<u>id，project</u>id，domain<u>id，methods，expires</u>at 等信息，重要的是，它没有 service_catalog，所以 region 的数量并不影响它的大小。self.pack() 最终调用如下代码对上述信息加密：</p>
+<p>以上代码表明，token 包含了 user_id，project_id，domain_id，methods，expires_at 等信息，重要的是，它没有 service_catalog，所以 region 的数量并不影响它的大小。self.pack() 最终调用如下代码对上述信息加密：</p>
 <div class="highlight"><pre><code class="language-python" data-lang="python">    <span class="k">def</span> <span class="nf">crypto</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">keys</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">load_keys</span><span class="p">()</span>
 
