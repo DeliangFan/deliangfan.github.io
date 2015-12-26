@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解Keystone的四种Token</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2015/12/26/%E7%90%86%E8%A7%A3Keystone%E7%9A%84%E5%9B%9B%E7%A7%8DToken.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解Keystone的四种Token</h1>
+    <p class="post-meta"><time datetime="2015-12-26T00:00:00+08:00" itemprop="datePublished">Dec 26, 2015</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <hr />
+
+<h1 id="token-">Token 是什么</h1>
+
+<p>通俗的讲，token 是用户的一种凭证，需拿正确的用户名/密码向 keystone 申请才能得到。如果用户每次都采用用户名/密码访问 OpenStack API，容易泄露用户信息，带来安全隐患。所以 OpenStack 要求用户访问其 API 前，必须先获取 token，然后用 token 作为用户凭据访问 OpenStack API。
+<img src="http://7xp2eu.com1.z0.glb.clouddn.com/uuid.png" alt="P1" /></p>
+
+<hr />
+
+<h1 id="token--1">四种 Token 的由来</h1>
+<p>D 版本时，仅有 UUID 类型的 Token，UUID token 简单易用，却容易给 Keystone 带来性能问题，从图一的步骤 4 可看出，每当 OpenStack API 收到用户请求，都需要向 Keystone 验证该 token 是否有&gt;效。随着集群规模的扩大，Keystone 需处理大量验证 token 的请求，在高并发下容易出现性能问题。</p>
+
+<p>于是，PKI(<a href="https://wiki.openstack.org/wiki/PKI">Public Key Infrastructrue</a>) token 在 G 版本运用而生，和 UUID 相比，PKI token 携带更多用户信息的同时还附上了数字签名，以支持本地认证，从而避免了步骤 4。因为 PKI token 携带了更多的信息，这些信息就包括 service catalog，随着 OpenStack 的 Region 数增多，service catalog 携带的 endpoint 数量越多，PKI token 也相应增大，&gt;很容易超出 HTTP Server 允许的最大 HTTP Header(默认为 8 KB)，导致 HTTP 请求失败。</p>
+
+<p>顾名思义，<a href="https://blueprints.launchpad.net/keystone/+spec/compress-tokens">PKIZ token</a> 就是 PKI token 的压缩版，但压缩效果有限，无法良好的处理 token size 过大问题。</p>
+
+<p>前三种 token 都会持久性存于数据库，大量与日俱增的 token 引起数据库性能下降，所以用户需经常清理数据库的 token。为了避免该问题，社区提出了 Fernet token，它携带了少量的用户信息，大小约为 255 Byte，采用了对称加密，无需存于数据库中。</p>
+
+<hr />
+
+<h1 id="uuid">UUID</h1>
+<p>UUID token 是长度固定为 32 Byte 的随机字符串，由 uuid.uuid4().hex 生成。</p>
+
+<pre><code>def _get_token_id(self, token_data):
+    return uuid.uuid4().hex
+</code></pre>
+
+<p>但是因 UUID token 不携带其它信息，OpenStack API 收到该 token 后，既不能判断该 token 是否有效，更无法得知该 token 携带的用户信息，所以需经图一步骤 4 向 Keystone 校验 token，并获用户&gt;相关的信息。其样例如下：</p>
+
+<pre><code>144d8a99a42447379ac37f78bf0ef608
+</code></pre>
+
+<p>UUID token 简单美观，不携带其它信息，因此 Keystone 必须实现 token 的存储和认证，随着集群的规模增大，Keystone 将很有可能成为性能瓶颈。</p>
+
+<hr />
+
+<h1 id="pki">PKI</h1>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/pki.png" alt="P2" />
+在阐述 PKI（Public Key Infrastruction） token 前，让我们简单的回顾<a href="https://zh.wikipedia.org/wiki/%E5%85%AC%E5%BC%80%E5%AF%86%E9%92%A5%E5%8A%A0%E5%AF%86">公开密钥加密(public-key cryptography)</a>和<a href="http://www.youdzone.com/signature.html">数字签名</a>。公开密钥加密，也称为非对称加密(asymmetric cryptography，加密密钥和解密密钥不相同)，在这种密码学方法中，需要一对密钥，分别为公钥(Public Key)和私钥(Private Key)，公钥是公开的，私钥是非公开的，需用户妥善保管。如果把加密和解密的流程当做函数 C(x) 和 D(x)，P 和 S 分别代表公钥和私钥，对明文 A 和密文 B 而言，数学的角度上有以下公式：
+B = C(A, S)
+A = D(B, P)
+其中加密函数 C(x), 解密函数 D(x) 以及公钥 P 均是公开的。上面两个公式的意思是公钥加密的密文只能用私钥解密，采用私钥加密的密文只能用公钥解密。非对称加密广泛运用在安全领域，诸如常见的 HTTPS，SSH 登录等。</p>
+
+<p>数字签名又称为公钥数字签名，首先采用 Hash 函数对消息生成摘要，摘要经私钥加密后称为数字签名。接收方用公钥解密该数字签名，并与接收消息生成的摘要做对比，如果二者一致，便可以确认该消息&gt;的完整性和真实性。</p>
+
+<p>PKI 的本质就是基于数字签名，keystone 用私钥对 token 进行数字签名，各个 API server 用公钥在本地验证该 token。相关代码简化如下：</p>
+
+<pre><code>def _get_token_id(self, token_data):
+    try:
+        token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
+        token_id = str(cms.cms_sign_token(token_json,
+                                          CONF.signing.certfile,
+                                          CONF.signing.keyfile))
+        return token_id
+</code></pre>
+
+<p>其中 cms.cms_sign_token 调用 openssl cms –sign 对 token_data 进行签名，token_data 的样式如下：</p>
+
+<pre><code>{
+  "token": {
+    "methods": [
+      "password"
+    ],
+    "roles": [
+      {
+        "id": "5642056d336b4c2a894882425ce22a86",
+        "name": "admin"
+      }
+    ],
+    "expires_at": "2015-12-25T09:57:28.404275Z",
+    "project": {
+      "domain": {
+        "id": "default",
+        "name": "Default"
+      },
+      "id": "144d8a99a42447379ac37f78bf0ef608",
+      "name": "admin"
+    },
+    "catalog": [
+      {
+        "endpoints": [
+          {
+            "region_id": "RegionOne",
+            "url": "http://controller:5000/v2.0",
+            "region": "RegionOne",
+            "interface": "public",
+            "id": "3837de623efd4af799e050d4d8d1f307"
+          },
+          {
+            "region_id": "RegionOne",
+            "url": "http://controller:35357/v2.0",
+            "region": "RegionOne",
+            "interface": "admin",
+            "id": "3ffc46344293437ca2919107980daee4"
+          },
+          {
+            "region_id": "RegionOne",
+            "url": "http://controller:5000/v2.0",
+            "region": "RegionOne",
+            "interface": "internal",
+            "id": "c138238caeb04bb391ea0957ac020ccc"
+          }
+        ],
+        "type": "identity",
+        "id": "888accf6f1364001af0b829f51d905c3",
+        "name": "keystone"
+      }
+    ],
+    "extras": {
+    },
+    "user": {
+      "domain": {
+        "id": "default",
+        "name": "Default"
+      },
+      "id": "1552d60a042e4a2caa07ea7ae6aa2f09",
+      "name": "admin"
+    },
+    "audit_ids": [
+      "ZCvZW2TtTgiaAsVA8qmc3A"
+    ],
+    "issued_at": "2015-12-25T08:57:28.404304Z"
+  }
+}
+</code></pre>
+
+<p>token_data 经 cms.cms_sign_token 签名生成的 token_id 如下，共 1932 Byte：</p>
+
+<pre><code>MIIKoZIhvcNAQcCoIIFljCCBZICAQExDTALBglghkgBZQMEAgEwggPzBgkqhkiG9w0B
+......
+rhr0acV3bMKzmqvViHf-fPVnLDMJajOWSuhimqfLZHRdr+ck0WVQosB6+M6iAvrEF7v
+</code></pre>
+
+<hr />
+
+<h1 id="pkiz">PKIZ</h1>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/pkiz.png" alt="P3" />
+PKIZ 在 PKI 的基础上做了压缩处理，但是压缩的效果极其有限，一般情况下，压缩后的大小为 PKI token 的 90 % 左右，所以 PKIZ 不能友好的解决 token size 太大问题。</p>
+
+<pre><code>def _get_token_id(self, token_data):
+    try:
+        token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
+        token_id = str(cms.pkiz_sign(token_json,
+                                     CONF.signing.certfile,
+                                     CONF.signing.keyfile))
+        return token_id
+</code></pre>
+
+<p>其中 cms.pkiz_sign() 比 cms.pki_sign() 多了如下一行代码，由 zlib 对签名后的消息进行压缩级别为 6 的压缩。</p>
+
+<pre><code>compressed = zlib.compress(token_id, compression_level=6)
+</code></pre>
+
+<p>PKIZ token 样例如下，共 1645 Byte，比 PKI token 减小 14.86 %：</p>
+
+<pre><code>PKIZ_eJytVcuOozgU3fMVs49aTXhUN0vAQEHFJiRg8IVHgn5OnA149JVaunNS3NYjoSU
+......
+W4fRaxrbNtinojheVICXYrEk0oPX6TSnP71IYj2e3nm4MLy7S84PtIPDz4_03IsOb2Q=
+</code></pre>
+
+<hr />
+
+<h1 id="fernet">Fernet</h1>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/fernet.png" alt="P4" />
+用户可能会碰上这么一个问题，当集群运行较长一段时间后，访问其 API 会变得奇慢无比，究其原因在于 Keystone 数据库存储了大量的 token 导致性能太差，解决的办法是经常清理 token。为了避免上&gt;述问题，社区提出了<a href="https://github.com/openstack/keystone-specs/blob/master/specs/kilo/klwt.rst">Fernet token</a>，它采用 <a href="http://cryptography.readthedocs.org/en/latest/fernet/">cryptography</a> 对称加密库(symmetric cryptography，加密密钥和解密密钥相同) 加密 token，具体由 AES-CBC 加密和散列函数 SHA256 签名。^N<a href="http://cryptography.readthedocs.org/en/latest/fernet/">Fernet</a>
+是专为 API token 设计的一种轻量级安全消息格式，不需要存储于数据库，减少了磁盘的 IO，带来了一定的<a href="http://dolphm.com/benchmarking-openstack-keystone-token-formats/">性能提升</a>。为了提&gt;高安全性，需要采用 <a href="http://lbragstad.com/fernet-tokens-and-key-rotation/">Key Rotation</a> 更换密钥。</p>
+
+<pre><code>def create_token(self, user_id, expires_at, audit_ids, methods=None,
+                 domain_id=None, project_id=None, trust_id=None,
+                 federated_info=None):
+    """Given a set of payload attributes, generate a Fernet token."""
+
+    if trust_id:
+        version = TrustScopedPayload.version
+        payload = TrustScopedPayload.assemble(
+            user_id,
+            methods,
+            project_id,
+            expires_at,
+            audit_ids,
+            trust_id)
+
+    ...
+
+    versioned_payload = (version,) + payload
+    serialized_payload = msgpack.packb(versioned_payload)
+    token = self.pack(serialized_payload)
+
+    return token 以上代码表明，token 包含了 user_id，project_id，domain_id，methods，expires_at 等信息，重要的是，它没有 service_catalog，所以 region 的数量并不影响它的大小。self.pack() 最终调用如下代码对上述信息加密：
+
+def crypto(self):
+    keys = utils.load_keys()
+
+    if not keys:
+        raise exception.KeysNotFound()
+
+    fernet_instances = [fernet.Fernet(key) for key in utils.load_keys()]
+    return fernet.MultiFernet(fernet_instances)
+</code></pre>
+
+<p>该 token 的大小一般在 200 多 Byte 左右，本例样式如下，大小为 186 Byte：</p>
+
+<pre><code>gAAAAABWfX8riU57aj0tkWdoIL6UdbViV-632pv0rw4zk9igCZXgC-sKwhVuVb-wyMVC9e5TFc
+7uPfKwNlT6cnzLalb3Hj0K3bc1X9ZXhde9C2ghsSfVuudMhfR8rThNBnh55RzOB8YTyBnl9MoQ
+XBO5UIFvC7wLTh_2klihb6hKuUqB6Sj3i_8
+</code></pre>
+
+<hr />
+
+<h1 id="token">如何选择 Token</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Token 类型</th>
+      <th>UUID</th>
+      <th>PKI</th>
+      <th>PKIZ</th>
+      <th>Fernet</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>大小</td>
+      <td>32 Byte</td>
+      <td>KB 级别</td>
+      <td>KB 级别</td>
+      <td>约 255 Byte</td>
+    </tr>
+    <tr>
+      <td>支持本地认证</td>
+      <td>不支持</td>
+      <td>支持</td>
+      <td>支持</td>
+      <td>不支持</td>
+    </tr>
+    <tr>
+      <td>Keystone 负载</td>
+      <td>大</td>
+      <td>小</td>
+      <td>小</td>
+      <td>大</td>
+    </tr>
+    <tr>
+      <td>存储于数据库</td>
+      <td>是</td>
+      <td>是</td>
+      <td>是</td>
+      <td>否</td>
+    </tr>
+    <tr>
+      <td>携带信息</td>
+      <td>无</td>
+      <td>User, Project, Role, Domain, Catalog 等</td>
+      <td>User, Project, Role, Domain, Catalog 等</td>
+      <td>User, Project 等</td>
+    </tr>
+    <tr>
+      <td>涉及加密方式</td>
+      <td>无</td>
+      <td>非对称加密</td>
+      <td>非对称加密</td>
+      <td>对称加密(AES)</td>
+    </tr>
+    <tr>
+      <td>是否压缩</td>
+      <td>否</td>
+      <td>否</td>
+      <td>是</td>
+      <td>否</td>
+    </tr>
+    <tr>
+      <td>版本支持</td>
+      <td>D</td>
+      <td>G</td>
+      <td>J</td>
+      <td>K</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Token 类型的选择涉及多个因素，包括 Keystone server 的负载、region 数量、安全因素、维护成本以及 token 本身的成熟度。region 的数量影响 PKI/PKIZ token 的大小，从安全的角度上看，UUID 无需维护密钥，PKI 需要妥善保管 Keystone server 上的私钥，Fernet 需要周期性的更换密钥，因此从安全、维护成本和成熟度上看，UUID &gt; PKI/PKIZ &gt; Fernet 如果：</p>
+
+<ul>
+  <li>Keystone server 负载低，region 少于 3 个，采用 UUID token。</li>
+  <li>Keystone server 负载高，region 少于 3 个，采用 PKI/PKIZ token。</li>
+  <li>Keystone server 负载低，region 大与或等于 3 个，采用 UUID token。</li>
+  <li>Keystone server 负载高，region 大于或等于 3 个，K 版本及以上可考虑采用 Fernet token。</li>
+</ul>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
