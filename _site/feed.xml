@@ -6,9 +6,300 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 11 Dec 2015 16:17:51 +0800</pubDate>
-    <lastBuildDate>Fri, 11 Dec 2015 16:17:51 +0800</lastBuildDate>
+    <pubDate>Sat, 26 Dec 2015 14:23:39 +0800</pubDate>
+    <lastBuildDate>Sat, 26 Dec 2015 14:23:39 +0800</lastBuildDate>
     <generator>Jekyll v3.0.1</generator>
+    
+      <item>
+        <title>理解keystone的四种token</title>
+        <description>
+&lt;hr /&gt;
+&lt;p&gt;layout: post
+title: “理解Keystone的四种Token”
+categories: OpenStack
+—&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;token-&quot;&gt;Token 是什么&lt;/h1&gt;
+
+&lt;p&gt;通俗的讲，token 是用户的一种凭证，需拿正确的用户名/密码向 keystone 申请才能得到。如果用户每次都采用用户名/密码访问 OpenStack API，容易泄露用户信息，带来安全隐患。所以 OpenStack 要求用户访问其 API 前，必须先获取 token，然后用 token 作为用户凭据访问 OpenStack API。
+&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/uuid.png&quot; alt=&quot;P1&quot; /&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;token--1&quot;&gt;四种 Token 的由来&lt;/h1&gt;
+&lt;p&gt;D 版本时，仅有 UUID 类型的 Token，UUID token 简单易用，却容易给 Keystone 带来性能问题，从图一的步骤 4 可看出，每当 OpenStack API 收到用户请求，都需要向 Keystone 验证该 token 是否有效。随着集群规模的扩大，Keystone 需处理大量验证 token 的请求，在高并发下容易出现性能问题。&lt;/p&gt;
+
+&lt;p&gt;于是，PKI(&lt;a href=&quot;https://wiki.openstack.org/wiki/PKI&quot;&gt;Public Key Infrastructrue&lt;/a&gt;) token 在 G 版本运用而生，和 UUID 相比，PKI token 携带更多用户信息的同时还附上了数字签名，以支持本地认证，从而避免了步骤 4。因为 PKI token 携带了更多的信息，这些信息就包括 service catalog，随着 OpenStack 的 Region 数增多，service catalog 携带的 endpoint 数量越多，PKI token 也相应增大，很容易超出 HTTP Server 允许的最大 HTTP Header(默认为 8 KB)，导致 HTTP 请求失败。&lt;/p&gt;
+
+&lt;p&gt;顾名思义，&lt;a href=&quot;https://blueprints.launchpad.net/keystone/+spec/compress-tokens&quot;&gt;PKIZ token&lt;/a&gt; 就是 PKI token 的压缩版，但压缩效果有限，无法良好的处理 token size 过大问题。&lt;/p&gt;
+
+&lt;p&gt;前三种 token 都会持久性存于数据库，大量与日俱增的 token 引起数据库性能下降，所以用户需经常清理数据库的 token。为了避免该问题，社区提出了 Fernet token，它携带了少量的用户信息，大小约为 255 Byte，采用了对称加密，无需存于数据库中。&lt;/p&gt;
+
+&lt;h1 id=&quot;uuid&quot;&gt;UUID&lt;/h1&gt;
+&lt;p&gt;UUID token 是长度固定为 32 Byte 的随机字符串，由 uuid.uuid4().hex 生成。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;def _get_token_id(self, token_data):
+    return uuid.uuid4().hex
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;但是因 UUID token 不携带其它信息，OpenStack API 收到该 token 后，既不能判断该 token 是否有效，更无法得知该 token 携带的用户信息，所以需经图一步骤 4 向 Keystone 校验 token，并获用户相关的信息。其样例如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;144d8a99a42447379ac37f78bf0ef608
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;UUID token 简单美观，不携带其它信息，因此 Keystone 必须实现 token 的存储和认证，随着集群的规模增大，Keystone 将很有可能成为性能瓶颈。&lt;/p&gt;
+
+&lt;h1 id=&quot;pki&quot;&gt;PKI&lt;/h1&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/pki.png&quot; alt=&quot;P2&quot; /&gt;
+在阐述 PKI（Public Key Infrastruction） token 前，让我们简单的回顾&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E5%85%AC%E5%BC%80%E5%AF%86%E9%92%A5%E5%8A%A0%E5%AF%86&quot;&gt;公开密钥加密(public-key cryptography)&lt;/a&gt;和&lt;a href=&quot;http://www.youdzone.com/signature.html&quot;&gt;数字签名&lt;/a&gt;。公开密钥加密，也称为非对称加密(asymmetric cryptography，加密密钥和解密密钥不相同)，在这种密码学方法中，需要一对密钥，分别为公钥(Public Key)和私钥(Private Key)，公钥是公开的，私钥是非公开的，需用户妥善保管。如果把加密和解密的流程当做函数 C(x) 和 D(x)，P 和 S 分别代表公钥和私钥，对明文 A 和密文 B 而言，数学的角度上有以下公式：
+B = C(A, S)
+A = D(B, P)
+其中加密函数 C(x), 解密函数 D(x) 以及公钥 P 均是公开的。上面两个公式的意思是公钥加密的密文只能用私钥解密，采用私钥加密的密文只能用公钥解密。非对称加密广泛运用在安全领域，诸如常见的 HTTPS，SSH 登录等。&lt;/p&gt;
+
+&lt;p&gt;数字签名又称为公钥数字签名，首先采用 Hash 函数对消息生成摘要，摘要经私钥加密后称为数字签名。接收方用公钥解密该数字签名，并与接收消息生成的摘要做对比，如果二者一致，便可以确认该消息的完整性和真实性。&lt;/p&gt;
+
+&lt;p&gt;PKI 的本质就是基于数字签名，keystone 用私钥对 token 进行数字签名，各个 API server 用公钥在本地验证该 token。相关代码简化如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;def _get_token_id(self, token_data):
+    try:
+        token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
+        token_id = str(cms.cms_sign_token(token_json,
+                                          CONF.signing.certfile,
+                                          CONF.signing.keyfile))
+        return token_id
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;其中 cms.cms_sign_token 调用 openssl cms –sign 对 token_data 进行签名，token_data 的样式如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;{
+  &quot;token&quot;: {
+    &quot;methods&quot;: [
+      &quot;password&quot;
+    ],
+    &quot;roles&quot;: [
+      {
+        &quot;id&quot;: &quot;5642056d336b4c2a894882425ce22a86&quot;,
+        &quot;name&quot;: &quot;admin&quot;
+      }
+    ],
+    &quot;expires_at&quot;: &quot;2015-12-25T09:57:28.404275Z&quot;,
+    &quot;project&quot;: {
+      &quot;domain&quot;: {
+        &quot;id&quot;: &quot;default&quot;,
+        &quot;name&quot;: &quot;Default&quot;
+      },
+      &quot;id&quot;: &quot;144d8a99a42447379ac37f78bf0ef608&quot;,
+      &quot;name&quot;: &quot;admin&quot;
+    },
+    &quot;catalog&quot;: [
+      {
+        &quot;endpoints&quot;: [
+          {
+            &quot;region_id&quot;: &quot;RegionOne&quot;,
+            &quot;url&quot;: &quot;http://controller:5000/v2.0&quot;,
+            &quot;region&quot;: &quot;RegionOne&quot;,
+            &quot;interface&quot;: &quot;public&quot;,
+            &quot;id&quot;: &quot;3837de623efd4af799e050d4d8d1f307&quot;
+          },
+          {
+            &quot;region_id&quot;: &quot;RegionOne&quot;,
+            &quot;url&quot;: &quot;http://controller:35357/v2.0&quot;,
+            &quot;region&quot;: &quot;RegionOne&quot;,
+            &quot;interface&quot;: &quot;admin&quot;,
+            &quot;id&quot;: &quot;3ffc46344293437ca2919107980daee4&quot;
+          },
+          {
+            &quot;region_id&quot;: &quot;RegionOne&quot;,
+            &quot;url&quot;: &quot;http://controller:5000/v2.0&quot;,
+            &quot;region&quot;: &quot;RegionOne&quot;,
+            &quot;interface&quot;: &quot;internal&quot;,
+            &quot;id&quot;: &quot;c138238caeb04bb391ea0957ac020ccc&quot;
+          }
+        ],
+        &quot;type&quot;: &quot;identity&quot;,
+        &quot;id&quot;: &quot;888accf6f1364001af0b829f51d905c3&quot;,
+        &quot;name&quot;: &quot;keystone&quot;
+      }
+    ],
+    &quot;extras&quot;: {
+    },
+    &quot;user&quot;: {
+      &quot;domain&quot;: {
+        &quot;id&quot;: &quot;default&quot;,
+        &quot;name&quot;: &quot;Default&quot;
+      },
+      &quot;id&quot;: &quot;1552d60a042e4a2caa07ea7ae6aa2f09&quot;,
+      &quot;name&quot;: &quot;admin&quot;
+    },
+    &quot;audit_ids&quot;: [
+      &quot;ZCvZW2TtTgiaAsVA8qmc3A&quot;
+    ],
+    &quot;issued_at&quot;: &quot;2015-12-25T08:57:28.404304Z&quot;
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;token_data 经 cms.cms_sign_token 签名生成的 token_id 如下，共 1932 Byte：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;MIIKoZIhvcNAQcCoIIFljCCBZICAQExDTALBglghkgBZQMEAgEwggPzBgkqhkiG9w0BBwGgggPkBIID4HsidG9rZW4iOnsibWV0aG9kcyI6Wy......+aRbfbxLTTz14fLX53QrHgcfuAl27dw+Vo4GzZ-D2Hrhr0acV3bMKzmqvViHf-fPVnLDMJajOWSuhimqfLZHRdr+ck0WVQosB6+M6iAvrEF7v
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1 id=&quot;pkiz&quot;&gt;PKIZ&lt;/h1&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/pkiz.png&quot; alt=&quot;P3&quot; /&gt;
+PKIZ 在 PKI 的基础上做了压缩处理，但是压缩的效果极其有限，一般情况下，压缩后的大小为 PKI token 的 90 % 左右，所以 PKIZ 不能友好的解决 token size 太大问题。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;def _get_token_id(self, token_data):
+    try:
+        token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
+        token_id = str(cms.pkiz_sign(token_json,
+                                     CONF.signing.certfile,
+                                     CONF.signing.keyfile))
+        return token_id
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;其中 cms.pkiz_sign() 比 cms.pki_sign() 多了如下一行代码，由 zlib 对签名后的消息进行压缩级别为 6 的压缩。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;compressed = zlib.compress(token_id, compression_level=6)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;PKIZ token 样例如下，共 1645 Byte，比 PKI token 减小 14.86 %：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;PKIZ_eJytVcuOozgU3fMVs49aTXhUN0vAQEHFJiRg8IVHgn5OnA149JVaunNS3NYjoSUri2r885957Lly_iZzmej_6y4XZSJB33eHiAZvRZX9xyZU......W4fRaxrbNtinB2ze3PXjv3sMqqvzunYxFa_fO1tyb0jteB0czPKKt97rojheVICXYrEk0oPX6TSnP71IYj2e3nm4MLy7S84PtIPDz4_03IsOb2Q=
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1 id=&quot;fernet&quot;&gt;Fernet&lt;/h1&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/fernet.png&quot; alt=&quot;P4&quot; /&gt;
+用户可能会碰上这么一个问题，当集群运行较长一段时间后，访问其 API 会变得奇慢无比，究其原因在于 Keystone 数据库存储了大量的 token 导致性能太差，解决的办法是经常清理 token。为了避免上述问题，社区提出了&lt;a href=&quot;https://github.com/openstack/keystone-specs/blob/master/specs/kilo/klwt.rst&quot;&gt;Fernet token&lt;/a&gt;，它采用 &lt;a href=&quot;http://cryptography.readthedocs.org/en/latest/fernet/&quot;&gt;cryptography&lt;/a&gt; 对称加密库(symmetric cryptography，加密密钥和解密密钥相同) 加密 token，具体由 AES-CBC 加密和散列函数 SHA256 签名。&lt;a href=&quot;http://cryptography.readthedocs.org/en/latest/fernet/&quot;&gt;Fernet&lt;/a&gt;
+是专为 API token 设计的一种轻量级安全消息格式，不需要存储于数据库，减少了磁盘的 IO，带来了一定的&lt;a href=&quot;http://dolphm.com/benchmarking-openstack-keystone-token-formats/&quot;&gt;性能提升&lt;/a&gt;。为了提高安全性，需要采用 &lt;a href=&quot;http://lbragstad.com/fernet-tokens-and-key-rotation/&quot;&gt;Key Rotation&lt;/a&gt; 更换密钥。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;def create_token(self, user_id, expires_at, audit_ids, methods=None,
+                 domain_id=None, project_id=None, trust_id=None,
+                 federated_info=None):
+    &quot;&quot;&quot;Given a set of payload attributes, generate a Fernet token.&quot;&quot;&quot;
+    
+    if trust_id:
+        version = TrustScopedPayload.version
+        payload = TrustScopedPayload.assemble(
+            user_id,
+            methods,
+            project_id,
+            expires_at,
+            audit_ids,
+            trust_id)
+    
+    ...
+    
+    versioned_payload = (version,) + payload
+    serialized_payload = msgpack.packb(versioned_payload)
+    token = self.pack(serialized_payload)
+
+    return token
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;以上代码表明，token 包含了 user_id，project_id，domain_id，methods，expires_at 等信息，重要的是，它没有 service_catalog，所以 region 的数量并不影响它的大小。self.pack() 最终调用如下代码对上述信息加密：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;def crypto(self):
+    keys = utils.load_keys()
+
+    if not keys:
+        raise exception.KeysNotFound()
+
+    fernet_instances = [fernet.Fernet(key) for key in utils.load_keys()]
+    return fernet.MultiFernet(fernet_instances)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;该 token 的大小一般在 200 多 Byte 左右，本例样式如下，大小为 186 Byte：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;gAAAAABWfX8riU57aj0tkWdoIL6UdbViV-632pv0rw4zk9igCZXgC-sKwhVuVb-wyMVC9e5TFc7uPfKwNlT6cnzLalb3Hj0K3bc1X9ZXhde9C2ghsSfVuudMhfR8rThNBnh55RzOB8YTyBnl9MoQXBO5UIFvC7wLTh_2klihb6hKuUqB6Sj3i_8
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1 id=&quot;token&quot;&gt;如何选择 Token&lt;/h1&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Token 类型&lt;/th&gt;
+      &lt;th&gt;UUID&lt;/th&gt;
+      &lt;th&gt;PKI&lt;/th&gt;
+      &lt;th&gt;PKIZ&lt;/th&gt;
+      &lt;th&gt;Fernet&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;大小&lt;/td&gt;
+      &lt;td&gt;32 Byte&lt;/td&gt;
+      &lt;td&gt;KB 级别&lt;/td&gt;
+      &lt;td&gt;KB 级别&lt;/td&gt;
+      &lt;td&gt;约 255 Byte&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;支持本地认证&lt;/td&gt;
+      &lt;td&gt;不支持&lt;/td&gt;
+      &lt;td&gt;支持&lt;/td&gt;
+      &lt;td&gt;支持&lt;/td&gt;
+      &lt;td&gt;不支持&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Keystone 负载&lt;/td&gt;
+      &lt;td&gt;大&lt;/td&gt;
+      &lt;td&gt;小&lt;/td&gt;
+      &lt;td&gt;小&lt;/td&gt;
+      &lt;td&gt;大&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;存储于数据库&lt;/td&gt;
+      &lt;td&gt;是&lt;/td&gt;
+      &lt;td&gt;是&lt;/td&gt;
+      &lt;td&gt;是&lt;/td&gt;
+      &lt;td&gt;否&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;携带信息&lt;/td&gt;
+      &lt;td&gt;无&lt;/td&gt;
+      &lt;td&gt;User, Project, Role, Domain, Catalog 等&lt;/td&gt;
+      &lt;td&gt;User, Project, Role, Domain, Catalog 等&lt;/td&gt;
+      &lt;td&gt;User, Project 等&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;涉及加密方式&lt;/td&gt;
+      &lt;td&gt;无&lt;/td&gt;
+      &lt;td&gt;非对称加密&lt;/td&gt;
+      &lt;td&gt;非对称加密&lt;/td&gt;
+      &lt;td&gt;对称加密(AES)&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;是否压缩&lt;/td&gt;
+      &lt;td&gt;否&lt;/td&gt;
+      &lt;td&gt;否&lt;/td&gt;
+      &lt;td&gt;是&lt;/td&gt;
+      &lt;td&gt;否&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;版本支持&lt;/td&gt;
+      &lt;td&gt;D&lt;/td&gt;
+      &lt;td&gt;G&lt;/td&gt;
+      &lt;td&gt;J&lt;/td&gt;
+      &lt;td&gt;K&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Token 类型的选择涉及多个因素，包括 Keystone server 的负载、region 数量、安全因素、维护成本以及 token 本身的成熟度。region 的数量影响 PKI/PKIZ token 的大小，从安全的角度上看，UUID 无需维护密钥，PKI 需要妥善保管 Keystone server 上的私钥，Fernet 需要周期性的更换密钥，因此从安全、维护成本和成熟度上看，UUID &amp;gt; PKI/PKIZ &amp;gt; Fernet 如果：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Keystone server 负载低，region 少于 3 个，采用 UUID token。&lt;/li&gt;
+  &lt;li&gt;Keystone server 负载高，region 少于 3 个，采用 PKI/PKIZ token。&lt;/li&gt;
+  &lt;li&gt;Keystone server 负载低，region 大与或等于 3 个，采用 UUID token。&lt;/li&gt;
+  &lt;li&gt;Keystone server 负载高，region 大于或等于 3 个，K 版本及以上可考虑采用 Fernet token。&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Sat, 26 Dec 2015 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/2015/12/26/%E7%90%86%E8%A7%A3Keystone%E7%9A%84%E5%9B%9B%E7%A7%8DToken.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/2015/12/26/%E7%90%86%E8%A7%A3Keystone%E7%9A%84%E5%9B%9B%E7%A7%8DToken.html</guid>
+        
+        
+      </item>
     
       <item>
         <title>Nova是如何统计OpenStack资源</title>
@@ -325,7 +616,7 @@ rpc_workers = $workers&lt;/p&gt;
   &lt;li&gt;&lt;a href=&quot;http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it&quot;&gt;http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it&lt;/a&gt;&lt;/li&gt;
 &lt;/ol&gt;
 </description>
-        <pubDate>Thu, 10 Dec 2015 16:00:00 +0800</pubDate>
+        <pubDate>Thu, 10 Dec 2015 00:00:00 +0800</pubDate>
         <link>http://wsfdl.com/openstack/2015/12/10/%E4%B8%80%E6%AC%A1%E6%89%B9%E9%87%8F%E9%87%8D%E5%90%AF%E5%BC%95%E5%8F%91%E7%9A%84%E7%BD%91%E7%BB%9C%E6%95%85%E9%9A%9C.html</link>
         <guid isPermaLink="true">http://wsfdl.com/openstack/2015/12/10/%E4%B8%80%E6%AC%A1%E6%89%B9%E9%87%8F%E9%87%8D%E5%90%AF%E5%BC%95%E5%8F%91%E7%9A%84%E7%BD%91%E7%BB%9C%E6%95%85%E9%9A%9C.html</guid>
         
