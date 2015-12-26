@@ -61,24 +61,12 @@ PKI 的本质就是基于数字签名，keystone 用私钥对 token 进行数字
 
     {
       "token": {
-        "methods": [
-          "password"
-        ],
-        "roles": [
-          {
-            "id": "5642056d336b4c2a894882425ce22a86",
-            "name": "admin"
-          }
-        ],
+        "methods": [ "password" ],
+        "roles": [{"id": "5642056d336b4c2a894882425ce22a86", "name": "admin"}],
         "expires_at": "2015-12-25T09:57:28.404275Z",
         "project": {
-          "domain": {
-            "id": "default",
-            "name": "Default"
-          },
-          "id": "144d8a99a42447379ac37f78bf0ef608",
-          "name": "admin"
-        },
+          "domain": { "id": "default", "name": "Default"},
+          "id": "144d8a99a42447379ac37f78bf0ef608", "name": "admin"},
         "catalog": [
           {
             "endpoints": [
@@ -89,39 +77,13 @@ PKI 的本质就是基于数字签名，keystone 用私钥对 token 进行数字
                 "interface": "public",
                 "id": "3837de623efd4af799e050d4d8d1f307"
               },
-              {
-                "region_id": "RegionOne",
-                "url": "http://controller:35357/v2.0",
-                "region": "RegionOne",
-                "interface": "admin",
-                "id": "3ffc46344293437ca2919107980daee4"
-              },
-              {
-                "region_id": "RegionOne",
-                "url": "http://controller:5000/v2.0",
-                "region": "RegionOne",
-                "interface": "internal",
-                "id": "c138238caeb04bb391ea0957ac020ccc"
-              }
-            ],
-            "type": "identity",
-            "id": "888accf6f1364001af0b829f51d905c3",
-            "name": "keystone"
-          }
+              ......
         ],
-        "extras": {
-        },
+        "extras": {},
         "user": {
-          "domain": {
-            "id": "default",
-            "name": "Default"
-          },
-          "id": "1552d60a042e4a2caa07ea7ae6aa2f09",
-          "name": "admin"
-        },
-        "audit_ids": [
-          "ZCvZW2TtTgiaAsVA8qmc3A"
-        ],
+          "domain": {"id": "default", "name": "Default"},
+          "id": "1552d60a042e4a2caa07ea7ae6aa2f09", "name": "admin"},
+        "audit_ids": ["ZCvZW2TtTgiaAsVA8qmc3A"],
         "issued_at": "2015-12-25T08:57:28.404304Z"
       }
     }

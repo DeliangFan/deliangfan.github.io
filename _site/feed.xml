@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 26 Dec 2015 14:57:47 +0800</pubDate>
-    <lastBuildDate>Sat, 26 Dec 2015 14:57:47 +0800</lastBuildDate>
+    <pubDate>Sat, 26 Dec 2015 15:05:53 +0800</pubDate>
+    <lastBuildDate>Sat, 26 Dec 2015 15:05:53 +0800</lastBuildDate>
     <generator>Jekyll v3.0.1</generator>
     
       <item>
@@ -72,24 +72,12 @@ A = D(B, P)
 
 &lt;pre&gt;&lt;code&gt;{
   &quot;token&quot;: {
-    &quot;methods&quot;: [
-      &quot;password&quot;
-    ],
-    &quot;roles&quot;: [
-      {
-        &quot;id&quot;: &quot;5642056d336b4c2a894882425ce22a86&quot;,
-        &quot;name&quot;: &quot;admin&quot;
-      }
-    ],
+    &quot;methods&quot;: [ &quot;password&quot; ],
+    &quot;roles&quot;: [{&quot;id&quot;: &quot;5642056d336b4c2a894882425ce22a86&quot;, &quot;name&quot;: &quot;admin&quot;}],
     &quot;expires_at&quot;: &quot;2015-12-25T09:57:28.404275Z&quot;,
     &quot;project&quot;: {
-      &quot;domain&quot;: {
-        &quot;id&quot;: &quot;default&quot;,
-        &quot;name&quot;: &quot;Default&quot;
-      },
-      &quot;id&quot;: &quot;144d8a99a42447379ac37f78bf0ef608&quot;,
-      &quot;name&quot;: &quot;admin&quot;
-    },
+      &quot;domain&quot;: { &quot;id&quot;: &quot;default&quot;, &quot;name&quot;: &quot;Default&quot;},
+      &quot;id&quot;: &quot;144d8a99a42447379ac37f78bf0ef608&quot;, &quot;name&quot;: &quot;admin&quot;},
     &quot;catalog&quot;: [
       {
         &quot;endpoints&quot;: [
@@ -100,39 +88,13 @@ A = D(B, P)
             &quot;interface&quot;: &quot;public&quot;,
             &quot;id&quot;: &quot;3837de623efd4af799e050d4d8d1f307&quot;
           },
-          {
-            &quot;region_id&quot;: &quot;RegionOne&quot;,
-            &quot;url&quot;: &quot;http://controller:35357/v2.0&quot;,
-            &quot;region&quot;: &quot;RegionOne&quot;,
-            &quot;interface&quot;: &quot;admin&quot;,
-            &quot;id&quot;: &quot;3ffc46344293437ca2919107980daee4&quot;
-          },
-          {
-            &quot;region_id&quot;: &quot;RegionOne&quot;,
-            &quot;url&quot;: &quot;http://controller:5000/v2.0&quot;,
-            &quot;region&quot;: &quot;RegionOne&quot;,
-            &quot;interface&quot;: &quot;internal&quot;,
-            &quot;id&quot;: &quot;c138238caeb04bb391ea0957ac020ccc&quot;
-          }
-        ],
-        &quot;type&quot;: &quot;identity&quot;,
-        &quot;id&quot;: &quot;888accf6f1364001af0b829f51d905c3&quot;,
-        &quot;name&quot;: &quot;keystone&quot;
-      }
+          ......
     ],
-    &quot;extras&quot;: {
-    },
+    &quot;extras&quot;: {},
     &quot;user&quot;: {
-      &quot;domain&quot;: {
-        &quot;id&quot;: &quot;default&quot;,
-        &quot;name&quot;: &quot;Default&quot;
-      },
-      &quot;id&quot;: &quot;1552d60a042e4a2caa07ea7ae6aa2f09&quot;,
-      &quot;name&quot;: &quot;admin&quot;
-    },
-    &quot;audit_ids&quot;: [
-      &quot;ZCvZW2TtTgiaAsVA8qmc3A&quot;
-    ],
+      &quot;domain&quot;: {&quot;id&quot;: &quot;default&quot;, &quot;name&quot;: &quot;Default&quot;},
+      &quot;id&quot;: &quot;1552d60a042e4a2caa07ea7ae6aa2f09&quot;, &quot;name&quot;: &quot;admin&quot;},
+    &quot;audit_ids&quot;: [&quot;ZCvZW2TtTgiaAsVA8qmc3A&quot;],
     &quot;issued_at&quot;: &quot;2015-12-25T08:57:28.404304Z&quot;
   }
 }
