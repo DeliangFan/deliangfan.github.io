@@ -292,7 +292,8 @@ XBO5UIFvC7wLTh_2klihb6hKuUqB6Sj3i_8
 </tr>
 </tbody></table>
 
-<p>Token 类型的选择涉及多个因素，包括 Keystone server 的负载、region 数量、安全因素、维护成本以及 token 本身的成熟度。region 的数量影响 PKI/PKIZ token 的大小，从安全的角度上看，UUID 无需维护密钥，PKI 需要妥善保管 Keystone server 上的私钥，Fernet 需要周期性的更换密钥，因此从安全、维护成本和成熟度上看，UUID &gt; PKI/PKIZ &gt; Fernet 如果：</p>
+<p>&nbsp;<br>
+Token 类型的选择涉及多个因素，包括 Keystone server 的负载、region 数量、安全因素、维护成本以及 token 本身的成熟度。region 的数量影响 PKI/PKIZ token 的大小，从安全的角度上看，UUID 无需维护密钥，PKI 需要妥善保管 Keystone server 上的私钥，Fernet 需要周期性的更换密钥，因此从安全、维护成本和成熟度上看，UUID &gt; PKI/PKIZ &gt; Fernet 如果：</p>
 
 <ul>
 <li>Keystone server 负载低，region 少于 3 个，采用 UUID token。</li>
