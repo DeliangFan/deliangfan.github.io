@@ -6,22 +6,23 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 26 Dec 2015 15:05:53 +0800</pubDate>
-    <lastBuildDate>Sat, 26 Dec 2015 15:05:53 +0800</lastBuildDate>
-    <generator>Jekyll v3.0.1</generator>
+    <pubDate>Sat, 26 Dec 2015 16:19:29 +0800</pubDate>
+    <lastBuildDate>Sat, 26 Dec 2015 16:19:29 +0800</lastBuildDate>
+    <generator>Jekyll v2.4.0</generator>
     
       <item>
         <title>理解Keystone的四种Token</title>
-        <description>&lt;hr /&gt;
+        <description>&lt;hr&gt;
 
-&lt;h1 id=&quot;token-&quot;&gt;Token 是什么&lt;/h1&gt;
+&lt;h1 id=&quot;token-是什么&quot;&gt;Token 是什么&lt;/h1&gt;
 
 &lt;p&gt;通俗的讲，token 是用户的一种凭证，需拿正确的用户名/密码向 keystone 申请才能得到。如果用户每次都采用用户名/密码访问 OpenStack API，容易泄露用户信息，带来安全隐患。所以 OpenStack 要求用户访问其 API 前，必须先获取 token，然后用 token 作为用户凭据访问 OpenStack API。
-&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/uuid.png&quot; alt=&quot;P1&quot; /&gt;&lt;/p&gt;
+&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/uuid.png&quot; alt=&quot;P1&quot;&gt;&lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;hr&gt;
 
-&lt;h1 id=&quot;token--1&quot;&gt;四种 Token 的由来&lt;/h1&gt;
+&lt;h1 id=&quot;四种-token-的由来&quot;&gt;四种 Token 的由来&lt;/h1&gt;
+
 &lt;p&gt;D 版本时，仅有 UUID 类型的 Token，UUID token 简单易用，却容易给 Keystone 带来性能问题，从图一的步骤 4 可看出，每当 OpenStack API 收到用户请求，都需要向 Keystone 验证该 token 是否有&amp;gt;效。随着集群规模的扩大，Keystone 需处理大量验证 token 的请求，在高并发下容易出现性能问题。&lt;/p&gt;
 
 &lt;p&gt;于是，PKI(&lt;a href=&quot;https://wiki.openstack.org/wiki/PKI&quot;&gt;Public Key Infrastructrue&lt;/a&gt;) token 在 G 版本运用而生，和 UUID 相比，PKI token 携带更多用户信息的同时还附上了数字签名，以支持本地认证，从而避免了步骤 4。因为 PKI token 携带了更多的信息，这些信息就包括 service catalog，随着 OpenStack 的 Region 数增多，service catalog 携带的 endpoint 数量越多，PKI token 也相应增大，&amp;gt;很容易超出 HTTP Server 允许的最大 HTTP Header(默认为 8 KB)，导致 HTTP 请求失败。&lt;/p&gt;
@@ -30,238 +31,224 @@
 
 &lt;p&gt;前三种 token 都会持久性存于数据库，大量与日俱增的 token 引起数据库性能下降，所以用户需经常清理数据库的 token。为了避免该问题，社区提出了 Fernet token，它携带了少量的用户信息，大小约为 255 Byte，采用了对称加密，无需存于数据库中。&lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;hr&gt;
 
 &lt;h1 id=&quot;uuid&quot;&gt;UUID&lt;/h1&gt;
+
 &lt;p&gt;UUID token 是长度固定为 32 Byte 的随机字符串，由 uuid.uuid4().hex 生成。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;def _get_token_id(self, token_data):
-    return uuid.uuid4().hex
-&lt;/code&gt;&lt;/pre&gt;
-
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;_get_token_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;token_data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;uuid&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;uuid4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hex&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;但是因 UUID token 不携带其它信息，OpenStack API 收到该 token 后，既不能判断该 token 是否有效，更无法得知该 token 携带的用户信息，所以需经图一步骤 4 向 Keystone 校验 token，并获用户&amp;gt;相关的信息。其样例如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;144d8a99a42447379ac37f78bf0ef608
-&lt;/code&gt;&lt;/pre&gt;
-
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;144d8a99a42447379ac37f78bf0ef608
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;UUID token 简单美观，不携带其它信息，因此 Keystone 必须实现 token 的存储和认证，随着集群的规模增大，Keystone 将很有可能成为性能瓶颈。&lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;hr&gt;
 
 &lt;h1 id=&quot;pki&quot;&gt;PKI&lt;/h1&gt;
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/pki.png&quot; alt=&quot;P2&quot; /&gt;
-在阐述 PKI（Public Key Infrastruction） token 前，让我们简单的回顾&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E5%85%AC%E5%BC%80%E5%AF%86%E9%92%A5%E5%8A%A0%E5%AF%86&quot;&gt;公开密钥加密(public-key cryptography)&lt;/a&gt;和&lt;a href=&quot;http://www.youdzone.com/signature.html&quot;&gt;数字签名&lt;/a&gt;。公开密钥加密，也称为非对称加密(asymmetric cryptography，加密密钥和解密密钥不相同)，在这种密码学方法中，需要一对密钥，分别为公钥(Public Key)和私钥(Private Key)，公钥是公开的，私钥是非公开的，需用户妥善保管。如果把加密和解密的流程当做函数 C(x) 和 D(x)，P 和 S 分别代表公钥和私钥，对明文 A 和密文 B 而言，数学的角度上有以下公式：
-B = C(A, S)
-A = D(B, P)
-其中加密函数 C(x), 解密函数 D(x) 以及公钥 P 均是公开的。上面两个公式的意思是公钥加密的密文只能用私钥解密，采用私钥加密的密文只能用公钥解密。非对称加密广泛运用在安全领域，诸如常见的 HTTPS，SSH 登录等。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/pki.png&quot; alt=&quot;P2&quot;&gt;
+在阐述 PKI（Public Key Infrastruction） token 前，让我们简单的回顾&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E5%85%AC%E5%BC%80%E5%AF%86%E9%92%A5%E5%8A%A0%E5%AF%86&quot;&gt;公开密钥加密(public-key cryptography)&lt;/a&gt;和&lt;a href=&quot;http://www.youdzone.com/signature.html&quot;&gt;数字签名&lt;/a&gt;。公开密钥加密，也称为非对称加密(asymmetric cryptography，加密密钥和解密密钥不相同)，在这种密码学方法中，需要一对密钥，分别为公钥(Public Key)和私钥(Private Key)，公钥是公开的，私钥是非公开的，需用户妥善保管。如果把加密和解密的流程当做函数 C(x) 和 D(x)，P 和 S 分别代表公钥和私钥，对明文 A 和密文 B 而言，数学的角度上有以下公式：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;B = C(A, S)&lt;br&gt;
+A = D(B, P)&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;其中加密函数 C(x), 解密函数 D(x) 以及公钥 P 均是公开的。上面两个公式的意思是公钥加密的密文只能用私钥解密，采用私钥加密的密文只能用公钥解密。非对称加密广泛运用在安全领域，诸如常见的 HTTPS，SSH 登录等。&lt;/p&gt;
 
 &lt;p&gt;数字签名又称为公钥数字签名，首先采用 Hash 函数对消息生成摘要，摘要经私钥加密后称为数字签名。接收方用公钥解密该数字签名，并与接收消息生成的摘要做对比，如果二者一致，便可以确认该消息&amp;gt;的完整性和真实性。&lt;/p&gt;
 
 &lt;p&gt;PKI 的本质就是基于数字签名，keystone 用私钥对 token 进行数字签名，各个 API server 用公钥在本地验证该 token。相关代码简化如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;def _get_token_id(self, token_data):
-    try:
-        token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
-        token_id = str(cms.cms_sign_token(token_json,
-                                          CONF.signing.certfile,
-                                          CONF.signing.keyfile))
-        return token_id
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;其中 cms.cms_sign_token 调用 openssl cms –sign 对 token_data 进行签名，token_data 的样式如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;{
-  &quot;token&quot;: {
-    &quot;methods&quot;: [ &quot;password&quot; ],
-    &quot;roles&quot;: [{&quot;id&quot;: &quot;5642056d336b4c2a894882425ce22a86&quot;, &quot;name&quot;: &quot;admin&quot;}],
-    &quot;expires_at&quot;: &quot;2015-12-25T09:57:28.404275Z&quot;,
-    &quot;project&quot;: {
-      &quot;domain&quot;: { &quot;id&quot;: &quot;default&quot;, &quot;name&quot;: &quot;Default&quot;},
-      &quot;id&quot;: &quot;144d8a99a42447379ac37f78bf0ef608&quot;, &quot;name&quot;: &quot;admin&quot;},
-    &quot;catalog&quot;: [
-      {
-        &quot;endpoints&quot;: [
-          {
-            &quot;region_id&quot;: &quot;RegionOne&quot;,
-            &quot;url&quot;: &quot;http://controller:5000/v2.0&quot;,
-            &quot;region&quot;: &quot;RegionOne&quot;,
-            &quot;interface&quot;: &quot;public&quot;,
-            &quot;id&quot;: &quot;3837de623efd4af799e050d4d8d1f307&quot;
-          },
-          ......
-    ],
-    &quot;extras&quot;: {},
-    &quot;user&quot;: {
-      &quot;domain&quot;: {&quot;id&quot;: &quot;default&quot;, &quot;name&quot;: &quot;Default&quot;},
-      &quot;id&quot;: &quot;1552d60a042e4a2caa07ea7ae6aa2f09&quot;, &quot;name&quot;: &quot;admin&quot;},
-    &quot;audit_ids&quot;: [&quot;ZCvZW2TtTgiaAsVA8qmc3A&quot;],
-    &quot;issued_at&quot;: &quot;2015-12-25T08:57:28.404304Z&quot;
-  }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;token_data 经 cms.cms_sign_token 签名生成的 token_id 如下，共 1932 Byte：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;MIIKoZIhvcNAQcCoIIFljCCBZICAQExDTALBglghkgBZQMEAgEwggPzBgkqhkiG9w0B
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;_get_token_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;token_data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;try&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;token_json&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jsonutils&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dumps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;token_data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cls&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;utils&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;PKIEncoder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;token_id&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cms&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cms_sign_token&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;token_json&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                                              &lt;span class=&quot;n&quot;&gt;CONF&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;signing&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;certfile&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                                              &lt;span class=&quot;n&quot;&gt;CONF&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;signing&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;keyfile&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;token_id&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;其中 cms.cms&lt;u&gt;sign&lt;/u&gt;token 调用 openssl cms --sign 对 token&lt;u&gt;data 进行签名，token&lt;/u&gt;data 的样式如下：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;token&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;quot;methods&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;password&amp;quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;quot;roles&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[{&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;5642056d336b4c2a894882425ce22a86&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;&amp;quot;name&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;admin&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}],&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;quot;expires_at&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;2015-12-25T09:57:28.404275Z&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;quot;project&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+          &lt;span class=&quot;nt&quot;&gt;&amp;quot;domain&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;default&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;&amp;quot;name&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;Default&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+          &lt;span class=&quot;nt&quot;&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;144d8a99a42447379ac37f78bf0ef608&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;&amp;quot;name&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;admin&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;quot;catalog&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;
+          &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;nt&quot;&gt;&amp;quot;endpoints&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;
+              &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;quot;region_id&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;RegionOne&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;quot;url&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;http://controller:5000/v2.0&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;quot;region&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;RegionOne&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;quot;interface&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;public&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;3837de623efd4af799e050d4d8d1f307&amp;quot;&lt;/span&gt;
+              &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+              &lt;span class=&quot;err&quot;&gt;......&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;quot;extras&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{},&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;quot;user&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+          &lt;span class=&quot;nt&quot;&gt;&amp;quot;domain&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;default&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;&amp;quot;name&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;Default&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+          &lt;span class=&quot;nt&quot;&gt;&amp;quot;id&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;1552d60a042e4a2caa07ea7ae6aa2f09&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;&amp;quot;name&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;admin&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;},&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;quot;audit_ids&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;ZCvZW2TtTgiaAsVA8qmc3A&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;quot;issued_at&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;2015-12-25T08:57:28.404304Z&amp;quot;&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;err&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;token&lt;u&gt;data 经 cms.cms&lt;/u&gt;sign&lt;u&gt;token 签名生成的 token&lt;/u&gt;id 如下，共 1932 Byte：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;MIIKoZIhvcNAQcCoIIFljCCBZICAQExDTALBglghkgBZQMEAgEwggPzBgkqhkiG9w0B
 ......
 rhr0acV3bMKzmqvViHf-fPVnLDMJajOWSuhimqfLZHRdr+ck0WVQosB6+M6iAvrEF7v
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;hr /&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;hr&gt;
 
 &lt;h1 id=&quot;pkiz&quot;&gt;PKIZ&lt;/h1&gt;
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/pkiz.png&quot; alt=&quot;P3&quot; /&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/pkiz.png&quot; alt=&quot;P3&quot;&gt;
 PKIZ 在 PKI 的基础上做了压缩处理，但是压缩的效果极其有限，一般情况下，压缩后的大小为 PKI token 的 90 % 左右，所以 PKIZ 不能友好的解决 token size 太大问题。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;def _get_token_id(self, token_data):
-    try:
-        token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
-        token_id = str(cms.pkiz_sign(token_json,
-                                     CONF.signing.certfile,
-                                     CONF.signing.keyfile))
-        return token_id
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;其中 cms.pkiz_sign() 比 cms.pki_sign() 多了如下一行代码，由 zlib 对签名后的消息进行压缩级别为 6 的压缩。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;compressed = zlib.compress(token_id, compression_level=6)
-&lt;/code&gt;&lt;/pre&gt;
-
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;_get_token_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;token_data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;try&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;token_json&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;jsonutils&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dumps&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;token_data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cls&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;utils&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;PKIEncoder&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;token_id&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cms&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pkiz_sign&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;token_json&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                                         &lt;span class=&quot;n&quot;&gt;CONF&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;signing&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;certfile&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                                         &lt;span class=&quot;n&quot;&gt;CONF&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;signing&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;keyfile&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;token_id&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;其中 cms.pkiz&lt;u&gt;sign() 比 cms.pki&lt;/u&gt;sign() 多了如下一行代码，由 zlib 对签名后的消息进行压缩级别为 6 的压缩。&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;    &lt;span class=&quot;n&quot;&gt;compressed&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;zlib&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;compress&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;token_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;compression_level&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;PKIZ token 样例如下，共 1645 Byte，比 PKI token 减小 14.86 %：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;PKIZ_eJytVcuOozgU3fMVs49aTXhUN0vAQEHFJiRg8IVHgn5OnA149JVaunNS3NYjoSU
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;PKIZ_eJytVcuOozgU3fMVs49aTXhUN0vAQEHFJiRg8IVHgn5OnA149JVaunNS3NYjoSU
 ......
 W4fRaxrbNtinojheVICXYrEk0oPX6TSnP71IYj2e3nm4MLy7S84PtIPDz4_03IsOb2Q=
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;hr /&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;hr&gt;
 
 &lt;h1 id=&quot;fernet&quot;&gt;Fernet&lt;/h1&gt;
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/fernet.png&quot; alt=&quot;P4&quot; /&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/fernet.png&quot; alt=&quot;P4&quot;&gt;
 用户可能会碰上这么一个问题，当集群运行较长一段时间后，访问其 API 会变得奇慢无比，究其原因在于 Keystone 数据库存储了大量的 token 导致性能太差，解决的办法是经常清理 token。为了避免上&amp;gt;述问题，社区提出了&lt;a href=&quot;https://github.com/openstack/keystone-specs/blob/master/specs/kilo/klwt.rst&quot;&gt;Fernet token&lt;/a&gt;，它采用 &lt;a href=&quot;http://cryptography.readthedocs.org/en/latest/fernet/&quot;&gt;cryptography&lt;/a&gt; 对称加密库(symmetric cryptography，加密密钥和解密密钥相同) 加密 token，具体由 AES-CBC 加密和散列函数 SHA256 签名。^N&lt;a href=&quot;http://cryptography.readthedocs.org/en/latest/fernet/&quot;&gt;Fernet&lt;/a&gt;
 是专为 API token 设计的一种轻量级安全消息格式，不需要存储于数据库，减少了磁盘的 IO，带来了一定的&lt;a href=&quot;http://dolphm.com/benchmarking-openstack-keystone-token-formats/&quot;&gt;性能提升&lt;/a&gt;。为了提&amp;gt;高安全性，需要采用 &lt;a href=&quot;http://lbragstad.com/fernet-tokens-and-key-rotation/&quot;&gt;Key Rotation&lt;/a&gt; 更换密钥。&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;create_token&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;user_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;expires_at&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;audit_ids&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;methods&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                     &lt;span class=&quot;n&quot;&gt;domain_id&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;project_id&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;trust_id&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                     &lt;span class=&quot;n&quot;&gt;federated_info&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;sd&quot;&gt;&amp;quot;&amp;quot;&amp;quot;Given a set of payload attributes, generate a Fernet token.&amp;quot;&amp;quot;&amp;quot;&lt;/span&gt;
 
-&lt;pre&gt;&lt;code&gt;def create_token(self, user_id, expires_at, audit_ids, methods=None,
-                 domain_id=None, project_id=None, trust_id=None,
-                 federated_info=None):
-    &quot;&quot;&quot;Given a set of payload attributes, generate a Fernet token.&quot;&quot;&quot;
+        &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;trust_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;version&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TrustScopedPayload&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;version&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TrustScopedPayload&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;assemble&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+                &lt;span class=&quot;n&quot;&gt;user_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                &lt;span class=&quot;n&quot;&gt;methods&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                &lt;span class=&quot;n&quot;&gt;project_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                &lt;span class=&quot;n&quot;&gt;expires_at&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                &lt;span class=&quot;n&quot;&gt;audit_ids&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+                &lt;span class=&quot;n&quot;&gt;trust_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 
-    if trust_id:
-        version = TrustScopedPayload.version
-        payload = TrustScopedPayload.assemble(
-            user_id,
-            methods,
-            project_id,
-            expires_at,
-            audit_ids,
-            trust_id)
+        &lt;span class=&quot;o&quot;&gt;...&lt;/span&gt;
 
-    ...
+        &lt;span class=&quot;n&quot;&gt;versioned_payload&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;version&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;payload&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;serialized_payload&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;msgpack&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;packb&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;versioned_payload&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;token&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pack&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;serialized_payload&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
 
-    versioned_payload = (version,) + payload
-    serialized_payload = msgpack.packb(versioned_payload)
-    token = self.pack(serialized_payload)
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;token&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;以上代码表明，token 包含了 user&lt;u&gt;id，project&lt;/u&gt;id，domain&lt;u&gt;id，methods，expires&lt;/u&gt;at 等信息，重要的是，它没有 service_catalog，所以 region 的数量并不影响它的大小。self.pack() 最终调用如下代码对上述信息加密：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;crypto&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;keys&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;utils&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;load_keys&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
 
-    return token 以上代码表明，token 包含了 user_id，project_id，domain_id，methods，expires_at 等信息，重要的是，它没有 service_catalog，所以 region 的数量并不影响它的大小。self.pack() 最终调用如下代码对上述信息加密：
+        &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;ow&quot;&gt;not&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;keys&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;raise&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;exception&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;KeysNotFound&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
 
-def crypto(self):
-    keys = utils.load_keys()
-
-    if not keys:
-        raise exception.KeysNotFound()
-
-    fernet_instances = [fernet.Fernet(key) for key in utils.load_keys()]
-    return fernet.MultiFernet(fernet_instances)
-&lt;/code&gt;&lt;/pre&gt;
-
+        &lt;span class=&quot;n&quot;&gt;fernet_instances&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fernet&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Fernet&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;key&lt;/span&gt; &lt;span class=&quot;ow&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;utils&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;load_keys&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()]&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;fernet&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MultiFernet&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fernet_instances&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;该 token 的大小一般在 200 多 Byte 左右，本例样式如下，大小为 186 Byte：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;gAAAAABWfX8riU57aj0tkWdoIL6UdbViV-632pv0rw4zk9igCZXgC-sKwhVuVb-wyMVC9e5TFc
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;gAAAAABWfX8riU57aj0tkWdoIL6UdbViV-632pv0rw4zk9igCZXgC-sKwhVuVb-wyMVC9e5TFc
 7uPfKwNlT6cnzLalb3Hj0K3bc1X9ZXhde9C2ghsSfVuudMhfR8rThNBnh55RzOB8YTyBnl9MoQ
 XBO5UIFvC7wLTh_2klihb6hKuUqB6Sj3i_8
-&lt;/code&gt;&lt;/pre&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;hr&gt;
 
-&lt;hr /&gt;
+&lt;h1 id=&quot;如何选择-token&quot;&gt;如何选择 Token&lt;/h1&gt;
 
-&lt;h1 id=&quot;token&quot;&gt;如何选择 Token&lt;/h1&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th&gt;Token 类型&lt;/th&gt;
-      &lt;th&gt;UUID&lt;/th&gt;
-      &lt;th&gt;PKI&lt;/th&gt;
-      &lt;th&gt;PKIZ&lt;/th&gt;
-      &lt;th&gt;Fernet&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;大小&lt;/td&gt;
-      &lt;td&gt;32 Byte&lt;/td&gt;
-      &lt;td&gt;KB 级别&lt;/td&gt;
-      &lt;td&gt;KB 级别&lt;/td&gt;
-      &lt;td&gt;约 255 Byte&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;支持本地认证&lt;/td&gt;
-      &lt;td&gt;不支持&lt;/td&gt;
-      &lt;td&gt;支持&lt;/td&gt;
-      &lt;td&gt;支持&lt;/td&gt;
-      &lt;td&gt;不支持&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;Keystone 负载&lt;/td&gt;
-      &lt;td&gt;大&lt;/td&gt;
-      &lt;td&gt;小&lt;/td&gt;
-      &lt;td&gt;小&lt;/td&gt;
-      &lt;td&gt;大&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;存储于数据库&lt;/td&gt;
-      &lt;td&gt;是&lt;/td&gt;
-      &lt;td&gt;是&lt;/td&gt;
-      &lt;td&gt;是&lt;/td&gt;
-      &lt;td&gt;否&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;携带信息&lt;/td&gt;
-      &lt;td&gt;无&lt;/td&gt;
-      &lt;td&gt;User, Project, Role, Domain, Catalog 等&lt;/td&gt;
-      &lt;td&gt;User, Project, Role, Domain, Catalog 等&lt;/td&gt;
-      &lt;td&gt;User, Project 等&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;涉及加密方式&lt;/td&gt;
-      &lt;td&gt;无&lt;/td&gt;
-      &lt;td&gt;非对称加密&lt;/td&gt;
-      &lt;td&gt;非对称加密&lt;/td&gt;
-      &lt;td&gt;对称加密(AES)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;是否压缩&lt;/td&gt;
-      &lt;td&gt;否&lt;/td&gt;
-      &lt;td&gt;否&lt;/td&gt;
-      &lt;td&gt;是&lt;/td&gt;
-      &lt;td&gt;否&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td&gt;版本支持&lt;/td&gt;
-      &lt;td&gt;D&lt;/td&gt;
-      &lt;td&gt;G&lt;/td&gt;
-      &lt;td&gt;J&lt;/td&gt;
-      &lt;td&gt;K&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
+&lt;table&gt;&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&quot;text-align: left&quot;&gt;Token 类型&lt;/th&gt;
+&lt;th style=&quot;text-align: left&quot;&gt;UUID&lt;/th&gt;
+&lt;th style=&quot;text-align: left&quot;&gt;PKI&lt;/th&gt;
+&lt;th style=&quot;text-align: left&quot;&gt;PKIZ&lt;/th&gt;
+&lt;th style=&quot;text-align: left&quot;&gt;Fernet&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;大小&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;32 Byte&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;KB 级别&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;KB 级别&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;约 255 Byte&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;支持本地认证&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;不支持&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;支持&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;支持&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;不支持&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;Keystone 负载&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;大&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;小&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;小&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;大&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;存储于数据库&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;是&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;是&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;是&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;携带信息&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;无&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;user, catalog 等&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;user, catalog 等&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;user 等&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;涉及加密方式&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;无&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;非对称加密&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;非对称加密&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;对称加密(AES)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;是否压缩&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;否&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;否&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;是&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;版本支持&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;D&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;G&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;J&lt;/td&gt;
+&lt;td style=&quot;text-align: left&quot;&gt;K&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;&lt;/table&gt;
 
 &lt;p&gt;Token 类型的选择涉及多个因素，包括 Keystone server 的负载、region 数量、安全因素、维护成本以及 token 本身的成熟度。region 的数量影响 PKI/PKIZ token 的大小，从安全的角度上看，UUID 无需维护密钥，PKI 需要妥善保管 Keystone server 上的私钥，Fernet 需要周期性的更换密钥，因此从安全、维护成本和成熟度上看，UUID &amp;gt; PKI/PKIZ &amp;gt; Fernet 如果：&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;Keystone server 负载低，region 少于 3 个，采用 UUID token。&lt;/li&gt;
-  &lt;li&gt;Keystone server 负载高，region 少于 3 个，采用 PKI/PKIZ token。&lt;/li&gt;
-  &lt;li&gt;Keystone server 负载低，region 大与或等于 3 个，采用 UUID token。&lt;/li&gt;
-  &lt;li&gt;Keystone server 负载高，region 大于或等于 3 个，K 版本及以上可考虑采用 Fernet token。&lt;/li&gt;
+&lt;li&gt;Keystone server 负载低，region 少于 3 个，采用 UUID token。&lt;/li&gt;
+&lt;li&gt;Keystone server 负载高，region 少于 3 个，采用 PKI/PKIZ token。&lt;/li&gt;
+&lt;li&gt;Keystone server 负载低，region 大与或等于 3 个，采用 UUID token。&lt;/li&gt;
+&lt;li&gt;Keystone server 负载高，region 大于或等于 3 个，K 版本及以上可考虑采用 Fernet token。&lt;/li&gt;
 &lt;/ul&gt;
 </description>
         <pubDate>Sat, 26 Dec 2015 00:00:00 +0800</pubDate>
@@ -269,125 +256,123 @@ XBO5UIFvC7wLTh_2klihb6hKuUqB6Sj3i_8
         <guid isPermaLink="true">http://wsfdl.com/openstack/2015/12/26/%E7%90%86%E8%A7%A3Keystone%E7%9A%84%E5%9B%9B%E7%A7%8DToken.html</guid>
         
         
-        <category>OpenStack</category>
+        <category>openstack</category>
         
       </item>
     
       <item>
         <title>Nova是如何统计OpenStack资源</title>
-        <description>&lt;hr /&gt;
+        <description>&lt;hr&gt;
 
-&lt;h1 id=&quot;section&quot;&gt;引言&lt;/h1&gt;
+&lt;h1 id=&quot;引言&quot;&gt;引言&lt;/h1&gt;
+
 &lt;p&gt;运维的同事常常遇到这么四个问题：&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;Nova 如何统计 OpenStack 计算资源？&lt;/li&gt;
-  &lt;li&gt;为什么 free_ram_mb,  free_disk_gb 有时会是负数？&lt;/li&gt;
-  &lt;li&gt;即使 free_ram_mb, free_disk_gb 为负，为什么虚拟机依旧能创建成功？&lt;/li&gt;
-  &lt;li&gt;资源不足会导致虚拟机创建失败，但指定了 host 有时却能创建成功？&lt;/li&gt;
+&lt;li&gt;Nova 如何统计 OpenStack 计算资源？&lt;/li&gt;
+&lt;li&gt;为什么 free&lt;u&gt;ram&lt;/u&gt;mb,  free&lt;u&gt;disk&lt;/u&gt;gb 有时会是负数？&lt;/li&gt;
+&lt;li&gt;即使 free&lt;u&gt;ram&lt;/u&gt;mb, free&lt;u&gt;disk&lt;/u&gt;gb 为负，为什么虚拟机依旧能创建成功？&lt;/li&gt;
+&lt;li&gt;资源不足会导致虚拟机创建失败，但指定了 host 有时却能创建成功？&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;本文以以上四个问题为切入点，结合 Kilo 版本 Nova 源码，在默认 Hypervisor 为 Qemu-kvm 的前提下(不同 Hypervisor 的资源统计方式差别较大 )，揭开 OpenStack 统计资源和资源调度的面纱。&lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;hr&gt;
 
-&lt;h1 id=&quot;nova-&quot;&gt;Nova 需统计哪些资源&lt;/h1&gt;
+&lt;h1 id=&quot;nova-需统计哪些资源&quot;&gt;Nova 需统计哪些资源&lt;/h1&gt;
+
 &lt;p&gt;云计算的本质在于将硬件资源软件化，以达到快速按需交付的效果，最基本的计算、存储和网络基础元素并没有因此改变。就计算而言，CPU、RAM 和 DISK等依旧是必不可少的核心资源。&lt;/p&gt;
 
 &lt;p&gt;从源码和数据库相关表可以得出，Nova 统计计算节点的四类计算资源：&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;CPU: 包括 vcpus(节点物理 cpu 总线程数),  vcpus_used(该节点虚拟机的 vcpu 总和)&lt;/li&gt;
-  &lt;li&gt;RAM: 包括 memory_mb(该节点总 ram)，memory_mb_used(该节点虚拟机的 ram 总和)，free_ram_mb(可用 ram)
- Note: memory_mb = memory_mb_used + free_ram_mb&lt;/li&gt;
-  &lt;li&gt;DISK：local_gb(该节点虚拟机的总可用 disk)，local_gb_used（该节点虚拟机 disk 总和），free_disk_gb(可用 disk)
- Note：local_gb = local_gb_used + free_disk_gb*&lt;/li&gt;
-  &lt;li&gt;其它：PCI 设备、CPU 拓扑、NUMA 拓扑和 Hypervisor 等信息&lt;/li&gt;
+&lt;li&gt;CPU: 包括 vcpus(节点物理 cpu 总线程数),  vcpus_used(该节点虚拟机的 vcpu 总和)&lt;/li&gt;
+&lt;li&gt;RAM: 包括 memory&lt;u&gt;mb(该节点总 ram)，memory&lt;/u&gt;mb&lt;u&gt;used(该节点虚拟机的 ram 总和)，free&lt;/u&gt;ram&lt;u&gt;mb(可用 ram)
+Note: memory&lt;/u&gt;mb = memory&lt;u&gt;mb&lt;/u&gt;used + free&lt;u&gt;ram&lt;/u&gt;mb&lt;/li&gt;
+&lt;li&gt;DISK：local&lt;u&gt;gb(该节点虚拟机的总可用 disk)，local&lt;/u&gt;gb&lt;u&gt;used（该节点虚拟机 disk 总和），free&lt;/u&gt;disk&lt;u&gt;gb(可用 disk)
+Note：local&lt;/u&gt;gb = local&lt;u&gt;gb&lt;/u&gt;used + free&lt;u&gt;disk&lt;/u&gt;gb*&lt;/li&gt;
+&lt;li&gt;其它：PCI 设备、CPU 拓扑、NUMA 拓扑和 Hypervisor 等信息&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;本文重点关注 CPU、RAM 和 DISK 三类资源。&lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;hr&gt;
 
-&lt;h1 id=&quot;nova--1&quot;&gt;Nova 如何收集资源&lt;/h1&gt;
+&lt;h1 id=&quot;nova-如何收集资源&quot;&gt;Nova 如何收集资源&lt;/h1&gt;
+
 &lt;p&gt;从 &lt;a href=&quot;https://github.com/openstack/nova/blob/master/nova/virt/libvirt/driver.py#L4878&quot;&gt;源码&lt;/a&gt;  可以看出，Nova 每分钟统计一次资源，方式如下：&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;CPU
-    &lt;ul&gt;
-      &lt;li&gt;vcpus: libvirt 中 get_Info()&lt;/li&gt;
-      &lt;li&gt;vcpu_used: 通过 libvirt 中 dom.vcpus() 从而统计该节点上所有虚拟机 vcpu 总和&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;RAM
-    &lt;ul&gt;
-      &lt;li&gt;memory: libvirt 中 get_Info()&lt;/li&gt;
-      &lt;li&gt;memory_mb_used：先通过 /proc/meminfo 统计可用内存， 再用总内存减去可用内存得出&lt;strong&gt;(资源再统计时会重新计算该值)&lt;/strong&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;DISK
-    &lt;ul&gt;
-      &lt;li&gt;local_gb: os.statvfs(CONF.instances_path)&lt;/li&gt;
-      &lt;li&gt;local_gb_used: os.statvfs(CONF.instances_path)&lt;strong&gt;(资源再统计时会重新计算该值)&lt;/strong&gt;&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
-  &lt;li&gt;其它
-    &lt;ul&gt;
-      &lt;li&gt;hypervisor 相关信息：均通过 libvirt 获取&lt;/li&gt;
-      &lt;li&gt;PCI: libvirt 中 listDevices(‘pci’, 0)&lt;/li&gt;
-      &lt;li&gt;NUMA: livirt 中 getCapabilities()&lt;/li&gt;
-    &lt;/ul&gt;
-  &lt;/li&gt;
+&lt;li&gt;CPU
+
+&lt;ul&gt;
+&lt;li&gt;vcpus: libvirt 中 get_Info()&lt;/li&gt;
+&lt;li&gt;vcpu_used: 通过 libvirt 中 dom.vcpus() 从而统计该节点上所有虚拟机 vcpu 总和&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;RAM
+
+&lt;ul&gt;
+&lt;li&gt;memory: libvirt 中 get_Info()&lt;/li&gt;
+&lt;li&gt;memory&lt;u&gt;mb&lt;/u&gt;used：先通过 /proc/meminfo 统计可用内存， 再用总内存减去可用内存得出&lt;strong&gt;(资源再统计时会重新计算该值)&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;DISK
+
+&lt;ul&gt;
+&lt;li&gt;local&lt;u&gt;gb: os.statvfs(CONF.instances&lt;/u&gt;path)&lt;/li&gt;
+&lt;li&gt;local&lt;u&gt;gb&lt;/u&gt;used: os.statvfs(CONF.instances_path)&lt;strong&gt;(资源再统计时会重新计算该值)&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;其它
+
+&lt;ul&gt;
+&lt;li&gt;hypervisor 相关信息：均通过 libvirt 获取&lt;/li&gt;
+&lt;li&gt;PCI: libvirt 中 listDevices(&amp;#39;pci&amp;#39;, 0)&lt;/li&gt;
+&lt;li&gt;NUMA: livirt 中 getCapabilities()&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;那么问题来了，按照上述收集资源的方式，free_ram_mb, free_disk_gb 不可能为负数啊！别急，Nova-compute 在上报资源至数据库前，还根据该节点上的虚拟机又做了一次资源统计。&lt;/p&gt;
+&lt;p&gt;那么问题来了，按照上述收集资源的方式，free&lt;u&gt;ram&lt;/u&gt;mb, free&lt;u&gt;disk&lt;/u&gt;gb 不可能为负数啊！别急，Nova-compute 在上报资源至数据库前，还根据该节点上的虚拟机又做了一次资源统计。&lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;hr&gt;
 
-&lt;h1 id=&quot;nova--2&quot;&gt;Nova 资源再统计&lt;/h1&gt;
+&lt;h1 id=&quot;nova-资源再统计&quot;&gt;Nova 资源再统计&lt;/h1&gt;
+
 &lt;p&gt;首先分析为什么需要再次统计资源以及统计哪些资源。从 &lt;a href=&quot;https://github.com/openstack/nova/blob/master/nova/compute/resource_tracker.py#L365&quot;&gt;源码&lt;/a&gt;  可以发现，Nova 根据该节点上的虚拟机再次统计了 RAM、DISK 和 PCI 资源。&lt;/p&gt;
 
 &lt;p&gt;为什么需再次统计 RAM 资源？以启动一个 4G 内存的虚拟机为例，虚拟机启动前后，对比宿主机上可用内存，发现宿主机上的 free memory 虽有所减少(本次测试减少 600 MB)，却没有减少到 4G，如果虚拟机运行很吃内存的应用，可发现宿主机上的可用内存迅速减少 3G多。试想，以 64G 的服务器为例，假设每个 4G 内存的虚拟机启动后，宿主机仅减少 1G 内存，服务器可以成功创建 64 个虚拟机，但是当这些虚拟机在跑大量业务时，服务器的内存迅速不足，轻着影响虚拟机效率，重者导致虚拟机 shutdown等。除此以外，宿主机上的内存并不是完全分给虚拟机，系统和其它应用程序也需要内存资源。因此必须重新统计 RAM 资源，统计的方式为：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;free_memory = total_memory - CONF.reserved_host_memory_mb - 虚拟机理论内存总和
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;free_memory = total_memory - CONF.reserved_host_memory_mb - 虚拟机理论内存总和
 CONF.reserved_host_memory_mb：内存预留，比如预留给系统或其它应用
 虚拟机理论内存总和：即所有虚拟机 flavor 中的内存总和
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;为什么要重新统计 DISK 资源？原因与 RAM 大致相同。为了节省空间， qemu-kvm 常用 &lt;a href=&quot;https://people.gnome.org/~markmc/qcow-image-format.html&quot;&gt;QCOW2&lt;/a&gt; 格式镜像，以创建 DISK 大小为 100G 的虚拟机为例，虚拟机创建后，其镜像文件往往只有几百 KB，当有大量数据写入时磁盘时，宿主机上对应的虚拟机镜像文件会迅速增大。而 os.statvfs 统计的是虚拟机磁盘当前使用量，并不能反映潜在使用量。因此必须重新统计 DISK 资源，统计的方式为：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;free_disk_gb = local_gb - CONF.reserved_host_disk_mb / 1024 - 虚拟机理论磁盘总和
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;为什么要重新统计 DISK 资源？原因与 RAM 大致相同。为了节省空间， qemu-kvm 常用 &lt;a href=&quot;https://people.gnome.org/%7Emarkmc/qcow-image-format.html&quot;&gt;QCOW2&lt;/a&gt; 格式镜像，以创建 DISK 大小为 100G 的虚拟机为例，虚拟机创建后，其镜像文件往往只有几百 KB，当有大量数据写入时磁盘时，宿主机上对应的虚拟机镜像文件会迅速增大。而 os.statvfs 统计的是虚拟机磁盘当前使用量，并不能反映潜在使用量。因此必须重新统计 DISK 资源，统计的方式为：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;free_disk_gb = local_gb - CONF.reserved_host_disk_mb / 1024 - 虚拟机理论磁盘总和
 CONF.reserved_host_disk_mb：磁盘预留
 虚拟机理论磁盘总和：即所有虚拟机  flavor 中得磁盘总和
-&lt;/code&gt;&lt;/pre&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;当允许资源超配(见下节)时，采用上述统计方式就有可能出现 free&lt;u&gt;ram&lt;/u&gt;mb,  free&lt;u&gt;disk&lt;/u&gt;gb 为负。&lt;/p&gt;
 
-&lt;p&gt;当允许资源超配(见下节)时，采用上述统计方式就有可能出现 free_ram_mb,  free_disk_gb 为负。&lt;/p&gt;
+&lt;hr&gt;
 
-&lt;hr /&gt;
+&lt;h1 id=&quot;资源超配与调度&quot;&gt;资源超配与调度&lt;/h1&gt;
 
-&lt;h1 id=&quot;section-1&quot;&gt;资源超配与调度&lt;/h1&gt;
-&lt;p&gt;即使 free_ram_mb 或 free_disk_gb 为负，虚拟机依旧有可能创建成功。事实上，当 nova-scheduler 在调度过程中，某些 filter 允许资源超配，比如 CPU、RAM 和 DISK 等 filter，它们默认的超配比为：&lt;/p&gt;
+&lt;p&gt;即使 free&lt;u&gt;ram&lt;/u&gt;mb 或 free&lt;u&gt;disk&lt;/u&gt;gb 为负，虚拟机依旧有可能创建成功。事实上，当 nova-scheduler 在调度过程中，某些 filter 允许资源超配，比如 CPU、RAM 和 DISK 等 filter，它们默认的超配比为：&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;CPU: CONF.cpu_allocation_ratio = 16&lt;/li&gt;
-  &lt;li&gt;RAM: CONF.ram_allocation_ratio = 1.5&lt;/li&gt;
-  &lt;li&gt;DISK: CONF.disk_allocation_ratio = 1.0&lt;/li&gt;
+&lt;li&gt;CPU: CONF.cpu&lt;u&gt;allocation&lt;/u&gt;ratio = 16&lt;/li&gt;
+&lt;li&gt;RAM: CONF.ram&lt;u&gt;allocation&lt;/u&gt;ratio = 1.5&lt;/li&gt;
+&lt;li&gt;DISK: CONF.disk&lt;u&gt;allocation&lt;/u&gt;ratio = 1.0&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;以 ram_filter 为例，在根据 RAM 过滤宿主机时，过滤的原则为：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;memory_limit = total_memory * ram_allocation_ratio
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;memory_limit = total_memory * ram_allocation_ratio
 used_memory = total_memory - free_memory
-memory_limit - used_memory &amp;lt; flavor[&#39;ram&#39;]，表示内存不足，过滤该宿主机；否则保留该宿主机。 
-&lt;/code&gt;&lt;/pre&gt;
-
+memory_limit - used_memory &amp;lt; flavor[&amp;#39;ram&amp;#39;]，表示内存不足，过滤该宿主机；否则保留该宿主机。 
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;相关代码如下(稍有精简)：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;def host_passes(self, host_state, instance_type):
 
-&lt;pre&gt;&lt;code&gt;def host_passes(self, host_state, instance_type):
+    &amp;quot;&amp;quot;&amp;quot;Only return hosts with sufficient available RAM.&amp;quot;&amp;quot;&amp;quot;
 
-    &quot;&quot;&quot;Only return hosts with sufficient available RAM.&quot;&quot;&quot;
-
-    requested_ram = instance_type[&#39;memory_mb&#39;]
+    requested_ram = instance_type[&amp;#39;memory_mb&amp;#39;]
     free_ram_mb = host_state.free_ram_mb
     total_usable_ram_mb = host_state.total_usable_ram_mb
 
@@ -396,33 +381,32 @@ memory_limit - used_memory &amp;lt; flavor[&#39;ram&#39;]，表示内存不足�
     usable_ram = memory_mb_limit - used_ram_mb
 
     if not usable_ram &amp;gt;= requested_ram:
-        LOG.debug(&quot;host does not have requested_ram&quot;)
+        LOG.debug(&amp;quot;host does not have requested_ram&amp;quot;)
         return False
-&lt;/code&gt;&lt;/pre&gt;
-
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;宿主机 RAM 和 DISK 的使用率往往要小于虚拟机理论使用的 RAM 和 DISK，在剩余资源充足的条件下，libvirt 将成功创建虚拟机。&lt;/p&gt;
 
 &lt;p&gt;随想：内存和磁盘超配虽然能提供更多数量的虚拟机，当该宿主机上大量虚拟机的负载都很高时，轻着影响虚拟机性能，重则引起 qemu-kvm  相关进程被杀，即虚拟机被关机。因此对于线上稳定性要求高的业务，建议不要超配 RAM 和 DISK，但可适当超配 CPU。建议这几个参数设置为：&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;CPU: CONF.cpu_allocation_ratio = 4&lt;/li&gt;
-  &lt;li&gt;RAM: CONF.ram_allocation_ratio = 1.0&lt;/li&gt;
-  &lt;li&gt;DISK: CONF.disk_allocation_ratio = 1.0&lt;/li&gt;
-  &lt;li&gt;RAM-Reserve: CONF.reserved_host_memory_mb = 2048&lt;/li&gt;
-  &lt;li&gt;DISK-Reserve: CONF.reserved_host_disk_mb = 20480&lt;/li&gt;
+&lt;li&gt;CPU: CONF.cpu&lt;u&gt;allocation&lt;/u&gt;ratio = 4&lt;/li&gt;
+&lt;li&gt;RAM: CONF.ram&lt;u&gt;allocation&lt;/u&gt;ratio = 1.0&lt;/li&gt;
+&lt;li&gt;DISK: CONF.disk&lt;u&gt;allocation&lt;/u&gt;ratio = 1.0&lt;/li&gt;
+&lt;li&gt;RAM-Reserve: CONF.reserved&lt;u&gt;host&lt;/u&gt;memory_mb = 2048&lt;/li&gt;
+&lt;li&gt;DISK-Reserve: CONF.reserved&lt;u&gt;host&lt;/u&gt;disk_mb = 20480&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;hr /&gt;
+&lt;hr&gt;
 
-&lt;h1 id=&quot;host-&quot;&gt;指定 host 创建虚拟机&lt;/h1&gt;
-&lt;p&gt;本节用于回答问题四，当所有宿主机的资源使用过多，即超出限定的超配值时(total_resource * allocation_ratio)，nova-scheduler 将过滤这些宿主机，若未找到符合要求的宿主机，虚拟机创建失败。&lt;/p&gt;
+&lt;h1 id=&quot;指定-host-创建虚拟机&quot;&gt;指定 host 创建虚拟机&lt;/h1&gt;
+
+&lt;p&gt;本节用于回答问题四，当所有宿主机的资源使用过多，即超出限定的超配值时(total&lt;u&gt;resource * allocation&lt;/u&gt;ratio)，nova-scheduler 将过滤这些宿主机，若未找到符合要求的宿主机，虚拟机创建失败。&lt;/p&gt;
 
 &lt;p&gt;创建虚拟机的 API 支持指定 host 创建虚拟机，指定 host 时，nova-scheduler 采取特别的处理方式：不再判断该 host 上的资源是否满足需求，而是直接将请求发给该 host 上的 nova-compute。
 相关代码如下(稍有精简)：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;def get_filtered_hosts(self, hosts, filter_properties,
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;def get_filtered_hosts(self, hosts, filter_properties,
             filter_class_names=None, index=0):
-    &#39;&#39;&#39;Filter hosts and return only ones passing all filters.&#39;&#39;&#39;
+    &amp;#39;&amp;#39;&amp;#39;Filter hosts and return only ones passing all filters.&amp;#39;&amp;#39;&amp;#39;
     ...
     if ignore_hosts or force_hosts or force_nodes:
         ...
@@ -432,103 +416,104 @@ memory_limit - used_memory &amp;lt; flavor[&#39;ram&#39;]，表示内存不足�
                 return name_to_cls_map.values()
 
         return self.filter_handler.get_filtered_objects()
-&lt;/code&gt;&lt;/pre&gt;
-
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;当该 host 上实际可用资源时满足要求时，libvirt 依旧能成功创建虚拟机。最后，一图蔽之
- &lt;img src=&quot;http://img.blog.csdn.net/20150501235350782&quot; alt=&quot;这里写图片描述&quot; /&gt;&lt;/p&gt;
+ &lt;img src=&quot;http://img.blog.csdn.net/20150501235350782&quot; alt=&quot;这里写图片描述&quot;&gt; &lt;/p&gt;
 </description>
         <pubDate>Fri, 11 Dec 2015 00:00:00 +0800</pubDate>
         <link>http://wsfdl.com/openstack/2015/12/11/Nova%E6%98%AF%E5%A6%82%E4%BD%95%E7%BB%9F%E8%AE%A1OpenStack%E8%B5%84%E6%BA%90.html</link>
         <guid isPermaLink="true">http://wsfdl.com/openstack/2015/12/11/Nova%E6%98%AF%E5%A6%82%E4%BD%95%E7%BB%9F%E8%AE%A1OpenStack%E8%B5%84%E6%BA%90.html</guid>
         
         
-        <category>OpenStack</category>
+        <category>openstack</category>
         
       </item>
     
       <item>
         <title>一次批量重启引发的网络故障</title>
-        <description>&lt;hr /&gt;
+        <description>&lt;hr&gt;
 
-&lt;h3 id=&quot;section&quot;&gt;现场回顾&lt;/h3&gt;
+&lt;h3 id=&quot;现场回顾&quot;&gt;现场回顾&lt;/h3&gt;
+
 &lt;p&gt;故事发生于某个下午，采用 salt 更新某集群的 neutron.conf (log 相关配置项) 并批量重启 neutron-openvswitch-agent(以下简称 neutron-ovs-agent)，不久便有人反馈云主机宕机。&lt;/p&gt;
 
 &lt;p&gt;立即排查发现云主机并没有宕机，只是网络不通，大部分计算节点的 ovs 流表空空如也。Nova 和 Neutron 打出 ERROR 级别的日志。&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;$ ovs-ofctl dump-flows br-bond1
-NXST_FLOW repy (xid=0x4)
- cookies=0x0, duration=433.691s, table=0, n_packages=568733, n_bytes=113547542, idle_age=0, priority=1 actions=NORMAL
- cookies=0x0, duration=432.358s, table=0, n_packages=8418, n_bytes=356703, idle_age=0, priority=2, in_port=3 actions=drop&lt;/p&gt;
+&lt;p&gt;$ ovs-ofctl dump-flows br-bond1
+NXST&lt;u&gt;FLOW repy (xid=0x4)
+ cookies=0x0, duration=433.691s, table=0, n&lt;/u&gt;packages=568733, n&lt;u&gt;bytes=113547542, idle&lt;/u&gt;age=0, priority=1 actions=NORMAL
+ cookies=0x0, duration=432.358s, table=0, n&lt;u&gt;packages=8418, n&lt;/u&gt;bytes=356703, idle&lt;u&gt;age=0, priority=2, in&lt;/u&gt;port=3 actions=drop&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;p&gt;neutron-ovs-agent Log:&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;DeviceListRetrievalError: Unable to retrieve port details for devices because of error: Remote error: TimeoutError QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout 10&lt;/p&gt;
+&lt;p&gt;DeviceListRetrievalError: Unable to retrieve port details for devices because of error: Remote error: TimeoutError QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout 10&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;p&gt;neutron-server Log：&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;File “/usr/lib64/python2.6/site-packages/sqlalchemy/pool.py”, … ‘TimeoutError: QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout 10\n’&lt;/p&gt;
+&lt;p&gt;File &amp;quot;/usr/lib64/python2.6/site-packages/sqlalchemy/pool.py&amp;quot;, ... &amp;#39;TimeoutError: QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout 10\n&amp;#39;&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;p&gt;nova Log：&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;NeutronClientException: Request Failed: internal server error while processing your request.&lt;/p&gt;
+&lt;p&gt;NeutronClientException: Request Failed: internal server error while processing your request.&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;p&gt;上述信息可得出以下结论：&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;Neutron 日志表明 neutron-ovs-agent 通过 rpc 向 neutron-server 请求虚拟机 port 相关信息失败，失败的原因是 neutron-server 和数据库的连接数超出连接池的上限。&lt;/li&gt;
-  &lt;li&gt;Nova 日志表明 neutron-server 无法响应 HTTP 请求。&lt;/li&gt;
-  &lt;li&gt;被清空的 ovs 流表导致虚拟机的网络瘫痪。&lt;/li&gt;
+&lt;li&gt;Neutron 日志表明 neutron-ovs-agent 通过 rpc 向 neutron-server 请求虚拟机 port 相关信息失败，失败的原因是 neutron-server 和数据库的连接数超出连接池的上限。&lt;/li&gt;
+&lt;li&gt;Nova 日志表明 neutron-server 无法响应 HTTP 请求。&lt;/li&gt;
+&lt;li&gt;被清空的 ovs 流表导致虚拟机的网络瘫痪。&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;hr /&gt;
+&lt;hr&gt;
 
-&lt;h3 id=&quot;section-1&quot;&gt;导火索&lt;/h3&gt;
+&lt;h3 id=&quot;导火索&quot;&gt;导火索&lt;/h3&gt;
+
 &lt;p&gt;深入剖析之前，先了解该 Icehouse 集群的基本信息：该集群有 102 个计算节点，运行着 nova, neutron, glance，ceilometer 等服务，为了避免单点故障，我们去除了 neutron l3 等相关服务，采用大二层的网络，虚拟机通过物理路由与外界通信。理论上说，无论哪个服务异常，甚至任意节点宕机，最差的结果是 openstack 服务不可用或者少量虚拟机故障，但绝大部分虚拟机依旧能正常运行。&lt;/p&gt;
 
 &lt;p&gt;经验告知，采用以上网络模型的多个集群一年多以来从未发生如此规模的故障。由于 log 模块配置项根本不会影响，直觉上推测批量重启可能是触发 ovs 流表被清空的导火索。&lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;hr&gt;
 
-&lt;h3 id=&quot;neutron-&quot;&gt;Neutron 的一个坑&lt;/h3&gt;
+&lt;h3 id=&quot;neutron-的一个坑&quot;&gt;Neutron 的一个坑&lt;/h3&gt;
 
 &lt;p&gt;由于流表被清空前仅仅重启了 neutron-openvs-agent，而计算节点，仅仅只有 neutron-ovs-agent 与 ovs 有交互，故按图索骥的浏览 neutron-ovs-agent 重启流程，梳理其逻辑如下：&lt;/p&gt;
 
 &lt;ol&gt;
-  &lt;li&gt;清除所有流表&lt;/li&gt;
-  &lt;li&gt;通过 rpc 向 neutron-server 获取流表相关信息&lt;/li&gt;
-  &lt;li&gt;创建新流变&lt;/li&gt;
+&lt;li&gt;清除所有流表&lt;/li&gt;
+&lt;li&gt;通过 rpc 向 neutron-server 获取流表相关信息&lt;/li&gt;
+&lt;li&gt;创建新流变&lt;/li&gt;
 &lt;/ol&gt;
 
 &lt;p&gt;不难发现，如果步骤 2 异常，比如 neutron-server 繁忙，消息中间件异常和数据库异常等种种因素，都会影响流表的重建，重则导致虚拟机网络瘫痪。事实上，社区也意识到了类似的问题：重启 neutron-ovs-agent 会导致网络暂时中断。&lt;/p&gt;
 
 &lt;p&gt;&lt;a href=&quot;https://bugs.launchpad.net/neutron/+bug/1383674&quot;&gt;Restarting neutron ovs agent causes network hiccup by throwing away all flows&lt;/a&gt;&lt;/p&gt;
 
-&lt;p&gt;社区的处理方式是增加配置项 drop_flows_on_start，默认其值为 False，从而避免上述问题。该 &lt;a href=&quot;https://review.openstack.org/#/c/182920&quot;&gt;Patch&lt;/a&gt; 已合入 Liberty，梳理其重启的逻辑流程如下：&lt;/p&gt;
+&lt;p&gt;社区的处理方式是增加配置项 drop&lt;u&gt;flows&lt;/u&gt;on_start，默认其值为 False，从而避免上述问题。该 &lt;a href=&quot;https://review.openstack.org/#/c/182920&quot;&gt;Patch&lt;/a&gt; 已合入 Liberty，梳理其重启的逻辑流程如下：&lt;/p&gt;
 
 &lt;ol&gt;
-  &lt;li&gt;用一个 cookie 标志当前流表&lt;/li&gt;
-  &lt;li&gt;获取新流变并更新至 ovs&lt;/li&gt;
-  &lt;li&gt;根据 cookie 清除旧流表&lt;/li&gt;
+&lt;li&gt;用一个 cookie 标志当前流表&lt;/li&gt;
+&lt;li&gt;获取新流变并更新至 ovs&lt;/li&gt;
+&lt;li&gt;根据 cookie 清除旧流表&lt;/li&gt;
 &lt;/ol&gt;
 
 &lt;p&gt;neutron-ovs-agent 在重启的过程中就流表的处理留下了一个隐患，直接的后果就是导致计算节点的流表被清理的干干净净，虚拟机成一个个孤立的点，而多种因素可触发该隐患。&lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;hr&gt;
 
-&lt;h3 id=&quot;section-2&quot;&gt;最大连接数&lt;/h3&gt;
+&lt;h3 id=&quot;最大连接数&quot;&gt;最大连接数&lt;/h3&gt;
 
 &lt;p&gt;现在解释为什么批量重启 neutron-ovs-agent 会触发上述隐患，重启过程中，neutron 日志报出如下错误：&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;‘TimeoutError: QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout。&lt;/p&gt;
+&lt;p&gt;&amp;#39;TimeoutError: QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout。&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;p&gt;这条日志意味着 neutron-server 和数据库的连接数超出客户端连接池的上限，当 neutron-ovs-agent 批量重启时，上百并发的通过 rpc 向 neutron-server 请求构建流表的相关信息，neutron-server 和数据库的连接数也就远远超过 30，造成大量的请求失败，计算节点获取不到流表相关信息无法重建流表，故计算节点的流表为空。&lt;/p&gt;
@@ -536,21 +521,21 @@ NXST_FLOW repy (xid=0x4)
 &lt;p&gt;要解决因 QueuePool 的限制而引起的 TimeoutError 问题也很简单，sqlalchemy 提供了两个配置项[1]，把下面两个参数适当调大即可。&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;[database] &lt;br /&gt;
-max_overflow = &lt;br /&gt;
-max_pool_size =&lt;/p&gt;
+&lt;p&gt;[database]&lt;br&gt;
+max&lt;u&gt;overflow =&lt;br&gt;
+max&lt;/u&gt;pool_size =&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; MySQL server 默认最大连接数为 100，当集群的规模上升时，需适当调整 MySQL server 最大连接数。&lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;hr&gt;
 
-&lt;h3 id=&quot;section-3&quot;&gt;进程的性能问题&lt;/h3&gt;
+&lt;h3 id=&quot;进程的性能问题&quot;&gt;进程的性能问题&lt;/h3&gt;
 
 &lt;p&gt;然而问题并没有完全解决，请注意 nova 的错误日志：&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;nova.compute.manager  NeutronClientException: Request Failed: internal server error while processing your request.&lt;/p&gt;
+&lt;p&gt;nova.compute.manager  NeutronClientException: Request Failed: internal server error while processing your request.&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;p&gt;这是nova 发给 neutron-server 的一条 HTTP 请求，neutron 返回了 internal server error。Internal server error 对应的 HTTP status code 为 500，意味着 neutron-server 无法响应 nova 请求。为什么会无法响应呢，批量重启的过程中，发现 neutron-server 进程的 CPU 使用率为 100 %，意味着 neutron-server 正忙于处理 neutron-ovs-agent 大量的请求，因而无暇处理 nova 的 HTTP 请求。&lt;/p&gt;
@@ -558,34 +543,34 @@ max_pool_size =&lt;/p&gt;
 &lt;p&gt;解决该问题的方法同样很简答，增加更多的 neutron-server 进程数即可。事实上，因 nova-conductor 要处理 nova-compute 大量的 rpc 请求(nova-compute 通过 nova-conductor 访问数据库)，自 Icehouse 起，nova-conductor 就默认启动了多个进程，进程的数目等同服务器 CPU 的逻辑核数。&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;$ workers=`cat /proc/cpuinfo |grep processor |wc | awk ‘{print $1}’`&lt;/p&gt;
+&lt;p&gt;$ workers=`cat /proc/cpuinfo |grep processor |wc | awk &amp;#39;{print $1}&amp;#39;`   &lt;/p&gt;
 
-  &lt;p&gt;[DEFAULT] &lt;br /&gt;
-api_workers = $workers &lt;br /&gt;
-rpc_workers = $workers&lt;/p&gt;
+&lt;p&gt;[DEFAULT]&lt;br&gt;
+api&lt;u&gt;workers = $workers&lt;br&gt;
+rpc&lt;/u&gt;workers = $workers   &lt;/p&gt;
 &lt;/blockquote&gt;
 
-&lt;hr /&gt;
+&lt;hr&gt;
 
-&lt;h3 id=&quot;python---io&quot;&gt;Python 的并发 &amp;amp; IO&lt;/h3&gt;
+&lt;h3 id=&quot;python-的并发-amp-io&quot;&gt;Python 的并发 &amp;amp; IO&lt;/h3&gt;
 
 &lt;p&gt;值得思考的是，对双路 12 核共 24 线程的服务器来说，数百并发请求真的算高么？neutron-server 进程的 CPU 最大使用率只能到达 100 %，意味着 neutron-server 仅仅利用了服务器的一个线程。这里不得不提协程(crontine)[2]，这种伪并发的“用户态线程” 意味着任意时刻只有一个协程在执行，即任意时刻只能利用服务器 CPU 的一个线程，而 openstack 所有组件的进程里满满都是协程(只有一个主线程)，因而单个进程下，neutron-server 不能充分利用多核的优势以提高处理并发的能力。&lt;/p&gt;
 
 &lt;p&gt;传统的 web 服务器 apache 和 nginx 利用多进程多线程提高并发数(上下文切换的开销：进程 &amp;gt; 线程 &amp;gt; 协程)。那么问题来了，单进程条件下，是不是可以用线程替换协程从而提高 neutron 的并发能力呢？真实的答案是 No, 根本原因在于 python GIL[3]，俗称 python 全局锁。对于 python 的程序来说，单进程只能在任何时刻只能占用一个物理线程，所有只有多进程才能充分利用服务器的多核多线程。&lt;/p&gt;
 
-&lt;p&gt;让我们深入一点，假设的 CPU 足够强大，是不是可以解决 neutron-server 单进程的并发问题呢？我觉得未必，这又回到了 IO 问题。Monkey patch[4] 虽然把系统的 socket 库替换成自己提供的非阻塞 socket 库，从而避免某些阻塞 IO 阻塞了整个进程(主线程)。但是 OpenStack 访问 MySQL 使用的是 libmysqlclient 库，eventlet 并不能对这个使用了系统 socket 的 C 库使用 monky_patch，所以对 MySQL CRUD 的时候会阻塞主线程，意味着 neutron-server 在访问数据库也容易出现性能瓶颈。&lt;/p&gt;
+&lt;p&gt;让我们深入一点，假设的 CPU 足够强大，是不是可以解决 neutron-server 单进程的并发问题呢？我觉得未必，这又回到了 IO 问题。Monkey patch[4] 虽然把系统的 socket 库替换成自己提供的非阻塞 socket 库，从而避免某些阻塞 IO 阻塞了整个进程(主线程)。但是 OpenStack 访问 MySQL 使用的是 libmysqlclient 库，eventlet 并不能对这个使用了系统 socket 的 C 库使用 monky_patch，所以对 MySQL CRUD 的时候会阻塞主线程，意味着 neutron-server 在访问数据库也容易出现性能瓶颈。 &lt;/p&gt;
 
 &lt;p&gt;解决上诉并发问题的方法之一就是启动更多的 api worker 和 rpc worker。在较新的版本，OpenStack 默认的 wokers 就是服务器的逻辑核数。另外一种办法是用 apache 替换 python http server，最近各个组件逐步提供了对 apache 的支持。&lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;hr&gt;
 
 &lt;h3 id=&quot;reference&quot;&gt;Reference&lt;/h3&gt;
 
 &lt;ol&gt;
-  &lt;li&gt;&lt;a href=&quot;http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html&quot;&gt;http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://www.dabeaz.com/coroutines/Coroutines.pdf&quot;&gt;http://www.dabeaz.com/coroutines/Coroutines.pdf&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://stackoverflow.com/questions/1294382/what-is-a-global-interpreter-lock-gil&quot;&gt;http://stackoverflow.com/questions/1294382/what-is-a-global-interpreter-lock-gil&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it&quot;&gt;http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html&quot;&gt;http://docs.sqlalchemy.org/en/rel&lt;u&gt;0&lt;/u&gt;9/core/pooling.html&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://www.dabeaz.com/coroutines/Coroutines.pdf&quot;&gt;http://www.dabeaz.com/coroutines/Coroutines.pdf&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://stackoverflow.com/questions/1294382/what-is-a-global-interpreter-lock-gil&quot;&gt;http://stackoverflow.com/questions/1294382/what-is-a-global-interpreter-lock-gil&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it&quot;&gt;http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it&lt;/a&gt;&lt;/li&gt;
 &lt;/ol&gt;
 </description>
         <pubDate>Thu, 10 Dec 2015 00:00:00 +0800</pubDate>
@@ -593,7 +578,7 @@ rpc_workers = $workers&lt;/p&gt;
         <guid isPermaLink="true">http://wsfdl.com/openstack/2015/12/10/%E4%B8%80%E6%AC%A1%E6%89%B9%E9%87%8F%E9%87%8D%E5%90%AF%E5%BC%95%E5%8F%91%E7%9A%84%E7%BD%91%E7%BB%9C%E6%95%85%E9%9A%9C.html</guid>
         
         
-        <category>OpenStack</category>
+        <category>openstack</category>
         
       </item>
     
