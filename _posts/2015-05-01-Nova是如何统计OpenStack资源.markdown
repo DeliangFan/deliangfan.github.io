@@ -89,21 +89,23 @@ categories: OpenStack
 
 相关代码如下(稍有精简)：
 
-    def host_passes(self, host_state, instance_type):
+```python
+def host_passes(self, host_state, instance_type):
 
-        """Only return hosts with sufficient available RAM."""
+    """Only return hosts with sufficient available RAM."""
 
-        requested_ram = instance_type['memory_mb']
-        free_ram_mb = host_state.free_ram_mb
-        total_usable_ram_mb = host_state.total_usable_ram_mb
+    requested_ram = instance_type['memory_mb']
+    free_ram_mb = host_state.free_ram_mb
+    total_usable_ram_mb = host_state.total_usable_ram_mb
 
-        memory_mb_limit = total_usable_ram_mb * CONF.ram_allocation_ratio
-        used_ram_mb = total_usable_ram_mb - free_ram_mb
-        usable_ram = memory_mb_limit - used_ram_mb
+    memory_mb_limit = total_usable_ram_mb * CONF.ram_allocation_ratio
+    used_ram_mb = total_usable_ram_mb - free_ram_mb
+    usable_ram = memory_mb_limit - used_ram_mb
 
-        if not usable_ram >= requested_ram:
-            LOG.debug("host does not have requested_ram")
-            return False
+    if not usable_ram >= requested_ram:
+        LOG.debug("host does not have requested_ram")
+        return False
+```
 
 宿主机 RAM 和 DISK 的使用率往往要小于虚拟机理论使用的 RAM 和 DISK，在剩余资源充足的条件下，libvirt 将成功创建虚拟机。
 
@@ -123,18 +125,20 @@ categories: OpenStack
 创建虚拟机的 API 支持指定 host 创建虚拟机，指定 host 时，nova-scheduler 采取特别的处理方式：不再判断该 host 上的资源是否满足需求，而是直接将请求发给该 host 上的 nova-compute。
 相关代码如下(稍有精简)：
 
-    def get_filtered_hosts(self, hosts, filter_properties,
-                filter_class_names=None, index=0):
-        '''Filter hosts and return only ones passing all filters.'''
+```python
+def get_filtered_hosts(self, hosts, filter_properties,
+            filter_class_names=None, index=0):
+    '''Filter hosts and return only ones passing all filters.'''
+    ...
+    if ignore_hosts or force_hosts or force_nodes:
         ...
-        if ignore_hosts or force_hosts or force_nodes:
-            ...
-            if force_hosts or force_nodes:
-                # NOTE(deva): Skip filters when forcing host or node
-                if name_to_cls_map:
-                    return name_to_cls_map.values()
-    
-            return self.filter_handler.get_filtered_objects()
+        if force_hosts or force_nodes:
+            # NOTE(deva): Skip filters when forcing host or node
+            if name_to_cls_map:
+                return name_to_cls_map.values()
+
+        return self.filter_handler.get_filtered_objects()
+```
 
 当该 host 上实际可用资源时满足要求时，libvirt 依旧能成功创建虚拟机。最后，一图蔽之
  ![这里写图片描述](http://img.blog.csdn.net/20150501235350782) 

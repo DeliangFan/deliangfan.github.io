@@ -168,21 +168,21 @@ used_memory = total_memory - free_memory
 memory_limit - used_memory &lt; flavor[&#39;ram&#39;]，表示内存不足，过滤该宿主机；否则保留该宿主机。 
 </code></pre></div>
 <p>相关代码如下(稍有精简)：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">def host_passes(self, host_state, instance_type):
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">host_passes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host_state</span><span class="p">,</span> <span class="n">instance_type</span><span class="p">):</span>
 
-    &quot;&quot;&quot;Only return hosts with sufficient available RAM.&quot;&quot;&quot;
+    <span class="sd">&quot;&quot;&quot;Only return hosts with sufficient available RAM.&quot;&quot;&quot;</span>
 
-    requested_ram = instance_type[&#39;memory_mb&#39;]
-    free_ram_mb = host_state.free_ram_mb
-    total_usable_ram_mb = host_state.total_usable_ram_mb
+    <span class="n">requested_ram</span> <span class="o">=</span> <span class="n">instance_type</span><span class="p">[</span><span class="s">&#39;memory_mb&#39;</span><span class="p">]</span>
+    <span class="n">free_ram_mb</span> <span class="o">=</span> <span class="n">host_state</span><span class="o">.</span><span class="n">free_ram_mb</span>
+    <span class="n">total_usable_ram_mb</span> <span class="o">=</span> <span class="n">host_state</span><span class="o">.</span><span class="n">total_usable_ram_mb</span>
 
-    memory_mb_limit = total_usable_ram_mb * CONF.ram_allocation_ratio
-    used_ram_mb = total_usable_ram_mb - free_ram_mb
-    usable_ram = memory_mb_limit - used_ram_mb
+    <span class="n">memory_mb_limit</span> <span class="o">=</span> <span class="n">total_usable_ram_mb</span> <span class="o">*</span> <span class="n">CONF</span><span class="o">.</span><span class="n">ram_allocation_ratio</span>
+    <span class="n">used_ram_mb</span> <span class="o">=</span> <span class="n">total_usable_ram_mb</span> <span class="o">-</span> <span class="n">free_ram_mb</span>
+    <span class="n">usable_ram</span> <span class="o">=</span> <span class="n">memory_mb_limit</span> <span class="o">-</span> <span class="n">used_ram_mb</span>
 
-    if not usable_ram &gt;= requested_ram:
-        LOG.debug(&quot;host does not have requested_ram&quot;)
-        return False
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">usable_ram</span> <span class="o">&gt;=</span> <span class="n">requested_ram</span><span class="p">:</span>
+        <span class="n">LOG</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;host does not have requested_ram&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">False</span>
 </code></pre></div>
 <p>宿主机 RAM 和 DISK 的使用率往往要小于虚拟机理论使用的 RAM 和 DISK，在剩余资源充足的条件下，libvirt 将成功创建虚拟机。</p>
 
@@ -204,18 +204,18 @@ memory_limit - used_memory &lt; flavor[&#39;ram&#39;]，表示内存不足，过
 
 <p>创建虚拟机的 API 支持指定 host 创建虚拟机，指定 host 时，nova-scheduler 采取特别的处理方式：不再判断该 host 上的资源是否满足需求，而是直接将请求发给该 host 上的 nova-compute。
 相关代码如下(稍有精简)：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">def get_filtered_hosts(self, hosts, filter_properties,
-            filter_class_names=None, index=0):
-    &#39;&#39;&#39;Filter hosts and return only ones passing all filters.&#39;&#39;&#39;
-    ...
-    if ignore_hosts or force_hosts or force_nodes:
-        ...
-        if force_hosts or force_nodes:
-            # NOTE(deva): Skip filters when forcing host or node
-            if name_to_cls_map:
-                return name_to_cls_map.values()
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">get_filtered_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hosts</span><span class="p">,</span> <span class="n">filter_properties</span><span class="p">,</span>
+            <span class="n">filter_class_names</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Filter hosts and return only ones passing all filters.&#39;&#39;&#39;</span>
+    <span class="o">...</span>
+    <span class="k">if</span> <span class="n">ignore_hosts</span> <span class="ow">or</span> <span class="n">force_hosts</span> <span class="ow">or</span> <span class="n">force_nodes</span><span class="p">:</span>
+        <span class="o">...</span>
+        <span class="k">if</span> <span class="n">force_hosts</span> <span class="ow">or</span> <span class="n">force_nodes</span><span class="p">:</span>
+            <span class="c"># NOTE(deva): Skip filters when forcing host or node</span>
+            <span class="k">if</span> <span class="n">name_to_cls_map</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">name_to_cls_map</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
 
-        return self.filter_handler.get_filtered_objects()
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_handler</span><span class="o">.</span><span class="n">get_filtered_objects</span><span class="p">()</span>
 </code></pre></div>
 <p>当该 host 上实际可用资源时满足要求时，libvirt 依旧能成功创建虚拟机。最后，一图蔽之
  <img src="http://img.blog.csdn.net/20150501235350782" alt="这里写图片描述"> </p>

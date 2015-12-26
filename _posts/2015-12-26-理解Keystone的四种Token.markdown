@@ -28,8 +28,8 @@ D 版本时，仅有 UUID 类型的 Token，UUID token 简单易用，却容易�
 UUID token 是长度固定为 32 Byte 的随机字符串，由 uuid.uuid4().hex 生成。
 
 ```python
-    def _get_token_id(self, token_data):
-        return uuid.uuid4().hex
+def _get_token_id(self, token_data):
+    return uuid.uuid4().hex
 ```
 
 但是因 UUID token 不携带其它信息，OpenStack API 收到该 token 后，既不能判断该 token 是否有效，更无法得知该 token 携带的用户信息，所以需经图一步骤 4 向 Keystone 校验 token，并获用户相关的信息。其样例如下：
@@ -54,46 +54,46 @@ UUID token 简单美观，不携带其它信息，因此 Keystone 必须实现 t
 PKI 的本质就是基于数字签名，Keystone 用私钥对 token 进行数字签名，各个 API server 用公钥在本地验证该 token。相关代码简化如下：
 
 ```python
-    def _get_token_id(self, token_data):
-        try:
-            token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
-            token_id = str(cms.cms_sign_token(token_json,
-                                              CONF.signing.certfile,
-                                              CONF.signing.keyfile))
-            return token_id
+def _get_token_id(self, token_data):
+    try:
+        token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
+        token_id = str(cms.cms_sign_token(token_json,
+                                          CONF.signing.certfile,
+                                          CONF.signing.keyfile))
+        return token_id
 ```
 
 其中 cms.cms\_sign\_token 调用 openssl cms --sign 对 token\_data 进行签名，token\_data 的样式如下：
 
 ```json
-    {
-      "token": {
-        "methods": [ "password" ],
-        "roles": [{"id": "5642056d336b4c2a894882425ce22a86", "name": "admin"}],
-        "expires_at": "2015-12-25T09:57:28.404275Z",
-        "project": {
-          "domain": { "id": "default", "name": "Default"},
-          "id": "144d8a99a42447379ac37f78bf0ef608", "name": "admin"},
-        "catalog": [
+{
+  "token": {
+    "methods": [ "password" ],
+    "roles": [{"id": "5642056d336b4c2a894882425ce22a86", "name": "admin"}],
+    "expires_at": "2015-12-25T09:57:28.404275Z",
+    "project": {
+      "domain": { "id": "default", "name": "Default"},
+      "id": "144d8a99a42447379ac37f78bf0ef608", "name": "admin"},
+    "catalog": [
+      {
+        "endpoints": [
           {
-            "endpoints": [
-              {
-                "region_id": "RegionOne",
-                "url": "http://controller:5000/v2.0",
-                "region": "RegionOne",
-                "interface": "public",
-                "id": "3837de623efd4af799e050d4d8d1f307"
-              },
-              ......
-          ]}],
-        "extras": {},
-        "user": {
-          "domain": {"id": "default", "name": "Default"},
-          "id": "1552d60a042e4a2caa07ea7ae6aa2f09", "name": "admin"},
-        "audit_ids": ["ZCvZW2TtTgiaAsVA8qmc3A"],
-        "issued_at": "2015-12-25T08:57:28.404304Z"
-      }
-    }
+            "region_id": "RegionOne",
+            "url": "http://controller:5000/v2.0",
+            "region": "RegionOne",
+            "interface": "public",
+            "id": "3837de623efd4af799e050d4d8d1f307"
+          },
+          ......
+      ]}],
+    "extras": {},
+    "user": {
+      "domain": {"id": "default", "name": "Default"},
+      "id": "1552d60a042e4a2caa07ea7ae6aa2f09", "name": "admin"},
+    "audit_ids": ["ZCvZW2TtTgiaAsVA8qmc3A"],
+    "issued_at": "2015-12-25T08:57:28.404304Z"
+  }
+}
 ```
 
 token\_data 经 cms.cms\_sign\_token 签名生成的 token\_id 如下，共 1932 Byte：
@@ -109,19 +109,19 @@ token\_data 经 cms.cms\_sign\_token 签名生成的 token\_id 如下，共 1932
 PKIZ 在 PKI 的基础上做了压缩处理，但是压缩的效果极其有限，一般情况下，压缩后的大小为 PKI token 的 90 % 左右，所以 PKIZ 不能友好的解决 token size 太大问题。
 
 ```python
-    def _get_token_id(self, token_data):
-        try:
-            token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
-            token_id = str(cms.pkiz_sign(token_json,
-                                         CONF.signing.certfile,
-                                         CONF.signing.keyfile))
-            return token_id
+def _get_token_id(self, token_data):
+    try:
+        token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
+        token_id = str(cms.pkiz_sign(token_json,
+                                     CONF.signing.certfile,
+                                     CONF.signing.keyfile))
+        return token_id
 ```
 
 其中 cms.pkiz\_sign() 中的以下代码调用 zlib 对签名后的消息进行压缩级别为 6 的压缩。
 
 ```python
-    compressed = zlib.compress(token_id, compression_level=6)
+compressed = zlib.compress(token_id, compression_level=6)
 ```
 
 PKIZ token 样例如下，共 1645 Byte，比 PKI token 减小 14.86 %：
@@ -138,41 +138,41 @@ PKIZ token 样例如下，共 1645 Byte，比 PKI token 减小 14.86 %：
 是专为 API token 设计的一种轻量级安全消息格式，不需要存储于数据库，减少了磁盘的 IO，带来了一定的[性能提升](http://dolphm.com/benchmarking-openstack-keystone-token-formats/)。为了提高安全性，需要采用 [Key Rotation](http://lbragstad.com/fernet-tokens-and-key-rotation/) 更换密钥。
 
 ```python
-    def create_token(self, user_id, expires_at, audit_ids, methods=None,
-                     domain_id=None, project_id=None, trust_id=None,
-                     federated_info=None):
-        """Given a set of payload attributes, generate a Fernet token."""
+def create_token(self, user_id, expires_at, audit_ids, methods=None,
+                 domain_id=None, project_id=None, trust_id=None,
+                 federated_info=None):
+    """Given a set of payload attributes, generate a Fernet token."""
 
-        if trust_id:
-            version = TrustScopedPayload.version
-            payload = TrustScopedPayload.assemble(
-                user_id,
-                methods,
-                project_id,
-                expires_at,
-                audit_ids,
-                trust_id)
+    if trust_id:
+        version = TrustScopedPayload.version
+        payload = TrustScopedPayload.assemble(
+            user_id,
+            methods,
+            project_id,
+            expires_at,
+            audit_ids,
+            trust_id)
 
-        ...
+    ...
 
-        versioned_payload = (version,) + payload
-        serialized_payload = msgpack.packb(versioned_payload)
-        token = self.pack(serialized_payload)
+    versioned_payload = (version,) + payload
+    serialized_payload = msgpack.packb(versioned_payload)
+    token = self.pack(serialized_payload)
 
-        return token
+    return token
 ```
 
 以上代码表明，token 包含了 user\_id，project\_id，domain\_id，methods，expires\_at 等信息，重要的是，它没有 service\_catalog，所以 region 的数量并不影响它的大小。self.pack() 最终调用如下代码对上述信息加密：
 
 ```python
-    def crypto(self):
-        keys = utils.load_keys()
+def crypto(self):
+    keys = utils.load_keys()
 
-        if not keys:
-            raise exception.KeysNotFound()
+    if not keys:
+        raise exception.KeysNotFound()
 
-        fernet_instances = [fernet.Fernet(key) for key in utils.load_keys()]
-        return fernet.MultiFernet(fernet_instances)
+    fernet_instances = [fernet.Fernet(key) for key in utils.load_keys()]
+    return fernet.MultiFernet(fernet_instances)
 ```
 
 该 token 的大小一般在 200 多 Byte 左右，本例样式如下，大小为 186 Byte：
