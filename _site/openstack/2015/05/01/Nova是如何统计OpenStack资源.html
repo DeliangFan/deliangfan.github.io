@@ -70,8 +70,8 @@
 
 <ul>
 <li>Nova 如何统计 OpenStack 计算资源？</li>
-<li>为什么 free<u>ram</u>mb,  free<u>disk</u>gb 有时会是负数？</li>
-<li>即使 free<u>ram</u>mb, free<u>disk</u>gb 为负，为什么虚拟机依旧能创建成功？</li>
+<li>为什么 free_ram_mb,  free_disk_gb 有时会是负数？</li>
+<li>即使 free_ram_mb, free_disk_gb 为负，为什么虚拟机依旧能创建成功？</li>
 <li>资源不足会导致虚拟机创建失败，但指定了 host 有时却能创建成功？</li>
 </ul>
 
@@ -87,10 +87,10 @@
 
 <ul>
 <li>CPU: 包括 vcpus(节点物理 cpu 总线程数),  vcpus_used(该节点虚拟机的 vcpu 总和)</li>
-<li>RAM: 包括 memory<u>mb(该节点总 ram)，memory</u>mb<u>used(该节点虚拟机的 ram 总和)，free</u>ram<u>mb(可用 ram)
-Note: memory</u>mb = memory<u>mb</u>used + free<u>ram</u>mb</li>
-<li>DISK：local<u>gb(该节点虚拟机的总可用 disk)，local</u>gb<u>used（该节点虚拟机 disk 总和），free</u>disk<u>gb(可用 disk)
-Note：local</u>gb = local<u>gb</u>used + free<u>disk</u>gb*</li>
+<li>RAM: 包括 memory_mb(该节点总 ram)，memory_mb_used(该节点虚拟机的 ram 总和)，free_ram_mb(可用 ram)
+Note: memory_mb = memory_mb_used + free_ram_mb</li>
+<li>DISK：local_gb(该节点虚拟机的总可用 disk)，local_gb_used（该节点虚拟机 disk 总和），free_disk_gb(可用 disk)
+Note：local_gb = local_gb_used + free_disk_gb*</li>
 <li>其它：PCI 设备、CPU 拓扑、NUMA 拓扑和 Hypervisor 等信息</li>
 </ul>
 
@@ -113,13 +113,13 @@ Note：local</u>gb = local<u>gb</u>used + free<u>disk</u>gb*</li>
 
 <ul>
 <li>memory: libvirt 中 get_Info()</li>
-<li>memory<u>mb</u>used：先通过 /proc/meminfo 统计可用内存， 再用总内存减去可用内存得出<strong>(资源再统计时会重新计算该值)</strong></li>
+<li>memory_mb_used：先通过 /proc/meminfo 统计可用内存， 再用总内存减去可用内存得出<strong>(资源再统计时会重新计算该值)</strong></li>
 </ul></li>
 <li>DISK
 
 <ul>
-<li>local<u>gb: os.statvfs(CONF.instances</u>path)</li>
-<li>local<u>gb</u>used: os.statvfs(CONF.instances_path)<strong>(资源再统计时会重新计算该值)</strong></li>
+<li>local_gb: os.statvfs(CONF.instances_path)</li>
+<li>local_gb_used: os.statvfs(CONF.instances_path)<strong>(资源再统计时会重新计算该值)</strong></li>
 </ul></li>
 <li>其它
 
@@ -130,7 +130,7 @@ Note：local</u>gb = local<u>gb</u>used + free<u>disk</u>gb*</li>
 </ul></li>
 </ul>
 
-<p>那么问题来了，按照上述收集资源的方式，free<u>ram</u>mb, free<u>disk</u>gb 不可能为负数啊！别急，Nova-compute 在上报资源至数据库前，还根据该节点上的虚拟机又做了一次资源统计。</p>
+<p>那么问题来了，按照上述收集资源的方式，free_ram_mb, free_disk_gb 不可能为负数啊！别急，Nova-compute 在上报资源至数据库前，还根据该节点上的虚拟机又做了一次资源统计。</p>
 
 <hr>
 
@@ -148,18 +148,18 @@ CONF.reserved_host_memory_mb：内存预留，比如预留给系统或其它应�
 CONF.reserved_host_disk_mb：磁盘预留
 虚拟机理论磁盘总和：即所有虚拟机  flavor 中得磁盘总和
 </code></pre></div>
-<p>当允许资源超配(见下节)时，采用上述统计方式就有可能出现 free<u>ram</u>mb,  free<u>disk</u>gb 为负。</p>
+<p>当允许资源超配(见下节)时，采用上述统计方式就有可能出现 free_ram_mb,  free_disk_gb 为负。</p>
 
 <hr>
 
 <h1 id="资源超配与调度">资源超配与调度</h1>
 
-<p>即使 free<u>ram</u>mb 或 free<u>disk</u>gb 为负，虚拟机依旧有可能创建成功。事实上，当 nova-scheduler 在调度过程中，某些 filter 允许资源超配，比如 CPU、RAM 和 DISK 等 filter，它们默认的超配比为：</p>
+<p>即使 free_ram_mb 或 free_disk_gb 为负，虚拟机依旧有可能创建成功。事实上，当 nova-scheduler 在调度过程中，某些 filter 允许资源超配，比如 CPU、RAM 和 DISK 等 filter，它们默认的超配比为：</p>
 
 <ul>
-<li>CPU: CONF.cpu<u>allocation</u>ratio = 16</li>
-<li>RAM: CONF.ram<u>allocation</u>ratio = 1.5</li>
-<li>DISK: CONF.disk<u>allocation</u>ratio = 1.0</li>
+<li>CPU: CONF.cpu_allocation_ratio = 16</li>
+<li>RAM: CONF.ram_allocation_ratio = 1.5</li>
+<li>DISK: CONF.disk_allocation_ratio = 1.0</li>
 </ul>
 
 <p>以 ram_filter 为例，在根据 RAM 过滤宿主机时，过滤的原则为：</p>
@@ -189,18 +189,18 @@ memory_limit - used_memory &lt; flavor[&#39;ram&#39;]，表示内存不足，过
 <p>随想：内存和磁盘超配虽然能提供更多数量的虚拟机，当该宿主机上大量虚拟机的负载都很高时，轻着影响虚拟机性能，重则引起 qemu-kvm  相关进程被杀，即虚拟机被关机。因此对于线上稳定性要求高的业务，建议不要超配 RAM 和 DISK，但可适当超配 CPU。建议这几个参数设置为：</p>
 
 <ul>
-<li>CPU: CONF.cpu<u>allocation</u>ratio = 4</li>
-<li>RAM: CONF.ram<u>allocation</u>ratio = 1.0</li>
-<li>DISK: CONF.disk<u>allocation</u>ratio = 1.0</li>
-<li>RAM-Reserve: CONF.reserved<u>host</u>memory_mb = 2048</li>
-<li>DISK-Reserve: CONF.reserved<u>host</u>disk_mb = 20480</li>
+<li>CPU: CONF.cpu_allocation_ratio = 4</li>
+<li>RAM: CONF.ram_allocation_ratio = 1.0</li>
+<li>DISK: CONF.disk_allocation_ratio = 1.0</li>
+<li>RAM-Reserve: CONF.reserved_host_memory_mb = 2048</li>
+<li>DISK-Reserve: CONF.reserved_host_disk_mb = 20480</li>
 </ul>
 
 <hr>
 
 <h1 id="指定-host-创建虚拟机">指定 host 创建虚拟机</h1>
 
-<p>本节用于回答问题四，当所有宿主机的资源使用过多，即超出限定的超配值时(total<u>resource * allocation</u>ratio)，nova-scheduler 将过滤这些宿主机，若未找到符合要求的宿主机，虚拟机创建失败。</p>
+<p>本节用于回答问题四，当所有宿主机的资源使用过多，即超出限定的超配值时(total_resource * allocation_ratio)，nova-scheduler 将过滤这些宿主机，若未找到符合要求的宿主机，虚拟机创建失败。</p>
 
 <p>创建虚拟机的 API 支持指定 host 创建虚拟机，指定 host 时，nova-scheduler 采取特别的处理方式：不再判断该 host 上的资源是否满足需求，而是直接将请求发给该 host 上的 nova-compute。
 相关代码如下(稍有精简)：</p>

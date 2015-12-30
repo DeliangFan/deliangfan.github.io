@@ -10,10 +10,10 @@ categories: OpenStack
 
 立即排查发现云主机并没有宕机，只是网络不通，大部分计算节点的 ovs 流表空空如也。Nova 和 Neutron 打出 ERROR 级别的日志。
 
-> $ ovs-ofctl dump-flows br-bond1
-NXST_FLOW repy (xid=0x4)
- cookies=0x0, duration=433.691s, table=0, n_packages=568733, n_bytes=113547542, idle_age=0, priority=1 actions=NORMAL
- cookies=0x0, duration=432.358s, table=0, n_packages=8418, n_bytes=356703, idle_age=0, priority=2, in_port=3 actions=drop
+> $ ovs-ofctl dump-flows br-bond   
+NXST\_FLOW repy (xid=0x4)
+ cookies=0x0, duration=433.691s, table=0, n\_packages=568733, n\_bytes=113547542, idle\_age=0, priority=1 actions=NORMAL
+ cookies=0x0, duration=432.358s, table=0, n\_packages=8418, n\_bytes=356703, idle\_age=0, priority=2, in\_port=3 actions=drop
 
 neutron-ovs-agent Log:
 
@@ -39,7 +39,7 @@ nova Log：
 ###导火索
 深入剖析之前，先了解该 Icehouse 集群的基本信息：该集群有 102 个计算节点，运行着 nova, neutron, glance，ceilometer 等服务，为了避免单点故障，我们去除了 neutron l3 等相关服务，采用大二层的网络，虚拟机通过物理路由与外界通信。理论上说，无论哪个服务异常，甚至任意节点宕机，最差的结果是 openstack 服务不可用或者少量虚拟机故障，但绝大部分虚拟机依旧能正常运行。
 
-经验告知，采用以上网络模型的多个集群一年多以来从未发生如此规模的故障。由于 log 模块配置项根本不会影响，直觉上推测批量重启可能是触发 ovs 流表被清空的导火索。
+经验告知，采用以上网络模型的多个集群一年多以来从未发生如此规模的故障。由于 log 模块配置项不会影响流表，直觉上推测批量重启可能是触发 ovs 流表被清空的导火索。
 
 ------------------
 
@@ -55,7 +55,7 @@ nova Log：
 
 [Restarting neutron ovs agent causes network hiccup by throwing away all flows](https://bugs.launchpad.net/neutron/+bug/1383674)
 
-社区的处理方式是增加配置项 drop_flows_on_start，默认其值为 False，从而避免上述问题。该 [Patch](https://review.openstack.org/#/c/182920) 已合入 Liberty，梳理其重启的逻辑流程如下：
+社区的处理方式是增加配置项 drop\_flows\_on\_start，默认其值为 False，从而避免上述问题。该 [Patch](https://review.openstack.org/#/c/182920) 已合入 Liberty，梳理其重启的逻辑流程如下：
 
 1. 用一个 cookie 标志当前流表
 2. 获取新流变并更新至 ovs
@@ -76,8 +76,8 @@ neutron-ovs-agent 在重启的过程中就流表的处理留下了一个隐患�
 要解决因 QueuePool 的限制而引起的 TimeoutError 问题也很简单，sqlalchemy 提供了两个配置项[1]，把下面两个参数适当调大即可。
 
 >[database]   
->max_overflow =   
->max_pool_size =
+>max\_overflow =   
+>max\_pool\_size =
 
 **Note:** MySQL server 默认最大连接数为 100，当集群的规模上升时，需适当调整 MySQL server 最大连接数。
 
@@ -96,8 +96,8 @@ neutron-ovs-agent 在重启的过程中就流表的处理留下了一个隐患�
 > $ workers=\`cat /proc/cpuinfo |grep processor |wc | awk '{print $1}'\`   
 >
 >[DEFAULT]   
-api_workers = $workers   
-rpc_workers = $workers   
+api\_workers = $workers   
+rpc\_workers = $workers   
 
 ------------------
 
@@ -108,7 +108,7 @@ rpc_workers = $workers
 传统的 web 服务器 apache 和 nginx 利用多进程多线程提高并发数(上下文切换的开销：进程 > 线程 > 协程)。那么问题来了，单进程条件下，是不是可以用线程替换协程从而提高 neutron 的并发能力呢？真实的答案是 No, 根本原因在于 python GIL[3]，俗称 python 全局锁。对于 python 的程序来说，单进程只能在任何时刻只能占用一个物理线程，所有只有多进程才能充分利用服务器的多核多线程。
 
 
-让我们深入一点，假设的 CPU 足够强大，是不是可以解决 neutron-server 单进程的并发问题呢？我觉得未必，这又回到了 IO 问题。Monkey patch[4] 虽然把系统的 socket 库替换成自己提供的非阻塞 socket 库，从而避免某些阻塞 IO 阻塞了整个进程(主线程)。但是 OpenStack 访问 MySQL 使用的是 libmysqlclient 库，eventlet 并不能对这个使用了系统 socket 的 C 库使用 monky_patch，所以对 MySQL CRUD 的时候会阻塞主线程，意味着 neutron-server 在访问数据库也容易出现性能瓶颈。 
+让我们深入一点，假设的 CPU 足够强大，是不是可以解决 neutron-server 单进程的并发问题呢？我觉得未必，这又回到了 IO 问题。Monkey patch[4] 虽然把系统的 socket 库替换成自己提供的非阻塞 socket 库，从而避免某些阻塞 IO 阻塞了整个进程(主线程)。但是 OpenStack 访问 MySQL 使用的是 libmysqlclient 库，eventlet 并不能对这个使用了系统 socket 的 C 库使用 monky\_patch，所以对 MySQL CRUD 的时候会阻塞主线程，意味着 neutron-server 在访问数据库也容易出现性能瓶颈。 
 
 解决上诉并发问题的方法之一就是启动更多的 api worker 和 rpc worker。在较新的版本，OpenStack 默认的 wokers 就是服务器的逻辑核数。另外一种办法是用 apache 替换 python http server，最近各个组件逐步提供了对 apache 的支持。
 
@@ -116,7 +116,7 @@ rpc_workers = $workers
 
 ###Reference
 
-1. [http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html](http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html)
+1. [http://docs.sqlalchemy.org/en/rel\_0\_9/core/pooling.html](http://docs.sqlalchemy.org/en/rel\_0\_9/core/pooling.html)
 2. [http://www.dabeaz.com/coroutines/Coroutines.pdf](http://www.dabeaz.com/coroutines/Coroutines.pdf)
 3. [http://stackoverflow.com/questions/1294382/what-is-a-global-interpreter-lock-gil](http://stackoverflow.com/questions/1294382/what-is-a-global-interpreter-lock-gil)
 4. [http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it](http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it)

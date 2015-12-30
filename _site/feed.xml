@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 26 Dec 2015 16:42:52 +0800</pubDate>
-    <lastBuildDate>Sat, 26 Dec 2015 16:42:52 +0800</lastBuildDate>
+    <pubDate>Wed, 30 Dec 2015 22:32:20 +0800</pubDate>
+    <lastBuildDate>Wed, 30 Dec 2015 22:32:20 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -272,10 +272,10 @@ Token 类型的选择涉及多个因素，包括 Keystone server 的负载、reg
 &lt;p&gt;立即排查发现云主机并没有宕机，只是网络不通，大部分计算节点的 ovs 流表空空如也。Nova 和 Neutron 打出 ERROR 级别的日志。&lt;/p&gt;
 
 &lt;blockquote&gt;
-&lt;p&gt;$ ovs-ofctl dump-flows br-bond1
-NXST&lt;u&gt;FLOW repy (xid=0x4)
- cookies=0x0, duration=433.691s, table=0, n&lt;/u&gt;packages=568733, n&lt;u&gt;bytes=113547542, idle&lt;/u&gt;age=0, priority=1 actions=NORMAL
- cookies=0x0, duration=432.358s, table=0, n&lt;u&gt;packages=8418, n&lt;/u&gt;bytes=356703, idle&lt;u&gt;age=0, priority=2, in&lt;/u&gt;port=3 actions=drop&lt;/p&gt;
+&lt;p&gt;$ ovs-ofctl dump-flows br-bond&lt;br&gt;
+NXST_FLOW repy (xid=0x4)
+ cookies=0x0, duration=433.691s, table=0, n_packages=568733, n_bytes=113547542, idle_age=0, priority=1 actions=NORMAL
+ cookies=0x0, duration=432.358s, table=0, n_packages=8418, n_bytes=356703, idle_age=0, priority=2, in_port=3 actions=drop&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;p&gt;neutron-ovs-agent Log:&lt;/p&gt;
@@ -310,7 +310,7 @@ NXST&lt;u&gt;FLOW repy (xid=0x4)
 
 &lt;p&gt;深入剖析之前，先了解该 Icehouse 集群的基本信息：该集群有 102 个计算节点，运行着 nova, neutron, glance，ceilometer 等服务，为了避免单点故障，我们去除了 neutron l3 等相关服务，采用大二层的网络，虚拟机通过物理路由与外界通信。理论上说，无论哪个服务异常，甚至任意节点宕机，最差的结果是 openstack 服务不可用或者少量虚拟机故障，但绝大部分虚拟机依旧能正常运行。&lt;/p&gt;
 
-&lt;p&gt;经验告知，采用以上网络模型的多个集群一年多以来从未发生如此规模的故障。由于 log 模块配置项根本不会影响，直觉上推测批量重启可能是触发 ovs 流表被清空的导火索。&lt;/p&gt;
+&lt;p&gt;经验告知，采用以上网络模型的多个集群一年多以来从未发生如此规模的故障。由于 log 模块配置项不会影响流表，直觉上推测批量重启可能是触发 ovs 流表被清空的导火索。&lt;/p&gt;
 
 &lt;hr&gt;
 
@@ -328,7 +328,7 @@ NXST&lt;u&gt;FLOW repy (xid=0x4)
 
 &lt;p&gt;&lt;a href=&quot;https://bugs.launchpad.net/neutron/+bug/1383674&quot;&gt;Restarting neutron ovs agent causes network hiccup by throwing away all flows&lt;/a&gt;&lt;/p&gt;
 
-&lt;p&gt;社区的处理方式是增加配置项 drop&lt;u&gt;flows&lt;/u&gt;on_start，默认其值为 False，从而避免上述问题。该 &lt;a href=&quot;https://review.openstack.org/#/c/182920&quot;&gt;Patch&lt;/a&gt; 已合入 Liberty，梳理其重启的逻辑流程如下：&lt;/p&gt;
+&lt;p&gt;社区的处理方式是增加配置项 drop_flows_on_start，默认其值为 False，从而避免上述问题。该 &lt;a href=&quot;https://review.openstack.org/#/c/182920&quot;&gt;Patch&lt;/a&gt; 已合入 Liberty，梳理其重启的逻辑流程如下：&lt;/p&gt;
 
 &lt;ol&gt;
 &lt;li&gt;用一个 cookie 标志当前流表&lt;/li&gt;
@@ -354,8 +354,8 @@ NXST&lt;u&gt;FLOW repy (xid=0x4)
 
 &lt;blockquote&gt;
 &lt;p&gt;[database]&lt;br&gt;
-max&lt;u&gt;overflow =&lt;br&gt;
-max&lt;/u&gt;pool_size =&lt;/p&gt;
+max_overflow =&lt;br&gt;
+max_pool_size =&lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; MySQL server 默认最大连接数为 100，当集群的规模上升时，需适当调整 MySQL server 最大连接数。&lt;/p&gt;
@@ -378,8 +378,8 @@ max&lt;/u&gt;pool_size =&lt;/p&gt;
 &lt;p&gt;$ workers=`cat /proc/cpuinfo |grep processor |wc | awk &amp;#39;{print $1}&amp;#39;`   &lt;/p&gt;
 
 &lt;p&gt;[DEFAULT]&lt;br&gt;
-api&lt;u&gt;workers = $workers&lt;br&gt;
-rpc&lt;/u&gt;workers = $workers   &lt;/p&gt;
+api_workers = $workers&lt;br&gt;
+rpc_workers = $workers   &lt;/p&gt;
 &lt;/blockquote&gt;
 
 &lt;hr&gt;
@@ -399,7 +399,7 @@ rpc&lt;/u&gt;workers = $workers   &lt;/p&gt;
 &lt;h3 id=&quot;reference&quot;&gt;Reference&lt;/h3&gt;
 
 &lt;ol&gt;
-&lt;li&gt;&lt;a href=&quot;http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html&quot;&gt;http://docs.sqlalchemy.org/en/rel&lt;u&gt;0&lt;/u&gt;9/core/pooling.html&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html&quot;&gt;http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&quot;http://www.dabeaz.com/coroutines/Coroutines.pdf&quot;&gt;http://www.dabeaz.com/coroutines/Coroutines.pdf&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&quot;http://stackoverflow.com/questions/1294382/what-is-a-global-interpreter-lock-gil&quot;&gt;http://stackoverflow.com/questions/1294382/what-is-a-global-interpreter-lock-gil&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&quot;http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it&quot;&gt;http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it&lt;/a&gt;&lt;/li&gt;
@@ -424,8 +424,8 @@ rpc&lt;/u&gt;workers = $workers   &lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Nova 如何统计 OpenStack 计算资源？&lt;/li&gt;
-&lt;li&gt;为什么 free&lt;u&gt;ram&lt;/u&gt;mb,  free&lt;u&gt;disk&lt;/u&gt;gb 有时会是负数？&lt;/li&gt;
-&lt;li&gt;即使 free&lt;u&gt;ram&lt;/u&gt;mb, free&lt;u&gt;disk&lt;/u&gt;gb 为负，为什么虚拟机依旧能创建成功？&lt;/li&gt;
+&lt;li&gt;为什么 free_ram_mb,  free_disk_gb 有时会是负数？&lt;/li&gt;
+&lt;li&gt;即使 free_ram_mb, free_disk_gb 为负，为什么虚拟机依旧能创建成功？&lt;/li&gt;
 &lt;li&gt;资源不足会导致虚拟机创建失败，但指定了 host 有时却能创建成功？&lt;/li&gt;
 &lt;/ul&gt;
 
@@ -441,10 +441,10 @@ rpc&lt;/u&gt;workers = $workers   &lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;CPU: 包括 vcpus(节点物理 cpu 总线程数),  vcpus_used(该节点虚拟机的 vcpu 总和)&lt;/li&gt;
-&lt;li&gt;RAM: 包括 memory&lt;u&gt;mb(该节点总 ram)，memory&lt;/u&gt;mb&lt;u&gt;used(该节点虚拟机的 ram 总和)，free&lt;/u&gt;ram&lt;u&gt;mb(可用 ram)
-Note: memory&lt;/u&gt;mb = memory&lt;u&gt;mb&lt;/u&gt;used + free&lt;u&gt;ram&lt;/u&gt;mb&lt;/li&gt;
-&lt;li&gt;DISK：local&lt;u&gt;gb(该节点虚拟机的总可用 disk)，local&lt;/u&gt;gb&lt;u&gt;used（该节点虚拟机 disk 总和），free&lt;/u&gt;disk&lt;u&gt;gb(可用 disk)
-Note：local&lt;/u&gt;gb = local&lt;u&gt;gb&lt;/u&gt;used + free&lt;u&gt;disk&lt;/u&gt;gb*&lt;/li&gt;
+&lt;li&gt;RAM: 包括 memory_mb(该节点总 ram)，memory_mb_used(该节点虚拟机的 ram 总和)，free_ram_mb(可用 ram)
+Note: memory_mb = memory_mb_used + free_ram_mb&lt;/li&gt;
+&lt;li&gt;DISK：local_gb(该节点虚拟机的总可用 disk)，local_gb_used（该节点虚拟机 disk 总和），free_disk_gb(可用 disk)
+Note：local_gb = local_gb_used + free_disk_gb*&lt;/li&gt;
 &lt;li&gt;其它：PCI 设备、CPU 拓扑、NUMA 拓扑和 Hypervisor 等信息&lt;/li&gt;
 &lt;/ul&gt;
 
@@ -467,13 +467,13 @@ Note：local&lt;/u&gt;gb = local&lt;u&gt;gb&lt;/u&gt;used + free&lt;u&gt;disk&lt
 
 &lt;ul&gt;
 &lt;li&gt;memory: libvirt 中 get_Info()&lt;/li&gt;
-&lt;li&gt;memory&lt;u&gt;mb&lt;/u&gt;used：先通过 /proc/meminfo 统计可用内存， 再用总内存减去可用内存得出&lt;strong&gt;(资源再统计时会重新计算该值)&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;memory_mb_used：先通过 /proc/meminfo 统计可用内存， 再用总内存减去可用内存得出&lt;strong&gt;(资源再统计时会重新计算该值)&lt;/strong&gt;&lt;/li&gt;
 &lt;/ul&gt;&lt;/li&gt;
 &lt;li&gt;DISK
 
 &lt;ul&gt;
-&lt;li&gt;local&lt;u&gt;gb: os.statvfs(CONF.instances&lt;/u&gt;path)&lt;/li&gt;
-&lt;li&gt;local&lt;u&gt;gb&lt;/u&gt;used: os.statvfs(CONF.instances_path)&lt;strong&gt;(资源再统计时会重新计算该值)&lt;/strong&gt;&lt;/li&gt;
+&lt;li&gt;local_gb: os.statvfs(CONF.instances_path)&lt;/li&gt;
+&lt;li&gt;local_gb_used: os.statvfs(CONF.instances_path)&lt;strong&gt;(资源再统计时会重新计算该值)&lt;/strong&gt;&lt;/li&gt;
 &lt;/ul&gt;&lt;/li&gt;
 &lt;li&gt;其它
 
@@ -484,7 +484,7 @@ Note：local&lt;/u&gt;gb = local&lt;u&gt;gb&lt;/u&gt;used + free&lt;u&gt;disk&lt
 &lt;/ul&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;那么问题来了，按照上述收集资源的方式，free&lt;u&gt;ram&lt;/u&gt;mb, free&lt;u&gt;disk&lt;/u&gt;gb 不可能为负数啊！别急，Nova-compute 在上报资源至数据库前，还根据该节点上的虚拟机又做了一次资源统计。&lt;/p&gt;
+&lt;p&gt;那么问题来了，按照上述收集资源的方式，free_ram_mb, free_disk_gb 不可能为负数啊！别急，Nova-compute 在上报资源至数据库前，还根据该节点上的虚拟机又做了一次资源统计。&lt;/p&gt;
 
 &lt;hr&gt;
 
@@ -502,18 +502,18 @@ CONF.reserved_host_memory_mb：内存预留，比如预留给系统或其它应�
 CONF.reserved_host_disk_mb：磁盘预留
 虚拟机理论磁盘总和：即所有虚拟机  flavor 中得磁盘总和
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;当允许资源超配(见下节)时，采用上述统计方式就有可能出现 free&lt;u&gt;ram&lt;/u&gt;mb,  free&lt;u&gt;disk&lt;/u&gt;gb 为负。&lt;/p&gt;
+&lt;p&gt;当允许资源超配(见下节)时，采用上述统计方式就有可能出现 free_ram_mb,  free_disk_gb 为负。&lt;/p&gt;
 
 &lt;hr&gt;
 
 &lt;h1 id=&quot;资源超配与调度&quot;&gt;资源超配与调度&lt;/h1&gt;
 
-&lt;p&gt;即使 free&lt;u&gt;ram&lt;/u&gt;mb 或 free&lt;u&gt;disk&lt;/u&gt;gb 为负，虚拟机依旧有可能创建成功。事实上，当 nova-scheduler 在调度过程中，某些 filter 允许资源超配，比如 CPU、RAM 和 DISK 等 filter，它们默认的超配比为：&lt;/p&gt;
+&lt;p&gt;即使 free_ram_mb 或 free_disk_gb 为负，虚拟机依旧有可能创建成功。事实上，当 nova-scheduler 在调度过程中，某些 filter 允许资源超配，比如 CPU、RAM 和 DISK 等 filter，它们默认的超配比为：&lt;/p&gt;
 
 &lt;ul&gt;
-&lt;li&gt;CPU: CONF.cpu&lt;u&gt;allocation&lt;/u&gt;ratio = 16&lt;/li&gt;
-&lt;li&gt;RAM: CONF.ram&lt;u&gt;allocation&lt;/u&gt;ratio = 1.5&lt;/li&gt;
-&lt;li&gt;DISK: CONF.disk&lt;u&gt;allocation&lt;/u&gt;ratio = 1.0&lt;/li&gt;
+&lt;li&gt;CPU: CONF.cpu_allocation_ratio = 16&lt;/li&gt;
+&lt;li&gt;RAM: CONF.ram_allocation_ratio = 1.5&lt;/li&gt;
+&lt;li&gt;DISK: CONF.disk_allocation_ratio = 1.0&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;以 ram_filter 为例，在根据 RAM 过滤宿主机时，过滤的原则为：&lt;/p&gt;
@@ -543,18 +543,18 @@ memory_limit - used_memory &amp;lt; flavor[&amp;#39;ram&amp;#39;]，表示内存
 &lt;p&gt;随想：内存和磁盘超配虽然能提供更多数量的虚拟机，当该宿主机上大量虚拟机的负载都很高时，轻着影响虚拟机性能，重则引起 qemu-kvm  相关进程被杀，即虚拟机被关机。因此对于线上稳定性要求高的业务，建议不要超配 RAM 和 DISK，但可适当超配 CPU。建议这几个参数设置为：&lt;/p&gt;
 
 &lt;ul&gt;
-&lt;li&gt;CPU: CONF.cpu&lt;u&gt;allocation&lt;/u&gt;ratio = 4&lt;/li&gt;
-&lt;li&gt;RAM: CONF.ram&lt;u&gt;allocation&lt;/u&gt;ratio = 1.0&lt;/li&gt;
-&lt;li&gt;DISK: CONF.disk&lt;u&gt;allocation&lt;/u&gt;ratio = 1.0&lt;/li&gt;
-&lt;li&gt;RAM-Reserve: CONF.reserved&lt;u&gt;host&lt;/u&gt;memory_mb = 2048&lt;/li&gt;
-&lt;li&gt;DISK-Reserve: CONF.reserved&lt;u&gt;host&lt;/u&gt;disk_mb = 20480&lt;/li&gt;
+&lt;li&gt;CPU: CONF.cpu_allocation_ratio = 4&lt;/li&gt;
+&lt;li&gt;RAM: CONF.ram_allocation_ratio = 1.0&lt;/li&gt;
+&lt;li&gt;DISK: CONF.disk_allocation_ratio = 1.0&lt;/li&gt;
+&lt;li&gt;RAM-Reserve: CONF.reserved_host_memory_mb = 2048&lt;/li&gt;
+&lt;li&gt;DISK-Reserve: CONF.reserved_host_disk_mb = 20480&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;hr&gt;
 
 &lt;h1 id=&quot;指定-host-创建虚拟机&quot;&gt;指定 host 创建虚拟机&lt;/h1&gt;
 
-&lt;p&gt;本节用于回答问题四，当所有宿主机的资源使用过多，即超出限定的超配值时(total&lt;u&gt;resource * allocation&lt;/u&gt;ratio)，nova-scheduler 将过滤这些宿主机，若未找到符合要求的宿主机，虚拟机创建失败。&lt;/p&gt;
+&lt;p&gt;本节用于回答问题四，当所有宿主机的资源使用过多，即超出限定的超配值时(total_resource * allocation_ratio)，nova-scheduler 将过滤这些宿主机，若未找到符合要求的宿主机，虚拟机创建失败。&lt;/p&gt;
 
 &lt;p&gt;创建虚拟机的 API 支持指定 host 创建虚拟机，指定 host 时，nova-scheduler 采取特别的处理方式：不再判断该 host 上的资源是否满足需求，而是直接将请求发给该 host 上的 nova-compute。
 相关代码如下(稍有精简)：&lt;/p&gt;

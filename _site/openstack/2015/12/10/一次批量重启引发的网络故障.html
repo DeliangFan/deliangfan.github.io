@@ -71,10 +71,10 @@
 <p>立即排查发现云主机并没有宕机，只是网络不通，大部分计算节点的 ovs 流表空空如也。Nova 和 Neutron 打出 ERROR 级别的日志。</p>
 
 <blockquote>
-<p>$ ovs-ofctl dump-flows br-bond1
-NXST<u>FLOW repy (xid=0x4)
- cookies=0x0, duration=433.691s, table=0, n</u>packages=568733, n<u>bytes=113547542, idle</u>age=0, priority=1 actions=NORMAL
- cookies=0x0, duration=432.358s, table=0, n<u>packages=8418, n</u>bytes=356703, idle<u>age=0, priority=2, in</u>port=3 actions=drop</p>
+<p>$ ovs-ofctl dump-flows br-bond<br>
+NXST_FLOW repy (xid=0x4)
+ cookies=0x0, duration=433.691s, table=0, n_packages=568733, n_bytes=113547542, idle_age=0, priority=1 actions=NORMAL
+ cookies=0x0, duration=432.358s, table=0, n_packages=8418, n_bytes=356703, idle_age=0, priority=2, in_port=3 actions=drop</p>
 </blockquote>
 
 <p>neutron-ovs-agent Log:</p>
@@ -109,7 +109,7 @@ NXST<u>FLOW repy (xid=0x4)
 
 <p>深入剖析之前，先了解该 Icehouse 集群的基本信息：该集群有 102 个计算节点，运行着 nova, neutron, glance，ceilometer 等服务，为了避免单点故障，我们去除了 neutron l3 等相关服务，采用大二层的网络，虚拟机通过物理路由与外界通信。理论上说，无论哪个服务异常，甚至任意节点宕机，最差的结果是 openstack 服务不可用或者少量虚拟机故障，但绝大部分虚拟机依旧能正常运行。</p>
 
-<p>经验告知，采用以上网络模型的多个集群一年多以来从未发生如此规模的故障。由于 log 模块配置项根本不会影响，直觉上推测批量重启可能是触发 ovs 流表被清空的导火索。</p>
+<p>经验告知，采用以上网络模型的多个集群一年多以来从未发生如此规模的故障。由于 log 模块配置项不会影响流表，直觉上推测批量重启可能是触发 ovs 流表被清空的导火索。</p>
 
 <hr>
 
@@ -127,7 +127,7 @@ NXST<u>FLOW repy (xid=0x4)
 
 <p><a href="https://bugs.launchpad.net/neutron/+bug/1383674">Restarting neutron ovs agent causes network hiccup by throwing away all flows</a></p>
 
-<p>社区的处理方式是增加配置项 drop<u>flows</u>on_start，默认其值为 False，从而避免上述问题。该 <a href="https://review.openstack.org/#/c/182920">Patch</a> 已合入 Liberty，梳理其重启的逻辑流程如下：</p>
+<p>社区的处理方式是增加配置项 drop_flows_on_start，默认其值为 False，从而避免上述问题。该 <a href="https://review.openstack.org/#/c/182920">Patch</a> 已合入 Liberty，梳理其重启的逻辑流程如下：</p>
 
 <ol>
 <li>用一个 cookie 标志当前流表</li>
@@ -153,8 +153,8 @@ NXST<u>FLOW repy (xid=0x4)
 
 <blockquote>
 <p>[database]<br>
-max<u>overflow =<br>
-max</u>pool_size =</p>
+max_overflow =<br>
+max_pool_size =</p>
 </blockquote>
 
 <p><strong>Note:</strong> MySQL server 默认最大连接数为 100，当集群的规模上升时，需适当调整 MySQL server 最大连接数。</p>
@@ -177,8 +177,8 @@ max</u>pool_size =</p>
 <p>$ workers=`cat /proc/cpuinfo |grep processor |wc | awk &#39;{print $1}&#39;`   </p>
 
 <p>[DEFAULT]<br>
-api<u>workers = $workers<br>
-rpc</u>workers = $workers   </p>
+api_workers = $workers<br>
+rpc_workers = $workers   </p>
 </blockquote>
 
 <hr>
@@ -198,7 +198,7 @@ rpc</u>workers = $workers   </p>
 <h3 id="reference">Reference</h3>
 
 <ol>
-<li><a href="http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html">http://docs.sqlalchemy.org/en/rel<u>0</u>9/core/pooling.html</a></li>
+<li><a href="http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html">http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html</a></li>
 <li><a href="http://www.dabeaz.com/coroutines/Coroutines.pdf">http://www.dabeaz.com/coroutines/Coroutines.pdf</a></li>
 <li><a href="http://stackoverflow.com/questions/1294382/what-is-a-global-interpreter-lock-gil">http://stackoverflow.com/questions/1294382/what-is-a-global-interpreter-lock-gil</a></li>
 <li><a href="http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it">http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it</a></li>
