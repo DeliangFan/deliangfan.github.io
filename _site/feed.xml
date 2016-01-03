@@ -6,9 +6,54 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 30 Dec 2015 22:32:20 +0800</pubDate>
-    <lastBuildDate>Wed, 30 Dec 2015 22:32:20 +0800</lastBuildDate>
+    <pubDate>Sun, 03 Jan 2016 20:59:26 +0800</pubDate>
+    <lastBuildDate>Sun, 03 Jan 2016 20:59:26 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
+    
+      <item>
+        <title>[行摄]上海武康路</title>
+        <description>&lt;p&gt;&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E6%AD%A6%E5%BA%B7%E8%B7%AF_(%E4%B8%8A%E6%B5%B7)&quot;&gt;武康路原名福开森路&lt;/a&gt;(Route Ferguson)，北起华山路，南接淮海中路，由法租界公董局修筑于1907年，后于汪精卫政府时期更名为武康路。这里住过次吒风云政要陈立夫等、陈丕显等人，也被商业大亨严裕棠等所青睐，更留下昔日红颜秦怡、王文娟等往事，还有巴金深夜耕耘的佳作。&lt;/p&gt;
+
+&lt;p&gt;原以为上海除了高楼还是高楼，当看到两旁坐落着民国时期建造的花园洋房与历史公寓时，欣喜之情情不自禁流露而出。16年的元旦是个天朗气清的冬日，午后暖阳甚是令人心旷神怡。据说从 13 年起，武康路不在人为清扫落叶，深秋的法桐路下，值得再踏叶游览一次。&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;
+P1. 饰品店&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/IMG_3024.JPG?imageView2/1/w/600/h/400/q/100&quot; alt=&quot;p1&quot;&gt;&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;
+P2. 丁香别墅&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/IMG_3074.JPG?imageView2/1/w/600/h/400/q/100&quot; alt=&quot;p2&quot;&gt;&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+
+&lt;p&gt;P3. 武原路&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/IMG_2971.JPG?imageView2/1/w/400/h/600/q/100&quot; alt=&quot;p3&quot;&gt;&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;&lt;/p&gt;
+
+&lt;p&gt;P4. 咖啡馆 &lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/IMG_2996.JPG?imageView2/1/w/400/h/600/q/100&quot; alt=&quot;p4&quot;&gt;&lt;/p&gt;
+</description>
+        <pubDate>Sun, 03 Jan 2016 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/photos/2016/01/03/%5B%E8%A1%8C%E6%91%84%5D%E4%B8%8A%E6%B5%B7%E6%AD%A6%E5%BA%B7%E8%B7%AF.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/photos/2016/01/03/%5B%E8%A1%8C%E6%91%84%5D%E4%B8%8A%E6%B5%B7%E6%AD%A6%E5%BA%B7%E8%B7%AF.html</guid>
+        
+        
+        <category>photos</category>
+        
+      </item>
     
       <item>
         <title>理解Keystone的四种Token</title>
@@ -580,6 +625,203 @@ memory_limit - used_memory &amp;lt; flavor[&amp;#39;ram&amp;#39;]，表示内存
         
         
         <category>openstack</category>
+        
+      </item>
+    
+      <item>
+        <title>Haproxy与安全</title>
+        <description>&lt;hr&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://docs.openstack.org/ha-guide/controller-ha-haproxy.html&quot;&gt;Haproxy&lt;/a&gt;
+作为 load balancer, Happroxy 常常作为服务器的前端，向外界用户提供服务的入口，如果能在入口处处理安全相关问题，将极大简化后端的设计。事实上，Haproxy 不仅仅是一款开源出色的 load balancer（四层和七层），而且在安全上也相当出色。它配合内核 IP/TCP 协议栈，能够较好的抵抗 DOS, DDOS 攻击，还能通过限制单个 IP 的连接数和请求速率等，防止用户的恶意行为。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;保证 High avaiability&lt;/li&gt;
+&lt;li&gt;提供 Load balance&lt;/li&gt;
+&lt;li&gt;提供安全&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;本文着重关注 Haproxy 安全领域，Haproxy 能够保证以下安全&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;支持 ssl, 提供 HTTPS&lt;/li&gt;
+&lt;li&gt;通过配置 ACL 在一定程度上防止 DDOS 攻击 &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Haproxy
+配置参数多的一塌糊涂，因而功能丰富，灵活多样，本文抛砖引玉，更多的安全功能请详见官网手册。&lt;/p&gt;
+
+&lt;hr&gt;
+
+&lt;h1 id=&quot;https&quot;&gt;HTTPS&lt;/h1&gt;
+
+&lt;p&gt;https&lt;/p&gt;
+
+&lt;hr&gt;
+
+&lt;h1 id=&quot;tcp-syn-flood-attacks&quot;&gt;TCP syn flood attacks&lt;/h1&gt;
+
+&lt;p&gt;通过向服务器发送大量的 TCP syn 分组，恶意用户实现了了 TCP syn flood 攻击，幸运的是，简单的配置内核网络参数即可防止这种攻击。 
+/etc/sysctl.conf&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;//Protection SYN flood
+net.ipv4.tcp_syncookies = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.tcp_max_syn_backlog = 1024 
+sysctl -p
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;hr&gt;
+
+&lt;h1 id=&quot;slowloris-like-attacks&quot;&gt;Slowloris like attacks&lt;/h1&gt;
+
+&lt;p&gt;一个 Http 请求通常包括头部、url、methods 等，服务器需要接收整个 Http 请求后会做出响应。恶意用户发送缓慢的 Http 请求，比如一个字节一个字节的发送头部，服务器将一直处于 wating 状态，从而耗费服务器的资源。Haproxy 通过配置 timeout http-request 参数，当一个用户的请求时间超过设定值时，Haproxy 断开与该用户的连接。&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;defaults
+  option http-server-close
+  mode http
+  &amp;lt;span style=&amp;quot;color:#ff0000;&amp;quot;&amp;gt;timeout http-request 5s&amp;lt;/span&amp;gt;  # 防止 Slowloris like attacks
+  timeout connect 5s
+  timeout server 10s
+  timeout client 30s
+
+listen stats
+  bind 0.0.0.0:8880
+  stats enable
+  stats hide-version
+  stats uri     /
+  stats realm   HAProxy\ Statistics
+  stats auth    admin:admin
+
+frontend ft_web
+  bind 0.0.0.0:8080
+  default_backend bk_web
+
+backend bk_web
+  balance roundrobin
+  cookie MYSRV insert indirect nocache
+  server srv1 192.168.1.2:80 check cookie srv1 maxconn 100
+  server srv2 192.168.1.3:80 check cookie srv2 maxconn 100
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;通过 telnet 登录验证结果&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;telnet 127.0.0.1 8080
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is &amp;#39;^]&amp;#39;.
+HTTP/1.0 408 Request Time-out
+Cache-Control: no-cache
+Connection: close
+Content-Type: text/html
+408 Request Time-out
+Your browser didn&amp;#39;t send a complete request in time.
+Connection closed by foreign host.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;hr&gt;
+
+&lt;h1 id=&quot;limiting-the-number-of-connections-per-users&quot;&gt;Limiting the number of connections per users&lt;/h1&gt;
+
+&lt;p&gt;以网站为例，普通用户访问网站，或者从网站下载东西时，浏览器一般会建立 5-7 个 TCP 链接。当一个恶意打开了大量 TCP 链接时，耗费服务器大量资源，影响其它用户的访问，因此我们需要根据实际情况，限制同一个用户的链接数。&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;defaults
+  option http-server-close
+  mode http
+  timeout http-request 5s
+  timeout connect 5s
+  timeout server 10s
+  timeout client 30s
+
+listen stats
+  bind 0.0.0.0:8880
+  stats enable
+  stats hide-version
+  stats uri     /
+  stats realm   HAProxy\ Statistics
+  stats auth    admin:admin
+
+frontend ft_web
+  bind 0.0.0.0:8080
+  # Allow clean known IPs to bypass the filter
+  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst }
+  # Shut the new connection as long as the client has already 10 opened 
+  tcp-request connection reject if { src_conn_cur ge 10 }
+  tcp-request connection track-sc1 src&amp;lt;/span&amp;gt;
+
+  default_backend bk_web
+
+backend bk_web
+  balance roundrobin
+  cookie MYSRV insert indirect nocache
+  server srv1 192.168.1.2:80 check cookie srv1 maxconn 100
+  server srv2 192.168.1.3:80 check cookie srv2 maxconn 100
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;注：若某些用户在同一个私有网段通过 NAT 访问网站，这样的配置存在不合理之处，最好把 NAT 处的公网地址添加到 whitelist.lst 文件中。&lt;/p&gt;
+
+&lt;p&gt;利用 apache 测试工具做验证，和服务器一直保持建立 10 个链接。&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;ab -n 50000000 -c 10 http://127.0.0.1:8080/
+用 telnet 打开第 11 个链接，服务器拒绝该链接。
+telnet 127.0.0.1 8080
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is &amp;#39;^]&amp;#39;.
+Connection closed by foreign host.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;hr&gt;
+
+&lt;h1 id=&quot;limiting-the-connection-rate-per-user&quot;&gt;Limiting the connection rate per user&lt;/h1&gt;
+
+&lt;p&gt;仅仅限制单个用户的并发链接数并意味着万事大吉，如果用户在短时间内向服务器不断的发送建立和关闭链接请求，也会耗费服务器资源，影响服务器端的性能，因此需要控制单个用户的访问速率。
+  通常情况下，考虑到用户通过浏览器一般会建立 5-7 条 TCP 链接，我们可以认为普通用户在 3 秒内不应该建立超过 20 条链接。&lt;/p&gt;
+
+&lt;p&gt;defaults
+  option http-server-close
+  mode http
+  timeout http-request 5s
+  timeout connect 5s
+  timeout server 10s
+  timeout client 30s&lt;/p&gt;
+
+&lt;p&gt;listen stats
+  bind 0.0.0.0:8880
+  stats enable
+  stats hide-version
+  stats uri     /
+  stats realm   HAProxy\ Statistics
+  stats auth    admin:admin&lt;/p&gt;
+
+&lt;p&gt;frontend ft_web
+  bind 0.0.0.0:8080&lt;/p&gt;
+
+&lt;p&gt;# Table definition&lt;br&gt;
+  stick-table type ip size 100k expire 30s store conn&lt;u&gt;cur,&lt;span style=&quot;color:#ff0000;&quot;&gt;conn&lt;/u&gt;rate(3s)&lt;/span&gt;&lt;/p&gt;
+
+&lt;p&gt;# Allow clean known IPs to bypass the filter
+  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst }
+  # Shut the new connection as long as the client has already 10 opened or rate more than 20
+  tcp-request connection reject if { src&lt;u&gt;conn&lt;/u&gt;cur ge 10 } &lt;span style=&quot;color:#ff0000;&quot;&gt;|| { src&lt;u&gt;conn&lt;/u&gt;rate ge 20}&lt;/span&gt;&lt;/p&gt;
+
+&lt;p&gt;tcp-request connection track-sc1 src&lt;/p&gt;
+
+&lt;p&gt;default&lt;u&gt;backend bk&lt;/u&gt;web&lt;/p&gt;
+
+&lt;p&gt;backend bk_web
+  balance roundrobin
+  cookie MYSRV insert indirect nocache
+  server srv1 192.168.1.2:80 check cookie srv1 maxconn 100
+  server srv2 192.168.1.3:80 check cookie srv2 maxconn 100&lt;/p&gt;
+
+&lt;p&gt;注：若某些用户在同一个私有网段通过 NAT 访问网站，这样的配置存在不合理之处，最好把 NAT 处的公网地址添加到 whitelist.lst 文件中。
+测试，采用 ab 打开 20 个链接。(本次测试把 限制单个用户并发数功能 去掉)
+ab -n 20 -c 1 -r http://127.0.0.1:8080/
+再用 telnet 打开第 21 个链接，服务器拒绝该请求。&lt;/p&gt;
+
+&lt;p&gt;telnet 127.0.0.1 8080
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is &amp;#39;^]&amp;#39;.
+Connection closed by foreign host.&lt;/p&gt;
+</description>
+        <pubDate>Wed, 24 Dec 2014 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/devops/2014/12/24/Haproxy%E4%B8%8E%E5%AE%89%E5%85%A8.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/devops/2014/12/24/Haproxy%E4%B8%8E%E5%AE%89%E5%85%A8.html</guid>
+        
+        
+        <category>devops</category>
         
       </item>
     
