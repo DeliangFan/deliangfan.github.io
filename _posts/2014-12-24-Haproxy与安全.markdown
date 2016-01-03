@@ -32,13 +32,13 @@ https
 #TCP syn flood attacks
 
 通过向服务器发送大量的 TCP syn 分组，恶意用户实现了了 TCP syn flood 攻击，幸运的是，简单的配置内核网络参数即可防止这种攻击。 
-/etc/sysctl.conf
 
-```
-//Protection SYN flood
+```bash
+/etc/sysctl.conf
 net.ipv4.tcp_syncookies = 1
 net.ipv4.conf.all.rp_filter = 1
 net.ipv4.tcp_max_syn_backlog = 1024 
+
 sysctl -p
 ```
 ----------
@@ -76,8 +76,7 @@ backend bk_web
 
 通过 telnet 登录验证结果
 
-
-```
+```bash
 telnet 127.0.0.1 8080
 Trying 127.0.0.1...
 Connected to 127.0.0.1.
@@ -131,11 +130,11 @@ backend bk_web
   server srv2 192.168.1.3:80 check cookie srv2 maxconn 100
 ```
 
-注：若某些用户在同一个私有网段通过 NAT 访问网站，这样的配置存在不合理之处，最好把 NAT 处的公网地址添加到 whitelist.lst 文件中。
+**注**：若某些用户在同一个私有网段通过 NAT 访问网站，这样的配置存在不合理之处，最好把 NAT 处的公网地址添加到 whitelist.lst 文件中。
 
 利用 apache 测试工具做验证，和服务器一直保持建立 10 个链接。
 
-```
+```bash
 ab -n 50000000 -c 10 http://127.0.0.1:8080/
 用 telnet 打开第 11 个链接，服务器拒绝该链接。
 telnet 127.0.0.1 8080
@@ -147,10 +146,12 @@ Connection closed by foreign host.
 ----------
 
 #Limiting the connection rate per user
-  仅仅限制单个用户的并发链接数并意味着万事大吉，如果用户在短时间内向服务器不断的发送建立和关闭链接请求，也会耗费服务器资源，影响服务器端的性能，因此需要控制单个用户的访问速率。
-  通常情况下，考虑到用户通过浏览器一般会建立 5-7 条 TCP 链接，我们可以认为普通用户在 3 秒内不应该建立超过 20 条链接。
-  
-  defaults
+
+仅仅限制单个用户的并发链接数并意味着万事大吉，如果用户在短时间内向服务器不断的发送建立和关闭链接请求，也会耗费服务器资源，影响服务器端的性能，因此需要控制单个用户的访问速率。
+通常情况下，考虑到用户通过浏览器一般会建立 5-7 条 TCP 链接，我们可以认为普通用户在 3 秒内不应该建立超过 20 条链接。
+
+```
+defaults
   option http-server-close
   mode http
   timeout http-request 5s
@@ -186,14 +187,19 @@ backend bk_web
   cookie MYSRV insert indirect nocache
   server srv1 192.168.1.2:80 check cookie srv1 maxconn 100
   server srv2 192.168.1.3:80 check cookie srv2 maxconn 100
+```
   
-  注：若某些用户在同一个私有网段通过 NAT 访问网站，这样的配置存在不合理之处，最好把 NAT 处的公网地址添加到 whitelist.lst 文件中。
-测试，采用 ab 打开 20 个链接。(本次测试把 限制单个用户并发数功能 去掉)
-ab -n 20 -c 1 -r http://127.0.0.1:8080/
-再用 telnet 打开第 21 个链接，服务器拒绝该请求。
 
+测试步骤如下：
+
+1. 采用 ab 打开 20 个链接。(本次测试把 限制单个用户并发数功能 去掉)
+2. ab -n 20 -c 1 -r http://127.0.0.1:8080/
+3. 再用 telnet 打开第 21 个链接，服务器拒绝该请求。
+
+```bash
 telnet 127.0.0.1 8080
 Trying 127.0.0.1...
 Connected to 127.0.0.1.
 Escape character is '^]'.
 Connection closed by foreign host.
+```

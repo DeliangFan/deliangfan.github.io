@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "一次批量重启引发的网络故障"
+title:  "一次批量重启引发的Neutron网络故障"
 categories: OpenStack
 ---
 ------------------

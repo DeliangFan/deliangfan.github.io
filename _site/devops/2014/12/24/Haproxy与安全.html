@@ -93,12 +93,12 @@
 
 <h1 id="tcp-syn-flood-attacks">TCP syn flood attacks</h1>
 
-<p>通过向服务器发送大量的 TCP syn 分组，恶意用户实现了了 TCP syn flood 攻击，幸运的是，简单的配置内核网络参数即可防止这种攻击。 
-/etc/sysctl.conf</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">//Protection SYN flood
-net.ipv4.tcp_syncookies = 1
-net.ipv4.conf.all.rp_filter = 1
-net.ipv4.tcp_max_syn_backlog = 1024 
+<p>通过向服务器发送大量的 TCP syn 分组，恶意用户实现了了 TCP syn flood 攻击，幸运的是，简单的配置内核网络参数即可防止这种攻击。 </p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">/etc/sysctl.conf
+net.ipv4.tcp_syncookies <span class="o">=</span> 1
+net.ipv4.conf.all.rp_filter <span class="o">=</span> 1
+net.ipv4.tcp_max_syn_backlog <span class="o">=</span> <span class="m">1024</span> 
+
 sysctl -p
 </code></pre></div>
 <hr>
@@ -133,16 +133,16 @@ backend bk_web
   server srv2 192.168.1.3:80 check cookie srv2 maxconn 100
 </code></pre></div>
 <p>通过 telnet 登录验证结果</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">telnet 127.0.0.1 8080
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">telnet 127.0.0.1 8080
 Trying 127.0.0.1...
 Connected to 127.0.0.1.
-Escape character is &#39;^]&#39;.
-HTTP/1.0 408 Request Time-out
+Escape character is <span class="s1">&#39;^]&#39;</span>.
+HTTP/1.0 <span class="m">408</span> Request Time-out
 Cache-Control: no-cache
 Connection: close
 Content-Type: text/html
-408 Request Time-out
-Your browser didn&#39;t send a complete request in time.
+<span class="m">408</span> Request Time-out
+Your browser didn<span class="err">&#39;</span>t send a <span class="nb">complete </span>request in time.
 Connection closed by foreign host.
 </code></pre></div>
 <hr>
@@ -182,15 +182,15 @@ backend bk_web
   server srv1 192.168.1.2:80 check cookie srv1 maxconn 100
   server srv2 192.168.1.3:80 check cookie srv2 maxconn 100
 </code></pre></div>
-<p>注：若某些用户在同一个私有网段通过 NAT 访问网站，这样的配置存在不合理之处，最好把 NAT 处的公网地址添加到 whitelist.lst 文件中。</p>
+<p><strong>注</strong>：若某些用户在同一个私有网段通过 NAT 访问网站，这样的配置存在不合理之处，最好把 NAT 处的公网地址添加到 whitelist.lst 文件中。</p>
 
 <p>利用 apache 测试工具做验证，和服务器一直保持建立 10 个链接。</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">ab -n 50000000 -c 10 http://127.0.0.1:8080/
-用 telnet 打开第 11 个链接，服务器拒绝该链接。
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">ab -n <span class="m">50000000</span> -c <span class="m">10</span> http://127.0.0.1:8080/
+用 telnet 打开第 <span class="m">11</span> 个链接，服务器拒绝该链接。
 telnet 127.0.0.1 8080
 Trying 127.0.0.1...
 Connected to 127.0.0.1.
-Escape character is &#39;^]&#39;.
+Escape character is <span class="s1">&#39;^]&#39;</span>.
 Connection closed by foreign host.
 </code></pre></div>
 <hr>
@@ -198,56 +198,57 @@ Connection closed by foreign host.
 <h1 id="limiting-the-connection-rate-per-user">Limiting the connection rate per user</h1>
 
 <p>仅仅限制单个用户的并发链接数并意味着万事大吉，如果用户在短时间内向服务器不断的发送建立和关闭链接请求，也会耗费服务器资源，影响服务器端的性能，因此需要控制单个用户的访问速率。
-  通常情况下，考虑到用户通过浏览器一般会建立 5-7 条 TCP 链接，我们可以认为普通用户在 3 秒内不应该建立超过 20 条链接。</p>
-
-<p>defaults
+通常情况下，考虑到用户通过浏览器一般会建立 5-7 条 TCP 链接，我们可以认为普通用户在 3 秒内不应该建立超过 20 条链接。</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">defaults
   option http-server-close
   mode http
   timeout http-request 5s
   timeout connect 5s
   timeout server 10s
-  timeout client 30s</p>
+  timeout client 30s
 
-<p>listen stats
+listen stats
   bind 0.0.0.0:8880
   stats enable
   stats hide-version
   stats uri     /
   stats realm   HAProxy\ Statistics
-  stats auth    admin:admin</p>
+  stats auth    admin:admin
 
-<p>frontend ft_web
-  bind 0.0.0.0:8080</p>
+frontend ft_web
+  bind 0.0.0.0:8080
 
-<p># Table definition<br>
-  stick-table type ip size 100k expire 30s store conn<u>cur,<span style="color:#ff0000;">conn</u>rate(3s)</span></p>
+  # Table definition  
+  stick-table type ip size 100k expire 30s store conn_cur,&lt;span style=&quot;color:#ff0000;&quot;&gt;conn_rate(3s)&lt;/span&gt;
 
-<p># Allow clean known IPs to bypass the filter
+  # Allow clean known IPs to bypass the filter
   tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst }
   # Shut the new connection as long as the client has already 10 opened or rate more than 20
-  tcp-request connection reject if { src<u>conn</u>cur ge 10 } <span style="color:#ff0000;">|| { src<u>conn</u>rate ge 20}</span></p>
+  tcp-request connection reject if { src_conn_cur ge 10 } &lt;span style=&quot;color:#ff0000;&quot;&gt;|| { src_conn_rate ge 20}&lt;/span&gt;
 
-<p>tcp-request connection track-sc1 src</p>
+  tcp-request connection track-sc1 src
 
-<p>default<u>backend bk</u>web</p>
+  default_backend bk_web
 
-<p>backend bk_web
+backend bk_web
   balance roundrobin
   cookie MYSRV insert indirect nocache
   server srv1 192.168.1.2:80 check cookie srv1 maxconn 100
-  server srv2 192.168.1.3:80 check cookie srv2 maxconn 100</p>
+  server srv2 192.168.1.3:80 check cookie srv2 maxconn 100
+</code></pre></div>
+<p>测试步骤如下：</p>
 
-<p>注：若某些用户在同一个私有网段通过 NAT 访问网站，这样的配置存在不合理之处，最好把 NAT 处的公网地址添加到 whitelist.lst 文件中。
-测试，采用 ab 打开 20 个链接。(本次测试把 限制单个用户并发数功能 去掉)
-ab -n 20 -c 1 -r http://127.0.0.1:8080/
-再用 telnet 打开第 21 个链接，服务器拒绝该请求。</p>
-
-<p>telnet 127.0.0.1 8080
+<ol>
+<li>采用 ab 打开 20 个链接。(本次测试把 限制单个用户并发数功能 去掉)</li>
+<li>ab -n 20 -c 1 -r http://127.0.0.1:8080/</li>
+<li>再用 telnet 打开第 21 个链接，服务器拒绝该请求。</li>
+</ol>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">telnet 127.0.0.1 8080
 Trying 127.0.0.1...
 Connected to 127.0.0.1.
-Escape character is &#39;^]&#39;.
-Connection closed by foreign host.</p>
-
+Escape character is <span class="s1">&#39;^]&#39;</span>.
+Connection closed by foreign host.
+</code></pre></div>
   </div>
 
 </article>
