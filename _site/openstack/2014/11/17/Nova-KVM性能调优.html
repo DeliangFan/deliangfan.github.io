@@ -141,13 +141,12 @@
 
 <h1 id="3-memory-tuning">3. Memory Tuning</h1>
 
-<ol>
-<li><p>关于 zone<u>reclaim</u>mode，设置为 disable 。</p></li>
-<li><p>关于 swappiness 参数，若 CPU macro-architecture 非 Intel Nehalem 架构，无需要修改优化。</p></li>
-<li><p>关闭 KVM 内存共享：When KSM merges across nodes on a NUMA host with multiple guest virtual machines, guests and CPUs from more distant nodes can suffer a significant increase of access latency to the merged KSM page[1].
-Disable KSM 方式有两种： 
-1) 禁止某个 Guest 与其它 Guest 共享内存，XML 文件可配置为:</p></li>
-</ol>
+<h2 id="3-1-disable-ksm">3.1. Disable KSM</h2>
+
+<p>When KSM merges across nodes on a NUMA host with multiple guest virtual machines, guests and CPUs from more distant nodes can suffer a significant increase of access latency to the merged <a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html">KSM page</a>.
+Disable KSM 方式有两种：</p>
+
+<p>1) 禁止某个 Guest 与其它 Guest 共享内存，XML 文件可配置为:</p>
 <div class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="nt">&lt;memoryBacking&gt;</span>
     <span class="nt">&lt;nosharepages/&gt;</span>
 <span class="nt">&lt;/memoryBacking&gt;</span>
@@ -156,36 +155,55 @@ Disable KSM 方式有两种：
 <div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">echo </span><span class="m">0</span> &gt; /sys/kernel/mm/ksm/pages_shared
 <span class="nb">echo </span><span class="m">0</span> &gt; /sys/kernel/mm/ksm/pages_sharing
 </code></pre></div>
-<ol>
-<li>打开透明大页：KVM guests can be deployed with huge page memory support in order to improve performance by increasing CPU cache hits against the Transaction Lookaside Buffer (TLB)[1].<br>
-打开透明大页方式有两种：
-1) 允许某个 Guest 开启透明大页</li>
-</ol>
+<h2 id="3-2-open-huge-page">3.2 Open huge page</h2>
+
+<p>KVM guests can be deployed with huge page memory support in order to <a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html">improve performance by increasing CPU cache hits against the Transaction Lookaside Buffer (TLB)</a>。打开透明大页方式有两种：</p>
+
+<p>1) 允许某个 Guest 开启透明大页</p>
 <div class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="nt">&lt;memoryBacking&gt;</span>
    <span class="nt">&lt;hugepages/&gt;</span>
 <span class="nt">&lt;/memoryBacking&gt;</span>
-</code></pre></div><div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">echo</span> <span class="mi">25000</span> <span class="o">&gt;</span> <span class="o">/</span><span class="n">pro</span> <span class="n">c</span><span class="o">/</span><span class="n">sys</span><span class="o">/</span><span class="n">vm</span><span class="o">/</span><span class="n">nr_hugepages</span>
-<span class="n">mount</span> <span class="o">-</span><span class="n">t</span> <span class="n">hugetlbfs</span> <span class="n">hugetlbfs</span> <span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">hugepages</span>
-<span class="n">service</span> <span class="n">libvirtd</span> <span class="n">restart</span>
+</code></pre></div><div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">echo </span><span class="m">25000</span> &gt; /pro c/sys/vm/nr_hugepages
+mount -t hugetlbfs hugetlbfs /dev/hugepages
+service libvirtd restart
 </code></pre></div>
 <p>2) 允许 Host 中所有 Guest 开启透明大页</p>
 <div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">echo </span>always &gt; /sys/kernel/mm/transparent_hugepage/enabled
 <span class="nb">echo </span>never &gt; /sys/kernel/mm/transparent_hugepage/defrag
 <span class="nb">echo </span><span class="m">0</span> &gt; /sys/kernel/mm/transparent_hugepage/khugepaged/defrag
 </code></pre></div>
+<hr>
+
 <h1 id="4-network-io-tuning">4. Network IO Tuning</h1>
 
-<h2 id="4-1-开启-vhost_net-模式-3-。">4.1 开启 vhost_net 模式[3]。</h2>
+<h2 id="4-1-enable-vhost_net">4.1 Enable vhost_net</h2>
 
+<p><a href="http://www.linux-kvm.org/page/UsingVhost">VhostNet</a> provides better latency (10% less than e1000 on my system) and greater throughput (8x the normal virtio, around 7~8 Gigabits/sec here) for network.</p>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">modprobe vhost-net
+</code></pre></div>
 <h2 id="4-2-mutil-queue">4.2 Mutil-queue</h2>
 
+<p>对虚拟机而言，virtio-net 不能并行的处理网络包，当网络流量很大时，单个 vCPU 有限的处理能力将直接影响虚拟机的网络流量，所以可以通过<a href="http://www.linux-kvm.org/page/Multiqueue">多队列的 virtio-net</a> 提高虚拟机网络吞吐量，<a href="https://blueprints.launchpad.net/nova/+spec/libvirt-virtio-net-multiqueue">该特性</a>已合入 L 版本。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/virt-net%20mutil-queue.jpg" alt="Multi-queue"></p>
+<div class="highlight"><pre><code class="language-xml" data-lang="xml">  <span class="nt">&lt;devices&gt;</span>
+    <span class="nt">&lt;interface</span> <span class="na">type=</span><span class="s">&#39;network&#39;</span><span class="nt">&gt;</span>
+      ...
+      <span class="nt">&lt;driver</span> <span class="na">name=</span><span class="s">&#39;vhost&#39;</span> <span class="na">txmode=</span><span class="s">&#39;iothread&#39;</span> <span class="na">ioeventfd=</span><span class="s">&#39;on&#39;</span> <span class="na">event_idx=</span><span class="s">&#39;off&#39;</span> <span class="na">queues=</span><span class="s">&#39;N&#39;</span><span class="nt">/&gt;</span>  #queues=N
+    <span class="nt">&lt;/interface&gt;</span>
+  <span class="nt">&lt;/devices&gt;</span>
+</code></pre></div>
 <h1 id="5-一次调优的悲剧">5. 一次调优的悲剧</h1>
+
+<p>Libvirt <a href="https://libvirt.org/formatdomain.html#elementsCPU">CPU host passthrough</a>支持把宿主机的 CPU 指令集透传给虚拟机，如此虚拟机尽可能的利用宿主机的指令集，从而提升效率。事实上，更改后的短短的三天时间里，有多台宿主机莫名其妙的 kernel panic，虽然未能查明具体原因，但是禁止该配置后，宿主机和虚拟机稳定如初。</p>
 
 <h1 id="reference">Reference</h1>
 
-<p>1.<a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html">Red Hat Enterprise Linux 6 Virtualization Tuning Optimization Guide</a>
-2.<a href="https://www-01.ibm.com/support/knowledgecenter/api/content/nl/en-us/linuxonibm/liaat/liaattuning_pdf.pdf">Tuning KVM for performance</a>
-3.<a href="https://www.ibm.com/developerworks/cn/cloud/library/1408_zhangxl_openstack/">网易 openstack 部署运维实战</a></p>
+<ol>
+<li><a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html">Red Hat Enterprise Linux 6 Virtualization Tuning Optimization Guide</a></li>
+<li><a href="https://www-01.ibm.com/support/knowledgecenter/api/content/nl/en-us/linuxonibm/liaat/liaattuning_pdf.pdf">Tuning KVM for performance</a></li>
+<li><a href="https://www.ibm.com/developerworks/cn/cloud/library/1408_zhangxl_openstack/">网易 openstack 部署运维实战</a></li>
+</ol>
 
   </div>
 

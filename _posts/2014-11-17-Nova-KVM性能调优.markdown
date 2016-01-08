@@ -84,28 +84,32 @@ Qcow2 格式发展到现在，[已经有和 Raw 相近的性能](http://www.linu
 
 #3. Memory Tuning
 
-1. 关于 zone_reclaim_mode，设置为 disable 。
 
-2. 关于 swappiness 参数，若 CPU macro-architecture 非 Intel Nehalem 架构，无需要修改优化。
+##3.1. Disable KSM
 
-3. 关闭 KVM 内存共享：When KSM merges across nodes on a NUMA host with multiple guest virtual machines, guests and CPUs from more distant nodes can suffer a significant increase of access latency to the merged KSM page[1].
-Disable KSM 方式有两种： 
-  1) 禁止某个 Guest 与其它 Guest 共享内存，XML 文件可配置为:
+When KSM merges across nodes on a NUMA host with multiple guest virtual machines, guests and CPUs from more distant nodes can suffer a significant increase of access latency to the merged [KSM page](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html).
+Disable KSM 方式有两种：
+
+1) 禁止某个 Guest 与其它 Guest 共享内存，XML 文件可配置为:
 
 ```xml
 <memoryBacking>
     <nosharepages/>
 </memoryBacking>
 ```
- 2) 禁止所有 Guest 直接共享内存，Host 配置为:
+
+2) 禁止所有 Guest 直接共享内存，Host 配置为:
 
 ```bash
 echo 0 > /sys/kernel/mm/ksm/pages_shared
 echo 0 > /sys/kernel/mm/ksm/pages_sharing
 ```
-4. 打开透明大页：KVM guests can be deployed with huge page memory support in order to improve performance by increasing CPU cache hits against the Transaction Lookaside Buffer (TLB)[1].  
-打开透明大页方式有两种：
-  1) 允许某个 Guest 开启透明大页
+
+##3.2 Open huge page
+
+KVM guests can be deployed with huge page memory support in order to [improve performance by increasing CPU cache hits against the Transaction Lookaside Buffer (TLB)](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html)。打开透明大页方式有两种：
+
+1) 允许某个 Guest 开启透明大页
 
 ```xml
 <memoryBacking>
@@ -113,26 +117,52 @@ echo 0 > /sys/kernel/mm/ksm/pages_sharing
 </memoryBacking>
 ```
 
-```python
+```bash
 echo 25000 > /pro c/sys/vm/nr_hugepages
 mount -t hugetlbfs hugetlbfs /dev/hugepages
 service libvirtd restart
 ```
- 2) 允许 Host 中所有 Guest 开启透明大页
+
+2) 允许 Host 中所有 Guest 开启透明大页
 
 ```bash
 echo always > /sys/kernel/mm/transparent_hugepage/enabled
 echo never > /sys/kernel/mm/transparent_hugepage/defrag
 echo 0 > /sys/kernel/mm/transparent_hugepage/khugepaged/defrag
 ```
+
+----------
+
+
 #4. Network IO Tuning
-##4.1 开启 vhost_net 模式[3]。
+##4.1 Enable vhost_net
+[VhostNet](http://www.linux-kvm.org/page/UsingVhost) provides better latency (10% less than e1000 on my system) and greater throughput (8x the normal virtio, around 7~8 Gigabits/sec here) for network.
+
+```bash
+modprobe vhost-net
+```
+
 ##4.2 Mutil-queue
+
+对虚拟机而言，virtio-net 不能并行的处理网络包，当网络流量很大时，单个 vCPU 有限的处理能力将直接影响虚拟机的网络流量，所以可以通过[多队列的 virtio-net](http://www.linux-kvm.org/page/Multiqueue) 提高虚拟机网络吞吐量，[该特性](https://blueprints.launchpad.net/nova/+spec/libvirt-virtio-net-multiqueue)已合入 L 版本。
+
+![Multi-queue](http://7xp2eu.com1.z0.glb.clouddn.com/virt-net%20mutil-queue.jpg)
+
+```xml
+  <devices>
+    <interface type='network'>
+      ...
+      <driver name='vhost' txmode='iothread' ioeventfd='on' event_idx='off' queues='N'/>  #queues=N
+    </interface>
+  </devices>
+```
 
 #5. 一次调优的悲剧
 
+Libvirt [CPU host passthrough](https://libvirt.org/formatdomain.html#elementsCPU)支持把宿主机的 CPU 指令集透传给虚拟机，如此虚拟机尽可能的利用宿主机的指令集，从而提升效率。事实上，更改后的短短的三天时间里，有多台宿主机莫名其妙的 kernel panic，虽然未能查明具体原因，但是禁止该配置后，宿主机和虚拟机稳定如初。
 
 #Reference
-1.[Red Hat Enterprise Linux 6 Virtualization Tuning Optimization Guide](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html)
-2.[Tuning KVM for performance](https://www-01.ibm.com/support/knowledgecenter/api/content/nl/en-us/linuxonibm/liaat/liaattuning_pdf.pdf)
-3.[网易 openstack 部署运维实战](https://www.ibm.com/developerworks/cn/cloud/library/1408_zhangxl_openstack/)
+
+1. [Red Hat Enterprise Linux 6 Virtualization Tuning Optimization Guide](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html)
+2. [Tuning KVM for performance](https://www-01.ibm.com/support/knowledgecenter/api/content/nl/en-us/linuxonibm/liaat/liaattuning_pdf.pdf)
+3. [网易 openstack 部署运维实战](https://www.ibm.com/developerworks/cn/cloud/library/1408_zhangxl_openstack/)

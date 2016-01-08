@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 08 Jan 2016 18:14:43 +0800</pubDate>
-    <lastBuildDate>Fri, 08 Jan 2016 18:14:43 +0800</lastBuildDate>
+    <pubDate>Fri, 08 Jan 2016 18:59:16 +0800</pubDate>
+    <lastBuildDate>Fri, 08 Jan 2016 18:59:16 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -951,13 +951,12 @@ frontend nova-api-cluster
 
 &lt;h1 id=&quot;3-memory-tuning&quot;&gt;3. Memory Tuning&lt;/h1&gt;
 
-&lt;ol&gt;
-&lt;li&gt;&lt;p&gt;关于 zone&lt;u&gt;reclaim&lt;/u&gt;mode，设置为 disable 。&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;关于 swappiness 参数，若 CPU macro-architecture 非 Intel Nehalem 架构，无需要修改优化。&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;关闭 KVM 内存共享：When KSM merges across nodes on a NUMA host with multiple guest virtual machines, guests and CPUs from more distant nodes can suffer a significant increase of access latency to the merged KSM page[1].
-Disable KSM 方式有两种： 
-1) 禁止某个 Guest 与其它 Guest 共享内存，XML 文件可配置为:&lt;/p&gt;&lt;/li&gt;
-&lt;/ol&gt;
+&lt;h2 id=&quot;3-1-disable-ksm&quot;&gt;3.1. Disable KSM&lt;/h2&gt;
+
+&lt;p&gt;When KSM merges across nodes on a NUMA host with multiple guest virtual machines, guests and CPUs from more distant nodes can suffer a significant increase of access latency to the merged &lt;a href=&quot;https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html&quot;&gt;KSM page&lt;/a&gt;.
+Disable KSM 方式有两种：&lt;/p&gt;
+
+&lt;p&gt;1) 禁止某个 Guest 与其它 Guest 共享内存，XML 文件可配置为:&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;memoryBacking&amp;gt;&lt;/span&gt;
     &lt;span class=&quot;nt&quot;&gt;&amp;lt;nosharepages/&amp;gt;&lt;/span&gt;
 &lt;span class=&quot;nt&quot;&gt;&amp;lt;/memoryBacking&amp;gt;&lt;/span&gt;
@@ -966,36 +965,55 @@ Disable KSM 方式有两种：
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; &amp;gt; /sys/kernel/mm/ksm/pages_shared
 &lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; &amp;gt; /sys/kernel/mm/ksm/pages_sharing
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;ol&gt;
-&lt;li&gt;打开透明大页：KVM guests can be deployed with huge page memory support in order to improve performance by increasing CPU cache hits against the Transaction Lookaside Buffer (TLB)[1].&lt;br&gt;
-打开透明大页方式有两种：
-1) 允许某个 Guest 开启透明大页&lt;/li&gt;
-&lt;/ol&gt;
+&lt;h2 id=&quot;3-2-open-huge-page&quot;&gt;3.2 Open huge page&lt;/h2&gt;
+
+&lt;p&gt;KVM guests can be deployed with huge page memory support in order to &lt;a href=&quot;https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html&quot;&gt;improve performance by increasing CPU cache hits against the Transaction Lookaside Buffer (TLB)&lt;/a&gt;。打开透明大页方式有两种：&lt;/p&gt;
+
+&lt;p&gt;1) 允许某个 Guest 开启透明大页&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;memoryBacking&amp;gt;&lt;/span&gt;
    &lt;span class=&quot;nt&quot;&gt;&amp;lt;hugepages/&amp;gt;&lt;/span&gt;
 &lt;span class=&quot;nt&quot;&gt;&amp;lt;/memoryBacking&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;n&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;25000&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pro&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sys&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vm&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nr_hugepages&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;mount&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;t&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;hugetlbfs&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;hugetlbfs&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dev&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;hugepages&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;service&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;libvirtd&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;restart&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;25000&lt;/span&gt; &amp;gt; /pro c/sys/vm/nr_hugepages
+mount -t hugetlbfs hugetlbfs /dev/hugepages
+service libvirtd restart
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;2) 允许 Host 中所有 Guest 开启透明大页&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;always &amp;gt; /sys/kernel/mm/transparent_hugepage/enabled
 &lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;never &amp;gt; /sys/kernel/mm/transparent_hugepage/defrag
 &lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; &amp;gt; /sys/kernel/mm/transparent_hugepage/khugepaged/defrag
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;hr&gt;
+
 &lt;h1 id=&quot;4-network-io-tuning&quot;&gt;4. Network IO Tuning&lt;/h1&gt;
 
-&lt;h2 id=&quot;4-1-开启-vhost_net-模式-3-。&quot;&gt;4.1 开启 vhost_net 模式[3]。&lt;/h2&gt;
+&lt;h2 id=&quot;4-1-enable-vhost_net&quot;&gt;4.1 Enable vhost_net&lt;/h2&gt;
 
+&lt;p&gt;&lt;a href=&quot;http://www.linux-kvm.org/page/UsingVhost&quot;&gt;VhostNet&lt;/a&gt; provides better latency (10% less than e1000 on my system) and greater throughput (8x the normal virtio, around 7~8 Gigabits/sec here) for network.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;modprobe vhost-net
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;h2 id=&quot;4-2-mutil-queue&quot;&gt;4.2 Mutil-queue&lt;/h2&gt;
 
+&lt;p&gt;对虚拟机而言，virtio-net 不能并行的处理网络包，当网络流量很大时，单个 vCPU 有限的处理能力将直接影响虚拟机的网络流量，所以可以通过&lt;a href=&quot;http://www.linux-kvm.org/page/Multiqueue&quot;&gt;多队列的 virtio-net&lt;/a&gt; 提高虚拟机网络吞吐量，&lt;a href=&quot;https://blueprints.launchpad.net/nova/+spec/libvirt-virtio-net-multiqueue&quot;&gt;该特性&lt;/a&gt;已合入 L 版本。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/virt-net%20mutil-queue.jpg&quot; alt=&quot;Multi-queue&quot;&gt;&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;  &lt;span class=&quot;nt&quot;&gt;&amp;lt;devices&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;interface&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;network&amp;#39;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+      ...
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;driver&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;vhost&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;txmode=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;iothread&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;ioeventfd=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;on&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;event_idx=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;off&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;queues=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;N&amp;#39;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;  #queues=N
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/interface&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/devices&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;h1 id=&quot;5-一次调优的悲剧&quot;&gt;5. 一次调优的悲剧&lt;/h1&gt;
+
+&lt;p&gt;Libvirt &lt;a href=&quot;https://libvirt.org/formatdomain.html#elementsCPU&quot;&gt;CPU host passthrough&lt;/a&gt;支持把宿主机的 CPU 指令集透传给虚拟机，如此虚拟机尽可能的利用宿主机的指令集，从而提升效率。事实上，更改后的短短的三天时间里，有多台宿主机莫名其妙的 kernel panic，虽然未能查明具体原因，但是禁止该配置后，宿主机和虚拟机稳定如初。&lt;/p&gt;
 
 &lt;h1 id=&quot;reference&quot;&gt;Reference&lt;/h1&gt;
 
-&lt;p&gt;1.&lt;a href=&quot;https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html&quot;&gt;Red Hat Enterprise Linux 6 Virtualization Tuning Optimization Guide&lt;/a&gt;
-2.&lt;a href=&quot;https://www-01.ibm.com/support/knowledgecenter/api/content/nl/en-us/linuxonibm/liaat/liaattuning_pdf.pdf&quot;&gt;Tuning KVM for performance&lt;/a&gt;
-3.&lt;a href=&quot;https://www.ibm.com/developerworks/cn/cloud/library/1408_zhangxl_openstack/&quot;&gt;网易 openstack 部署运维实战&lt;/a&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;a href=&quot;https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html&quot;&gt;Red Hat Enterprise Linux 6 Virtualization Tuning Optimization Guide&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://www-01.ibm.com/support/knowledgecenter/api/content/nl/en-us/linuxonibm/liaat/liaattuning_pdf.pdf&quot;&gt;Tuning KVM for performance&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://www.ibm.com/developerworks/cn/cloud/library/1408_zhangxl_openstack/&quot;&gt;网易 openstack 部署运维实战&lt;/a&gt;&lt;/li&gt;
+&lt;/ol&gt;
 </description>
         <pubDate>Mon, 17 Nov 2014 00:00:00 +0800</pubDate>
         <link>http://wsfdl.com/openstack/2014/11/17/Nova-KVM%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98.html</link>
