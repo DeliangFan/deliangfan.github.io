@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Haproxy与安全</title>
+  <title>Haproxy与OpenStack-API安全</title>
   <meta name="description" content="">
 
   <link rel="stylesheet" href="/css/main.css">
@@ -57,41 +57,92 @@
         <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title" itemprop="name headline">Haproxy与安全</h1>
+    <h1 class="post-title" itemprop="name headline">Haproxy与OpenStack-API安全</h1>
     <p class="post-meta"><time datetime="2014-12-24T00:00:00+08:00" itemprop="datePublished">Dec 24, 2014</time></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
     <hr>
 
-<p><a href="http://docs.openstack.org/ha-guide/controller-ha-haproxy.html">Haproxy</a>
-作为 load balancer, Happroxy 常常作为服务器的前端，向外界用户提供服务的入口，如果能在入口处处理安全相关问题，将极大简化后端的设计。事实上，Haproxy 不仅仅是一款开源出色的 load balancer（四层和七层），而且在安全上也相当出色。它配合内核 IP/TCP 协议栈，能够较好的抵抗 DOS, DDOS 攻击，还能通过限制单个 IP 的连接数和请求速率等，防止用户的恶意行为。</p>
+<p><a href="http://docs.openstack.org/ha-guide/controller-ha-haproxy.html">Haproxy</a> 作为优秀的软件负载均衡器，常常作为服务的前端，为外界提供服务的入口，同时隐藏服务端内部的细节，通过负载均衡提高服务端的并发量。随着 Haproxy 的发展，它的安全性也不断的提升。</p>
 
 <ul>
-<li>保证 High avaiability</li>
-<li>提供 Load balance</li>
-<li>提供安全</li>
+<li>作为负载均衡器，提高服务端的并发处理能力</li>
+<li>保证服务高可靠性</li>
+<li>增强安全性</li>
 </ul>
 
-<p>本文着重关注 Haproxy 安全领域，Haproxy 能够保证以下安全</p>
+<p>OpenStack 社区在 <a href="http://docs.openstack.org/ha-guide/intro-ha-arch-keepalived.html">High Availability</a> (高可靠) 推荐 Controller 端部署 Haproxy 和 Keepalived，前者负责转发外部 http 请求到正常的 OpenStack API 节点，后者通过 VRRP 协议管理 VIP 的漂移，如下图：</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/Controller%20HA.png?imageView2/1/w/800/q/100" alt="Controller HA"></p>
+
+<p>本文重点关注其安全特性，首先，它作为服务的唯一入口，对外隐藏了 OpenStack API 服务器的细节；其次，支持 HTTPS，保证客户端和服务端通信的安全性；再次，它配合内核 IP/TCP 协议栈，能够较好的抵抗 DDOS 攻击，还能限制单个 IP 的连接数和请求速率等，防止用户的恶意行为。</p>
 
 <ul>
-<li>支持 ssl, 提供 HTTPS</li>
-<li>通过配置 ACL 在一定程度上防止 DDOS 攻击 </li>
+<li>作为服务端唯一入口，隐藏服务端的细节</li>
+<li>支持 SSL/TSL, 提供 HTTPS</li>
+<li>通过配置 ACL，在一定程度上防止 DDOS 攻击 </li>
 </ul>
 
-<p>Haproxy
-配置参数多的一塌糊涂，因而功能丰富，灵活多样，本文抛砖引玉，更多的安全功能请详见官网手册。</p>
+<p>Haproxy 配置参数多的一塌糊涂，功能丰富，灵活多样，本文抛砖引玉，在文章末尾给出 nova-api 的配置样例，更多的安全和其它功能请详见<a href="https://cbonte.github.io/haproxy-dconv/index.html">官网手册</a>。</p>
 
 <hr>
 
 <h1 id="https">HTTPS</h1>
 
-<p>https</p>
+<p>1.5.0 版本的 Release Notes 有下面这么一行话，意味着从该版本开始， haproxy 支持由 HTTPS 加密客户端和服务端的通信消息，避免明文传输。</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">Update [2012/09/11] : native SSL support was implemented in 1.5-dev12.
+</code></pre></div>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/https-http.png?imageView2/1/w/800/q/100" alt="https-http"></p>
 
+<p><a href="https://www.digitalocean.com/community/tutorials/how-to-implement-ssl-termination-with-haproxy-on-ubuntu-14-04">how-to-implement-ssl-termination-with-haproxy</a> 详细的说明如何配置 HTTPS，主要包括证书 和 SSL 相关配置项。证书可以到 CA 机构购买，也可用 openssl 自制证书，甚至可用 <a href="http://docs.openstack.org/developer/keystone/configuration.html#ssl">keystone 生成证书</a>。</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">[eventlet_server_ssl]
+enable = True
+certfile = &lt;path to keystone.pem&gt;
+keyfile = &lt;path to keystonekey.pem&gt;
+ca_certs = &lt;path to ca.pem&gt;
+cert_required = False
+
+[ssl]
+ca_key = &lt;path to cakey.pem&gt;
+key_size = 1024
+valid_days=3650
+cert_subject=/C=US/ST=Unset/L=Unset/O=Unset/CN=localhost
+
+keystone-manage ssl_setup
+</code></pre></div>
+<p>配置样例如下：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">global
+    ...
+
+defaults
+    ...
+
+frontend ft_web
+    bind &lt;Virtual IP&gt;:443 ssl crt /etc/haproxy/https.pem #证书
+    reqadd X-Forwarded-Proto:\ https #相关配置
+    default_backend bk_web
+
+backend bk_web
+    balance roundrobin
+    redirect scheme https if !{ ssl_fc } #相关配置
+    server http-server-01 private_IP1:8080 check inter 10s
+    server http-server-02 private_IP2:8080 check inter 10s
+</code></pre></div>
 <hr>
 
-<h1 id="tcp-syn-flood-attacks">TCP syn flood attacks</h1>
+<h1 id="ddos">DDOS</h1>
+
+<p>Haproxy 可在一定程度上提高服务端抗击 DDOS 攻击能力，DDOS 主要有 UDP，TCP sync flood，Http slowloris attack 等攻击手段，<a href="http://blog.haproxy.com/2012/02/27/use-a-load-balancer-as-a-first-row-of-defense-against-ddos/">use-a-load-balancer-as-a-first-row-of-defense-against-ddos</a> 详细的阐述了配置过程，主要表现在以下几个方面：</p>
+
+<ul>
+<li>TCP syn flood attacks</li>
+<li>Slowloris like attacks</li>
+<li>Limiting the number of connections per users</li>
+<li>Limiting the connection rate per user</li>
+</ul>
+
+<h2 id="tcp-syn-flood-attacks">TCP syn flood attacks</h2>
 
 <p>通过向服务器发送大量的 TCP syn 分组，恶意用户实现了了 TCP syn flood 攻击，幸运的是，简单的配置内核网络参数即可防止这种攻击。 </p>
 <div class="highlight"><pre><code class="language-bash" data-lang="bash">/etc/sysctl.conf
@@ -103,36 +154,23 @@ sysctl -p
 </code></pre></div>
 <hr>
 
-<h1 id="slowloris-like-attacks">Slowloris like attacks</h1>
+<h2 id="slowloris-like-attacks">Slowloris like attacks</h2>
 
-<p>一个 Http 请求通常包括头部、url、methods 等，服务器需要接收整个 Http 请求后会做出响应。恶意用户发送缓慢的 Http 请求，比如一个字节一个字节的发送头部，服务器将一直处于 wating 状态，从而耗费服务器的资源。Haproxy 通过配置 timeout http-request 参数，当一个用户的请求时间超过设定值时，Haproxy 断开与该用户的连接。</p>
+<p>一个 HTTP 请求通常包括头部、url、methods 等，服务器需要接收整个请求后才能做出响应。如果恶意用户发送缓慢的请求，比如一个字节一个字节的发送头部，服务器将一直处于 waiting 状态，耗费服务器的资源。通过配置 timeout http-request 参数，当一个用户的请求时间超过设定值时，haproxy 自动断开该连接。</p>
 <div class="highlight"><pre><code class="language-text" data-lang="text">defaults
   option http-server-close
   mode http
-  &lt;span style=&quot;color:#ff0000;&quot;&gt;timeout http-request 5s&lt;/span&gt;  # 防止 Slowloris like attacks
-  timeout connect 5s
-  timeout server 10s
-  timeout client 30s
-
-listen stats
-  bind 0.0.0.0:8880
-  stats enable
-  stats hide-version
-  stats uri     /
-  stats realm   HAProxy\ Statistics
-  stats auth    admin:admin
+  timeout connect 10s  #限制链接时间，该参数不宜过大
+  timeout server  15s  #限制链接时间，该参数不宜过大
+  timeout client  15s  #限制链接时间，该参数不宜过大
 
 frontend ft_web
-  bind 0.0.0.0:8080
-  default_backend bk_web
+    ...
 
 backend bk_web
-  balance roundrobin
-  cookie MYSRV insert indirect nocache
-  server srv1 192.168.1.2:80 check cookie srv1 maxconn 100
-  server srv2 192.168.1.3:80 check cookie srv2 maxconn 100
+    ...
 </code></pre></div>
-<p>通过 telnet 登录验证结果</p>
+<p>通过 telnet 登录验证结果：</p>
 <div class="highlight"><pre><code class="language-bash" data-lang="bash">telnet 127.0.0.1 8080
 Trying 127.0.0.1...
 Connected to 127.0.0.1.
@@ -147,40 +185,24 @@ Connection closed by foreign host.
 </code></pre></div>
 <hr>
 
-<h1 id="limiting-the-number-of-connections-per-users">Limiting the number of connections per users</h1>
+<h2 id="limiting-the-number-of-connections-per-users">Limiting the number of connections per users</h2>
 
-<p>以网站为例，普通用户访问网站，或者从网站下载东西时，浏览器一般会建立 5-7 个 TCP 链接。当一个恶意打开了大量 TCP 链接时，耗费服务器大量资源，影响其它用户的访问，因此我们需要根据实际情况，限制同一个用户的链接数。</p>
+<p>普通用户访问某个 OpenStack 服务时，如果恶意打开了大量 TCP 链接，会耗费服务器内存资源，影响其它用户的体验，因此我们需要根据实际情况，限制同一个用户的链接并发数。</p>
 <div class="highlight"><pre><code class="language-text" data-lang="text">defaults
-  option http-server-close
-  mode http
-  timeout http-request 5s
-  timeout connect 5s
-  timeout server 10s
-  timeout client 30s
-
-listen stats
-  bind 0.0.0.0:8880
-  stats enable
-  stats hide-version
-  stats uri     /
-  stats realm   HAProxy\ Statistics
-  stats auth    admin:admin
+    ...
 
 frontend ft_web
-  bind 0.0.0.0:8080
+  bind &lt;Virtual IP&gt;:8080
   # Allow clean known IPs to bypass the filter
-  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst }
-  # Shut the new connection as long as the client has already 10 opened 
-  tcp-request connection reject if { src_conn_cur ge 10 }
+  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst } #白名单
+  # Shut the new connection as long as the client has already 10 opened  #限制单个用户的连接数
+  tcp-request connection reject if { src_conn_cur ge 10 }                #限制单个用户的连接数
   tcp-request connection track-sc1 src&lt;/span&gt;
 
   default_backend bk_web
 
 backend bk_web
-  balance roundrobin
-  cookie MYSRV insert indirect nocache
-  server srv1 192.168.1.2:80 check cookie srv1 maxconn 100
-  server srv2 192.168.1.3:80 check cookie srv2 maxconn 100
+    ...
 </code></pre></div>
 <p><strong>注</strong>：若某些用户在同一个私有网段通过 NAT 访问网站，这样的配置存在不合理之处，最好把 NAT 处的公网地址添加到 whitelist.lst 文件中。</p>
 
@@ -195,46 +217,26 @@ Connection closed by foreign host.
 </code></pre></div>
 <hr>
 
-<h1 id="limiting-the-connection-rate-per-user">Limiting the connection rate per user</h1>
+<h2 id="limiting-the-connection-rate-per-user">Limiting the connection rate per user</h2>
 
-<p>仅仅限制单个用户的并发链接数并意味着万事大吉，如果用户在短时间内向服务器不断的发送建立和关闭链接请求，也会耗费服务器资源，影响服务器端的性能，因此需要控制单个用户的访问速率。
-通常情况下，考虑到用户通过浏览器一般会建立 5-7 条 TCP 链接，我们可以认为普通用户在 3 秒内不应该建立超过 20 条链接。</p>
+<p>仅仅限制单个用户的并发链接数并意味着万事大吉，如果用户在短时间内向服务器不断的发送建立和关闭链接请求，也会耗费服务器资源，影响服务器端的性能，因此需要控制单个用户的访问速率。通常情况下，我们认为普通用户在 3 秒内不应该向某个 openstack api 发送的请求不应该超过 20 次。</p>
 <div class="highlight"><pre><code class="language-text" data-lang="text">defaults
-  option http-server-close
-  mode http
-  timeout http-request 5s
-  timeout connect 5s
-  timeout server 10s
-  timeout client 30s
-
-listen stats
-  bind 0.0.0.0:8880
-  stats enable
-  stats hide-version
-  stats uri     /
-  stats realm   HAProxy\ Statistics
-  stats auth    admin:admin
+    ...
 
 frontend ft_web
-  bind 0.0.0.0:8080
-
-  # Table definition  
-  stick-table type ip size 100k expire 30s store conn_cur,&lt;span style=&quot;color:#ff0000;&quot;&gt;conn_rate(3s)&lt;/span&gt;
+  bind &lt;Virtual IP&gt;:8080
+  stick-table type ip size 100k expire 30s store conn_cur, conn_rate(3s) # Table definition 
 
   # Allow clean known IPs to bypass the filter
-  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst }
+  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst } #白名单
   # Shut the new connection as long as the client has already 10 opened or rate more than 20
-  tcp-request connection reject if { src_conn_cur ge 10 } &lt;span style=&quot;color:#ff0000;&quot;&gt;|| { src_conn_rate ge 20}&lt;/span&gt;
-
+  tcp-request connection reject if { src_conn_cur ge 10 }|| { src_conn_rate ge 20} #限制单个用户链接数和访问速率
   tcp-request connection track-sc1 src
 
   default_backend bk_web
 
 backend bk_web
-  balance roundrobin
-  cookie MYSRV insert indirect nocache
-  server srv1 192.168.1.2:80 check cookie srv1 maxconn 100
-  server srv2 192.168.1.3:80 check cookie srv2 maxconn 100
+    ...
 </code></pre></div>
 <p>测试步骤如下：</p>
 
@@ -248,6 +250,50 @@ Trying 127.0.0.1...
 Connected to 127.0.0.1.
 Escape character is <span class="s1">&#39;^]&#39;</span>.
 Connection closed by foreign host.
+</code></pre></div>
+<hr>
+
+<h1 id="样例-nova-api">样例 nova-api</h1>
+
+<p>根据上述内容，以 nova-api 为例，其配置如下：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">global
+  chroot  /var/lib/haproxy
+  daemon
+  group  haproxy
+  maxconn  4000
+  pidfile  /var/run/haproxy.pid
+  user  haproxy
+
+defaults
+  log  global
+  maxconn  4000
+  option  redispatch
+  retries  3
+  timeout  http-request 10s
+  timeout  queue 1m
+  timeout  connect 10s
+  timeout  client 15s
+  timeout  server 15s
+  timeout  check 10s
+
+frontend nova_api_VIP
+  bind &lt;Virtual IP&gt;:443 ssl crt /etc/haproxy/https.pem
+  reqadd X-Forwarded-Proto:\ https
+
+  stick-table type ip size 100k expire 30s store conn_cur, conn_rate(3s)
+  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst }
+  tcp-request connection reject if { src_conn_cur ge 10 }|| { src_conn_rate ge 20}
+  tcp-request connection track-sc1 src
+
+  default_backend nova-api-cluster
+
+frontend nova-api-cluster
+  balance  source
+  option  httpchk
+  redirect scheme https if !{ ssl_fc }
+  server controller1 10.0.0.1:8774 check inter 2000 rise 2 fall 5
+  server controller2 10.0.0.2:8774 check inter 2000 rise 2 fall 5
+  server controller3 10.0.0.3:8774 check inter 2000 rise 2 fall 5
 </code></pre></div>
   </div>
 
