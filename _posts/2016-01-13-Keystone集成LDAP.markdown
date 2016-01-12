@@ -24,7 +24,6 @@ root@ubuntu:~# cat /etc/hosts
 #Install LDAP
 
 ```bash
-sudo apt-get updatesudo
 sudo apt-get install slapd ldap-utils
 ```
 
@@ -94,7 +93,7 @@ uid: admin
 userPassword: 123456
 ```
 
-keystone 的配置文件如下：
+Keystone 的配置文件如下：
 
 ```
 [identity]

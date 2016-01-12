@@ -6,9 +6,177 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 09 Jan 2016 11:27:45 +0800</pubDate>
-    <lastBuildDate>Sat, 09 Jan 2016 11:27:45 +0800</lastBuildDate>
+    <pubDate>Tue, 12 Jan 2016 23:52:03 +0800</pubDate>
+    <lastBuildDate>Tue, 12 Jan 2016 23:52:03 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
+    
+      <item>
+        <title>Keystone集成LDAP</title>
+        <description>&lt;hr&gt;
+
+&lt;p&gt;基本配置如下：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Linux: Ubuntu 14.04 LTS&lt;/li&gt;
+&lt;li&gt;OpenStack: Kilo&lt;/li&gt;
+&lt;li&gt;LDAP: slap 2.4.31&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;LDAP 的 DN(Distinguished Names) 默认由主机域名生成，本地的 DNS 设置如下：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;root@ubuntu:~# cat /etc/hosts
+10.10.1.100    keystone.com
+127.0.0.1   localhost
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;hr&gt;
+
+&lt;h1 id=&quot;install-ldap&quot;&gt;Install LDAP&lt;/h1&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo apt-get updatesudo
+sudo apt-get install slapd ldap-utils
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;安装完成后可通过以下命令和步骤完成 LDAP 的基本配置：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;sudo dpkg-reconfigure slapd
+
+
+* Omit OpenLDAP server configuration? No
+
+* DNS domain name?  keystone.com
+
+* Organization name?  admin
+
+* Administrator password? YourPassword
+
+* Use the password you configured during installation, or choose another one
+  Database backend to use? HDB
+
+* Remove the database when slapd is purged? No
+
+* Move old database? Yes
+
+* Allow LDAPv2 protocol? No
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;hr&gt;
+
+&lt;h1 id=&quot;configure-ldap&quot;&gt;Configure LDAP&lt;/h1&gt;
+
+&lt;p&gt;由于 LDAP 的用户属性和 Keystone 默认的用户属性有所差异，所以 LDAP 需生成与 Keystone 中的 User 和 Group 相匹配的对象，可通过以下脚本(add&lt;u&gt;user&lt;/u&gt;group.ldif)添加该对象，并生成两个用户。&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# Users
+dn: ou=users,dc=keystone,dc=com
+ou: users
+objectClass: organizationalUnit
+
+# Group
+dn: ou=groups,dc=keystone,dc=com
+objectClass: organizationalUnit
+ou: groups
+
+# demo user
+dn: cn=demo,ou=users,dc=keystone,dc=com
+cn: demo
+displayName: demo
+givenName: demo
+mail: demo@example.com
+objectClass: inetOrgPerson
+objectClass: top
+sn: demo
+uid: demo
+userPassword: 123456
+
+# admin user
+dn: cn=admin,ou=users,dc=keystone,dc=com
+cn: admin
+displayName: admin
+givenName: admin
+mail: admin@example.com
+objectClass: inetOrgPerson
+objectClass: top
+sn: admin
+uid: admin
+userPassword: 123456
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Keystone 的配置文件如下：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;[identity]
+driver = keystone.identity.backends.ldap.Identity
+
+[assignment]
+driver = keystone.assignment.backends.sql.Assignment
+
+[ldap]
+url = ldap://keystone.com
+query_scope = sub
+user = &amp;quot;cn=admin,dc=keystone,dc=com&amp;quot;
+password = 123456
+tree_dn = &amp;quot;dc=keystone,dc=com&amp;quot;
+
+user_tree_dn = &amp;quot;ou=users,dc=keystone,dc=com&amp;quot;
+user_objectclass = inetOrgPerson
+user_id_attribute = cn
+user_name_attribute = cn
+user_mail_attribute = mail
+user_pass_attribute = userPassword
+user_enabled_attribute = enabled
+
+group_tree_dn = &amp;quot;ou=groups,dc=keystone,dc=com&amp;quot;
+group_objectclass = groupOfUniqueNames
+group_id_attribute = cn
+group_name_attribute = cn
+group_member_attribute = uniquemember
+group_desc_attribute = description
+
+user_allow_create = true
+user_allow_update = true
+user_allow_delete = true
+
+group_allow_create = true
+group_allow_update = true
+group_allow_delete = true
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;hr&gt;
+
+&lt;h1 id=&quot;test&quot;&gt;Test&lt;/h1&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;root@ubuntu:~# openstack user list
++--------------------+--------------------+
+| ID                 | Name               |
++--------------------+--------------------+
+| goodluck@gmail.com | goodluck@gmail.com |
+| demo               | demo               |
+| admin              | admin              |
++--------------------+--------------------+
+
+root@ubuntu:~# openstack user show demo
++-----------+------------------+
+| Field     | Value            |
++-----------+------------------+
+| domain_id | default          |
+| email     | demo@example.com |
+| id        | demo             |
+| name      | demo             |
++-----------+------------------+
+
+root@ubuntu:~# openstack project create ldap_project
++-------------+----------------------------------+
+| Field       | Value                            |
++-------------+----------------------------------+
+| description |                                  |
+| domain_id   | default                          |
+| enabled     | True                             |
+| id          | cbdf05b17cf54587b3b58a11f49252e7 |
+| name        | ldap_project                     |
++-------------+----------------------------------+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;hr&gt;
+
+&lt;h1 id=&quot;tips&quot;&gt;Tips&lt;/h1&gt;
+
+&lt;p&gt;TBD&lt;/p&gt;
+</description>
+        <pubDate>Wed, 13 Jan 2016 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/openstack/2016/01/13/Keystone%E9%9B%86%E6%88%90LDAP.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/openstack/2016/01/13/Keystone%E9%9B%86%E6%88%90LDAP.html</guid>
+        
+        
+        <category>openstack</category>
+        
+      </item>
     
       <item>
         <title>[行摄]上海武康路</title>
