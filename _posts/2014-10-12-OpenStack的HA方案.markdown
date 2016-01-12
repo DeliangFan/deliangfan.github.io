@@ -12,8 +12,10 @@ categories: OpenStack
 - Active/Passive: 适用于 stateful 服务，常用 load balance + keepalive(VIP) + pacemaker + Corosync 配置 HA
 
 ---------------
- 
+
 #Openstack HA 实现
+
+![OpenStack HA](http://7xp2eu.com1.z0.glb.clouddn.com/openstack_ha.jpg)
 
 ##Database(Active/Active):
 官方推荐：[MySQL with Galera](http://docs.openstack.org/high-availability-guide/content/ha-aa-db.html)
