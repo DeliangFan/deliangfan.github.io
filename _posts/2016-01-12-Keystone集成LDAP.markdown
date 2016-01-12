@@ -92,6 +92,7 @@ uid: admin
 userPassword: 123456
 ```
 
+keystone 的配置文件如下：
 
 ```
 [identity]
@@ -131,6 +132,9 @@ group_allow_update = true
 group_allow_delete = true
 ```
 
+--------------------
+#Test
+
 ```
 root@ubuntu:~# openstack user list
 +--------------------+--------------------+
@@ -162,3 +166,8 @@ root@ubuntu:~# openstack project create ldap_project
 | name        | ldap_project                     |
 +-------------+----------------------------------+
 ```
+
+------------
+
+#Tips
+TBD
