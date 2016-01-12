@@ -1,4 +1,3 @@
-
 ---
 layout: post
 title:  "Keystone集成LDAP"
@@ -18,9 +17,10 @@ LDAP 的 DN(Distinguished Names) 默认由主机域名生成，本地的 DNS 设
 ```
 root@ubuntu:~# cat /etc/hosts
 10.10.1.100    keystone.com
-127.0.0.1	localhost
+127.0.0.1   localhost
 ```
 ----------------
+
 #Install LDAP
 
 ```bash
@@ -42,7 +42,7 @@ sudo dpkg-reconfigure slapd
 
 * Administrator password? YourPassword
 
-* Use the password you configured during installation, or choose another one 
+* Use the password you configured during installation, or choose another one
   Database backend to use? HDB
 
 * Remove the database when slapd is purged? No
@@ -51,6 +51,8 @@ sudo dpkg-reconfigure slapd
 
 * Allow LDAPv2 protocol? No
 ```
+
+---------------
 
 #Configure LDAP
 
@@ -133,6 +135,7 @@ group_allow_delete = true
 ```
 
 --------------------
+
 #Test
 
 ```
