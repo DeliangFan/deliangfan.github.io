@@ -1,44 +1,60 @@
-#Install LDAP
 
-sudo apt-get updatesudo apt-get install slapd ldap-utils
+---
+layout: post
+title:  "Keystone集成LDAP"
+categories: OpenStack
+---
 
+--------------
 
-When the installation is complete, we actually need to reconfigure the LDAP package. Type the following to bring up the package configuration tool:
+基本配置如下：
 
-sudo dpkg-reconfigure slapd
-You will be asked a series of questions about how you'd like to configure the software.
+- Linux: Ubuntu 14.04 LTS
+- OpenStack: Kilo
+- LDAP: slap 2.4.31
 
-Omit OpenLDAP server configuration? No
-
-DNS domain name?
-
-This will create the base structure of your directory path. Read the message to understand how it works.
-There are no set rules for how to configure this. If you have an actual domain name on this server, you can use that. Otherwise, use whatever you'd like.
-In this article, we will call it test.com 
-Organization name?
-
-Again, this is up to you
-We will use example in this guide. 
-Administrator password?
-
-Use the password you configured during installation, or choose another one 
-Database backend to use? HDB
-
-Remove the database when slapd is purged? No
-
-Move old database? Yes
-
-Allow LDAPv2 protocol? No
-
-#Configure LDAP
+LDAP 的 DN(Distinguished Names) 默认由主机域名生成，本地的 DNS 设置如下：
 
 ```
 root@ubuntu:~# cat /etc/hosts
-15.107.12.87    controller.keystone.com controller
-15.107.12.87    controller
-15.107.12.87    keystone.com
+10.10.1.100    keystone.com
 127.0.0.1	localhost
 ```
+----------------
+#Install LDAP
+
+```bash
+sudo apt-get updatesudo
+sudo apt-get install slapd ldap-utils
+```
+
+安装完成后可通过以下命令和步骤完成 LDAP 的基本配置：
+
+```
+sudo dpkg-reconfigure slapd
+
+
+* Omit OpenLDAP server configuration? No
+
+* DNS domain name?  keystone.com
+
+* Organization name?  admin
+
+* Administrator password? YourPassword
+
+* Use the password you configured during installation, or choose another one 
+  Database backend to use? HDB
+
+* Remove the database when slapd is purged? No
+
+* Move old database? Yes
+
+* Allow LDAPv2 protocol? No
+```
+
+#Configure LDAP
+
+由于 LDAP 的用户属性和 Keystone 默认的用户属性有所差异，所以 LDAP 需生成与 Keystone 中的 User 和 Group 相匹配的对象，可通过以下脚本(add_user_group.ldif)添加该对象，并生成两个用户。
 
 ```
 # Users
@@ -75,6 +91,7 @@ sn: admin
 uid: admin
 userPassword: 123456
 ```
+
 
 ```
 [identity]
