@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 08 Jan 2016 18:59:16 +0800</pubDate>
-    <lastBuildDate>Fri, 08 Jan 2016 18:59:16 +0800</lastBuildDate>
+    <pubDate>Sat, 09 Jan 2016 11:27:45 +0800</pubDate>
+    <lastBuildDate>Sat, 09 Jan 2016 11:27:45 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -1018,6 +1018,104 @@ service libvirtd restart
         <pubDate>Mon, 17 Nov 2014 00:00:00 +0800</pubDate>
         <link>http://wsfdl.com/openstack/2014/11/17/Nova-KVM%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98.html</link>
         <guid isPermaLink="true">http://wsfdl.com/openstack/2014/11/17/Nova-KVM%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98.html</guid>
+        
+        
+        <category>openstack</category>
+        
+      </item>
+    
+      <item>
+        <title>Nova快照分析</title>
+        <description>&lt;h1 id=&quot;snapshot-overview&quot;&gt;Snapshot Overview&lt;/h1&gt;
+
+&lt;p&gt;对OpenStack而言，虚拟机的快照即是镜像，快照做完后以镜像形式存于glance。虽然OpenStack的快照是基于libvirt(qemu-kvm)，但是二者在实现上有很大区别：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;libvirt 主流快照实现: 采用virDomainSnapshotCreateXML()函数(CLI为virsh snapshot-create)。 新建的快照与虚拟机有关联：若为内置快照，快照信息和虚拟机存在同一个qcow2镜像中；若为外置快照，新建一个qcow2文件，原虚拟机的disk将变为一个read only的模板镜像，新qcow2镜像仅记录与2.模板镜像的差异数据。这种快照包含快照链信息，可保留disk和ram信息，可回滚至快照点。&lt;/p&gt;&lt;/li&gt;
+&lt;li&gt;&lt;p&gt;OpenStack快照实现: OpenStack并未采用virDomainSnapshotCreateXML()来实现快照，而是单纯的对虚拟机镜像做转换和拷贝，生成一个与虚拟机无关联的镜像，最后上传至glance中。这种快照不包含快照链信息，只保留disk信息，无法回滚至快照点，只能采用该快照镜像创建一个新的虚拟机。&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;cold-snapshot-amp-live-snapshot&quot;&gt;Cold Snapshot &amp;amp; Live Snapshot&lt;/h1&gt;
+
+&lt;ul&gt;
+&lt;li&gt;cold snapshot: 创建snapshot时，需暂停虚拟机。&lt;/li&gt;
+&lt;li&gt;live snapshot: 创建snapshot时，无需暂停虚拟机。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;cold-snapshot-流程&quot;&gt;cold snapshot 流程:&lt;/h1&gt;
+
+&lt;p&gt;1.Save the state and stop a running guest, then detach pci devices&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;virsh managedsave vm
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;2.Create a qemu internal snapshot&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;qemu-img snapshot -c snap1 vm_snapshot
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;3.Extract the internal snapshot, convert it to qcow2 and export it a file, then upload to glance&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;qemu-img convert -f qcow2 vm -O qcow2 vm_snapshot
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;4.Start the guest again
+virsh start vm&lt;/p&gt;
+
+&lt;h1 id=&quot;live-snapshot-流程&quot;&gt;live snapshot 流程&lt;/h1&gt;
+
+&lt;p&gt;1.Abort any failed/finished block operations:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;virsh blockjob vm vda --abort
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;2.Undefine a running domain. (Note: Undefining a running domain does not kill the domain, it just converts it from persistent to transient.)&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;virsh undefine vm
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;3.create a destination image with the original backing file and matching size of the instance root disk.&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;qemu-img create -f qcow2 vm_copy --backing_file&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;backing_file --size&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;root_disk_size
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;4.Invoke &amp;#39;virsh blockcopy&amp;#39; (This will take time, depending on the size of disk image vm1):&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;virsh blockcopy --domain vm vda vm_copy --wait --verbose
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;5.Abort any failed/finished block operations:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;virsh blockjob vm vda --abort
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;6.Define the guest again (to make it persistent):&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;virsh define vm
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;7.From the obtained new copy, convert the QCOW2 with a backing file to a qcow2 image with no backing file, then upload to glance:&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;qemu-img convert -f qcow2 -O raw vm_copy vm_convert
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h1 id=&quot;virsh-snapshot-create-as-snapshot-create-快照简析&quot;&gt;virsh snapshot-create-as/snapshot-create 快照简析&lt;/h1&gt;
+
+&lt;ul&gt;
+&lt;li&gt;默认为内置快照，支持快照链，支持快照回滚，支持内存信息。&lt;/li&gt;
+&lt;li&gt;快照过程中，虚拟机短暂卡顿。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;不知 OpenStack 为什么不通过该方法实现主流快照 ？！&lt;/p&gt;
+
+&lt;h1 id=&quot;conclusion&quot;&gt;conclusion&lt;/h1&gt;
+
+&lt;p&gt;支持功能&lt;/p&gt;
+
+&lt;p&gt;虚拟机快照（快照存放于glance）
+卷快照（LVM快照存放于本地）
+限制与缺点&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;没有快照链信息，不支持revert恢复虚拟机到某一个快照点&lt;/li&gt;
+&lt;li&gt;只对系统盘进行快照，不支持内存快照，不支持同时对虚拟机和磁盘做快照&lt;/li&gt;
+&lt;li&gt;需要用户进行一致性操作&lt;/li&gt;
+&lt;li&gt;不支持含元数据导出，不支持含元数据导入&lt;/li&gt;
+&lt;li&gt;只支持虚拟机全量数据快照（与快照的实现方式有关，因为是通过image进行保存的），过程较长（需要先通过存储快照，然后抽取并上传至glance)，快照以Image方式保存，而非以cinder卷方式保存，无法充分利用存储本身能力加快快照的创建和使用&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;参考资料：&quot;&gt;参考资料：&lt;/h1&gt;
+
+&lt;ol&gt;
+&lt;li&gt;https://www.redhat.com/archives/libvirt-users/2012-April/msg00142.html&lt;/li&gt;
+&lt;li&gt;http://blog.csdn.net/halcyonbaby/article/details/19998155&lt;/li&gt;
+&lt;li&gt;http://itxx.sinaapp.com/blog/content/130&lt;/li&gt;
+&lt;li&gt;http://kashyapc.com/2012/09/14/externaland-live-snapshots-with-libvirt/&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+        <pubDate>Tue, 12 Aug 2014 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/openstack/2014/08/12/Nova%E5%BF%AB%E7%85%A7%E5%88%86%E6%9E%90.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/openstack/2014/08/12/Nova%E5%BF%AB%E7%85%A7%E5%88%86%E6%9E%90.html</guid>
         
         
         <category>openstack</category>
