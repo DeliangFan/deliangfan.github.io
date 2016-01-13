@@ -15,7 +15,7 @@ categories: OpenStack
 
 #OpenStack HA 实现
 
-![OpenStack HA](http://7xp2eu.com1.z0.glb.clouddn.com/OpenStack_ha.jpg?imageView2/1/w/600/q/100)
+![OpenStack HA](http://7xp2eu.com1.z0.glb.clouddn.com/HA.png?imageView2/1/w/600/q/100)
 
 ##Database(Active/Active):
 官方推荐：[MySQL with Galera](http://docs.OpenStack.org/high-availability-guide/content/ha-aa-db.html)
@@ -45,7 +45,8 @@ Nova-scheduler, nova-conductor, nova-consoleauth, nova-novncproxy, ceilometer-co
 - neutron DHCP agent(Active/Passive)
 - neutron L3 agent(Active/Passive)
 - neutron metadata agent(Active/Passive) 
-       
+- neutron DVR
+
 [以上三者均由 Pacemaker + Corosync 配置](http://docs.OpenStack.org/high-availability-guide/content/ch-network.html)。
  
 ##Storage:

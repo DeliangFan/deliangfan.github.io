@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 13 Jan 2016 11:40:32 +0800</pubDate>
-    <lastBuildDate>Wed, 13 Jan 2016 11:40:32 +0800</lastBuildDate>
+    <pubDate>Wed, 13 Jan 2016 11:45:37 +0800</pubDate>
+    <lastBuildDate>Wed, 13 Jan 2016 11:45:37 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -1216,7 +1216,7 @@ service libvirtd restart
 
 &lt;h1 id=&quot;openstack-ha-实现&quot;&gt;OpenStack HA 实现&lt;/h1&gt;
 
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/OpenStack_ha.jpg?imageView2/1/w/600/q/100&quot; alt=&quot;OpenStack HA&quot;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/HA.png?imageView2/1/w/600/q/100&quot; alt=&quot;OpenStack HA&quot;&gt;&lt;/p&gt;
 
 &lt;h2 id=&quot;database-active-active&quot;&gt;Database(Active/Active):&lt;/h2&gt;
 
@@ -1253,6 +1253,7 @@ service libvirtd restart
 &lt;li&gt;neutron DHCP agent(Active/Passive)&lt;/li&gt;
 &lt;li&gt;neutron L3 agent(Active/Passive)&lt;/li&gt;
 &lt;li&gt;neutron metadata agent(Active/Passive) &lt;/li&gt;
+&lt;li&gt;neutron DVR&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;&lt;a href=&quot;http://docs.OpenStack.org/high-availability-guide/content/ch-network.html&quot;&gt;以上三者均由 Pacemaker + Corosync 配置&lt;/a&gt;。&lt;/p&gt;
