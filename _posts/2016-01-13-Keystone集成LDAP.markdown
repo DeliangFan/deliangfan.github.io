@@ -6,11 +6,19 @@ categories: OpenStack
 
 --------------
 
+得益于 Keystone 优良的架构，它允许 Service 适配多种 Backend。Keystone 目前有 Identity, Resource, Assigment, Token, Policy, Catatlog 等 service，在 K 版本中，Identity, Resource, Assigment 都支持 LDAP 作为其 Backend，但是因为 Resource 和 Assigment 中的某些属性在 LDAP 并不能很好的支持，因此从 M 版本后，只有 Idendity 支持 LDAP 作为 Backend。本文的例子也仅将 Identity 的数据存储在 LDAP 中，其它 Services 的数据依旧存储在 SQL 里。
+
+- Identity: User and Group
+- Resource: Project and Domain
+- Assigment: Role and Role Assigment
+
+![Services and Backends](http://7xp2eu.com1.z0.glb.clouddn.com/keystone%20service%20and%20backend.png?imageView2/1/w/1300/q/100) 
+
 基本配置如下：
 
 - Linux: Ubuntu 14.04 LTS
 - OpenStack: Kilo
-- LDAP: slap 2.4.31
+- LDAP: slapd 2.4.31
 
 LDAP 的 DN(Distinguished Names) 默认由主机域名生成，本地的 DNS 设置如下：
 
@@ -51,11 +59,12 @@ sudo dpkg-reconfigure slapd
 * Allow LDAPv2 protocol? No
 ```
 
+
 ---------------
 
 #Configure LDAP
 
-由于 LDAP 的用户属性和 Keystone 默认的用户属性有所差异，所以 LDAP 需生成与 Keystone 中的 User 和 Group 相匹配的对象，可通过以下脚本(add_user_group.ldif)添加该对象，并生成两个用户。
+由于 LDAP 的用户属性和 Keystone 默认的用户属性有所差异，所以 LDAP 需生成与 Keystone 中的 User 和 Group 相匹配的对象，可通过以下脚本(add\_user\_group.ldif)添加该对象，并生成 demo 和 admin 两个用户。
 
 ```
 # Users
@@ -93,6 +102,12 @@ uid: admin
 userPassword: 123456
 ```
 
+由以下命令把上述配置文件内容更新至 LDAP：
+
+```bash
+ldapadd -x -W -D "cn=admin,dc=example,dc=com" -f add_user_group.ldif
+```
+
 Keystone 的配置文件如下：
 
 ```
@@ -103,13 +118,15 @@ driver = keystone.identity.backends.ldap.Identity
 driver = keystone.assignment.backends.sql.Assignment
 
 [ldap]
-url = ldap://keystone.com
+# LDAP 服务器地址，tree_dn 目录下管理员的账号和密码等
+url = ldap://keystone.com              
 query_scope = sub
-user = "cn=admin,dc=keystone,dc=com"
+user = "cn=admin,dc=keystone,dc=com" 
 password = 123456
 tree_dn = "dc=keystone,dc=com"
 
-user_tree_dn = "ou=users,dc=keystone,dc=com"
+# 以下配置定义 Keystone 和 LDAP 二者的属性的 mapping 关系。
+user_tree_dn = "ou=users,dc=keystone,dc=com"  
 user_objectclass = inetOrgPerson
 user_id_attribute = cn
 user_name_attribute = cn
@@ -137,12 +154,13 @@ group_allow_delete = true
 
 #Test
 
+用 admin_token 创建 project 和 role，并赋予 demo 和 admin 用户在 project 中的 role 后，即可使用该用户获得 scope token 访问 Keystone 的 API。
+
 ```
 root@ubuntu:~# openstack user list
 +--------------------+--------------------+
 | ID                 | Name               |
 +--------------------+--------------------+
-| goodluck@gmail.com | goodluck@gmail.com |
 | demo               | demo               |
 | admin              | admin              |
 +--------------------+--------------------+
@@ -157,7 +175,7 @@ root@ubuntu:~# openstack user show demo
 | name      | demo             |
 +-----------+------------------+
 
-root@ubuntu:~# openstack project create ldap_project
+root@ubuntu:~# openstack project create test_project
 +-------------+----------------------------------+
 | Field       | Value                            |
 +-------------+----------------------------------+
@@ -165,11 +183,6 @@ root@ubuntu:~# openstack project create ldap_project
 | domain_id   | default                          |
 | enabled     | True                             |
 | id          | cbdf05b17cf54587b3b58a11f49252e7 |
-| name        | ldap_project                     |
+| name        | test_project                     |
 +-------------+----------------------------------+
 ```
-
-------------
-
-#Tips
-TBD

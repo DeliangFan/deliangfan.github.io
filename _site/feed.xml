@@ -6,20 +6,30 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 12 Jan 2016 23:52:03 +0800</pubDate>
-    <lastBuildDate>Tue, 12 Jan 2016 23:52:03 +0800</lastBuildDate>
+    <pubDate>Wed, 13 Jan 2016 11:40:32 +0800</pubDate>
+    <lastBuildDate>Wed, 13 Jan 2016 11:40:32 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
         <title>Keystone集成LDAP</title>
         <description>&lt;hr&gt;
 
+&lt;p&gt;得益于 Keystone 优良的架构，它允许 Service 适配多种 Backend。Keystone 目前有 Identity, Resource, Assigment, Token, Policy, Catatlog 等 service，在 K 版本中，Identity, Resource, Assigment 都支持 LDAP 作为其 Backend，但是因为 Resource 和 Assigment 中的某些属性在 LDAP 并不能很好的支持，因此从 M 版本后，只有 Idendity 支持 LDAP 作为 Backend。本文的例子也仅将 Identity 的数据存储在 LDAP 中，其它 Services 的数据依旧存储在 SQL 里。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Identity: User and Group&lt;/li&gt;
+&lt;li&gt;Resource: Project and Domain&lt;/li&gt;
+&lt;li&gt;Assigment: Role and Role Assigment&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/keystone%20service%20and%20backend.png?imageView2/1/w/1300/q/100&quot; alt=&quot;Services and Backends&quot;&gt; &lt;/p&gt;
+
 &lt;p&gt;基本配置如下：&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Linux: Ubuntu 14.04 LTS&lt;/li&gt;
 &lt;li&gt;OpenStack: Kilo&lt;/li&gt;
-&lt;li&gt;LDAP: slap 2.4.31&lt;/li&gt;
+&lt;li&gt;LDAP: slapd 2.4.31&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;LDAP 的 DN(Distinguished Names) 默认由主机域名生成，本地的 DNS 设置如下：&lt;/p&gt;
@@ -30,8 +40,7 @@
 &lt;hr&gt;
 
 &lt;h1 id=&quot;install-ldap&quot;&gt;Install LDAP&lt;/h1&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo apt-get updatesudo
-sudo apt-get install slapd ldap-utils
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo apt-get install slapd ldap-utils
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;安装完成后可通过以下命令和步骤完成 LDAP 的基本配置：&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;sudo dpkg-reconfigure slapd
@@ -58,7 +67,7 @@ sudo apt-get install slapd ldap-utils
 
 &lt;h1 id=&quot;configure-ldap&quot;&gt;Configure LDAP&lt;/h1&gt;
 
-&lt;p&gt;由于 LDAP 的用户属性和 Keystone 默认的用户属性有所差异，所以 LDAP 需生成与 Keystone 中的 User 和 Group 相匹配的对象，可通过以下脚本(add&lt;u&gt;user&lt;/u&gt;group.ldif)添加该对象，并生成两个用户。&lt;/p&gt;
+&lt;p&gt;由于 LDAP 的用户属性和 Keystone 默认的用户属性有所差异，所以 LDAP 需生成与 Keystone 中的 User 和 Group 相匹配的对象，可通过以下脚本(add_user_group.ldif)添加该对象，并生成 demo 和 admin 两个用户。&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# Users
 dn: ou=users,dc=keystone,dc=com
 ou: users
@@ -93,6 +102,9 @@ sn: admin
 uid: admin
 userPassword: 123456
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;由以下命令把上述配置文件内容更新至 LDAP：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;ldapadd -x -W -D &lt;span class=&quot;s2&quot;&gt;&amp;quot;cn=admin,dc=example,dc=com&amp;quot;&lt;/span&gt; -f add_user_group.ldif
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;Keystone 的配置文件如下：&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;[identity]
 driver = keystone.identity.backends.ldap.Identity
@@ -101,13 +113,15 @@ driver = keystone.identity.backends.ldap.Identity
 driver = keystone.assignment.backends.sql.Assignment
 
 [ldap]
-url = ldap://keystone.com
+# LDAP 服务器地址，tree_dn 目录下管理员的账号和密码等
+url = ldap://keystone.com              
 query_scope = sub
-user = &amp;quot;cn=admin,dc=keystone,dc=com&amp;quot;
+user = &amp;quot;cn=admin,dc=keystone,dc=com&amp;quot; 
 password = 123456
 tree_dn = &amp;quot;dc=keystone,dc=com&amp;quot;
 
-user_tree_dn = &amp;quot;ou=users,dc=keystone,dc=com&amp;quot;
+# 以下配置定义 Keystone 和 LDAP 二者的属性的 mapping 关系。
+user_tree_dn = &amp;quot;ou=users,dc=keystone,dc=com&amp;quot;  
 user_objectclass = inetOrgPerson
 user_id_attribute = cn
 user_name_attribute = cn
@@ -133,11 +147,12 @@ group_allow_delete = true
 &lt;hr&gt;
 
 &lt;h1 id=&quot;test&quot;&gt;Test&lt;/h1&gt;
+
+&lt;p&gt;用 admin_token 创建 project 和 role，并赋予 demo 和 admin 用户在 project 中的 role 后，即可使用该用户获得 scope token 访问 Keystone 的 API。&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;root@ubuntu:~# openstack user list
 +--------------------+--------------------+
 | ID                 | Name               |
 +--------------------+--------------------+
-| goodluck@gmail.com | goodluck@gmail.com |
 | demo               | demo               |
 | admin              | admin              |
 +--------------------+--------------------+
@@ -152,7 +167,7 @@ root@ubuntu:~# openstack user show demo
 | name      | demo             |
 +-----------+------------------+
 
-root@ubuntu:~# openstack project create ldap_project
+root@ubuntu:~# openstack project create test_project
 +-------------+----------------------------------+
 | Field       | Value                            |
 +-------------+----------------------------------+
@@ -160,15 +175,9 @@ root@ubuntu:~# openstack project create ldap_project
 | domain_id   | default                          |
 | enabled     | True                             |
 | id          | cbdf05b17cf54587b3b58a11f49252e7 |
-| name        | ldap_project                     |
+| name        | test_project                     |
 +-------------+----------------------------------+
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;hr&gt;
-
-&lt;h1 id=&quot;tips&quot;&gt;Tips&lt;/h1&gt;
-
-&lt;p&gt;TBD&lt;/p&gt;
-</description>
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
         <pubDate>Wed, 13 Jan 2016 00:00:00 +0800</pubDate>
         <link>http://wsfdl.com/openstack/2016/01/13/Keystone%E9%9B%86%E6%88%90LDAP.html</link>
         <guid isPermaLink="true">http://wsfdl.com/openstack/2016/01/13/Keystone%E9%9B%86%E6%88%90LDAP.html</guid>
@@ -1186,6 +1195,75 @@ service libvirtd restart
         <pubDate>Mon, 17 Nov 2014 00:00:00 +0800</pubDate>
         <link>http://wsfdl.com/openstack/2014/11/17/Nova-KVM%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98.html</link>
         <guid isPermaLink="true">http://wsfdl.com/openstack/2014/11/17/Nova-KVM%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98.html</guid>
+        
+        
+        <category>openstack</category>
+        
+      </item>
+    
+      <item>
+        <title>OpenStack的HA方案</title>
+        <description>&lt;hr&gt;
+
+&lt;p&gt;根据服务自身状况，HA 分为 Active/Active 和 Active/Passive 两种&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Active/Active:   适合于 stateless/stateful 服务，常用 Load Balancer + Keepalive(VIP) 配置 HA&lt;/li&gt;
+&lt;li&gt;Active/Passive: 适用于 stateful 服务，常用 Load Balancer + Keepalive(VIP) + Pacemaker + Corosync 配置 HA&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr&gt;
+
+&lt;h1 id=&quot;openstack-ha-实现&quot;&gt;OpenStack HA 实现&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/OpenStack_ha.jpg?imageView2/1/w/600/q/100&quot; alt=&quot;OpenStack HA&quot;&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;database-active-active&quot;&gt;Database(Active/Active):&lt;/h2&gt;
+
+&lt;p&gt;官方推荐：&lt;a href=&quot;http://docs.OpenStack.org/high-availability-guide/content/ha-aa-db.html&quot;&gt;MySQL with Galera&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;amqp-active-active&quot;&gt;AMQP(Active/Active):&lt;/h2&gt;
+
+&lt;p&gt;官方推荐：&lt;a href=&quot;https://OpenStack.redhat.com/RabbitMQ&quot;&gt;RabbitMQ cluster&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;openstack-api-active-active&quot;&gt;OpenStack API(Active/Active):&lt;/h2&gt;
+
+&lt;p&gt;Keystone, Glance-api, Glance-registry, Neutron-server, Ceilometer-api, Dashboard 均为 stateless 服务，通过 Load Balancer + Keepalive 保证 HA，部署于 Apache server 可提高性能，Haproxy(1.5.0)支持 SSL。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://OpenStack.redhat.com/Load_Balance_OpenStack_API&quot;&gt;Loadbalance for OpenStack API&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://www.b2btech.in/implement-ssl-termination-haproxy-ubuntu-14-04&quot;&gt;Configuration SSL for haproxy&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://andy.mc.it/2013/07/apache2-mod_wsgi-OpenStack-pt-2-nova-api-os-compute-nova-api-ec2/#comment-35&quot;&gt;Runs OpenStack API in apache&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;openstack-scheduler-active-active&quot;&gt;OpenStack scheduler(Active/Active):&lt;/h2&gt;
+
+&lt;p&gt;Nova-scheduler, nova-conductor, nova-consoleauth, nova-novncproxy, ceilometer-collector, cinder-scheduler 等均为 stateless 服务，恰当的配置与 AMQP server 连接参数即可，具体详见&lt;a href=&quot;http://docs.OpenStack.org/high-availability-guide/content/_run_OpenStack_api_and_schedulers.html&quot;&gt;社区文档&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;memcached-active-active&quot;&gt;Memcached(Active/Active):&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;提高 Dashboard 的性能&lt;/li&gt;
+&lt;li&gt;解决 nova-consoleauth 单点问题&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;network&quot;&gt;Network:&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;neutron DHCP agent(Active/Passive)&lt;/li&gt;
+&lt;li&gt;neutron L3 agent(Active/Passive)&lt;/li&gt;
+&lt;li&gt;neutron metadata agent(Active/Passive) &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://docs.OpenStack.org/high-availability-guide/content/ch-network.html&quot;&gt;以上三者均由 Pacemaker + Corosync 配置&lt;/a&gt;。&lt;/p&gt;
+
+&lt;h2 id=&quot;storage&quot;&gt;Storage:&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.ceph.com/docs/next/rbd/rbd-OpenStack/&quot;&gt;Ceph 保证 Image storage, Volume storage, Nova backend 可靠性&lt;/a&gt;。&lt;/p&gt;
+</description>
+        <pubDate>Sun, 12 Oct 2014 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/openstack/2014/10/12/OpenStack%E7%9A%84HA%E6%96%B9%E6%A1%88.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/openstack/2014/10/12/OpenStack%E7%9A%84HA%E6%96%B9%E6%A1%88.html</guid>
         
         
         <category>openstack</category>

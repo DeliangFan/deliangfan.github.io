@@ -6,12 +6,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>koala bear</title>
-  <meta name="description" content="观水有术，必观其澜，日月有明，容光必照。
-">
+  <title>OpenStack的HA方案</title>
+  <meta name="description" content="">
 
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="http://wsfdl.com/">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2014/10/12/OpenStack%E7%9A%84HA%E6%96%B9%E6%A1%88.html">
   <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
 </head>
 
@@ -55,97 +54,75 @@
 
     <div class="page-content">
       <div class="wrapper">
-        <div class="home">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 
-  <h1 class="page-heading">Posts</h1>
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">OpenStack的HA方案</h1>
+    <p class="post-meta"><time datetime="2014-10-12T00:00:00+08:00" itemprop="datePublished">Oct 12, 2014</time></p>
+  </header>
 
-  <ul class="post-list">
-    
-      <li>
-        <span class="post-meta">Jan 13, 2016</span>
+  <div class="post-content" itemprop="articleBody">
+    <hr>
 
-        <h2>
-          <a class="post-link" href="/openstack/2016/01/13/Keystone%E9%9B%86%E6%88%90LDAP.html">Keystone集成LDAP</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Jan 3, 2016</span>
+<p>根据服务自身状况，HA 分为 Active/Active 和 Active/Passive 两种</p>
 
-        <h2>
-          <a class="post-link" href="/photos/2016/01/03/%5B%E8%A1%8C%E6%91%84%5D%E4%B8%8A%E6%B5%B7%E6%AD%A6%E5%BA%B7%E8%B7%AF.html">[行摄]上海武康路</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Dec 26, 2015</span>
+<ul>
+<li>Active/Active:   适合于 stateless/stateful 服务，常用 Load Balancer + Keepalive(VIP) 配置 HA</li>
+<li>Active/Passive: 适用于 stateful 服务，常用 Load Balancer + Keepalive(VIP) + Pacemaker + Corosync 配置 HA</li>
+</ul>
 
-        <h2>
-          <a class="post-link" href="/openstack/2015/12/26/%E7%90%86%E8%A7%A3Keystone%E7%9A%84%E5%9B%9B%E7%A7%8DToken.html">理解Keystone的四种Token</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Oct 10, 2015</span>
+<hr>
 
-        <h2>
-          <a class="post-link" href="/openstack/2015/10/10/%E4%B8%80%E6%AC%A1%E6%89%B9%E9%87%8F%E9%87%8D%E5%90%AF%E5%BC%95%E5%8F%91%E7%9A%84Neutron%E7%BD%91%E7%BB%9C%E6%95%85%E9%9A%9C.html">一次批量重启引发的Neutron网络故障</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 1, 2015</span>
+<h1 id="openstack-ha-实现">OpenStack HA 实现</h1>
 
-        <h2>
-          <a class="post-link" href="/openstack/2015/05/01/Nova%E6%98%AF%E5%A6%82%E4%BD%95%E7%BB%9F%E8%AE%A1OpenStack%E8%B5%84%E6%BA%90.html">Nova是如何统计OpenStack资源</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Dec 24, 2014</span>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/OpenStack_ha.jpg?imageView2/1/w/600/q/100" alt="OpenStack HA"></p>
 
-        <h2>
-          <a class="post-link" href="/devops/2014/12/24/Haproxy%E4%B8%8EOpenStack-API%E5%AE%89%E5%85%A8.html">Haproxy与OpenStack-API安全</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Nov 17, 2014</span>
+<h2 id="database-active-active">Database(Active/Active):</h2>
 
-        <h2>
-          <a class="post-link" href="/openstack/2014/11/17/Nova-KVM%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98.html">Nova-KVM性能调优</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Oct 12, 2014</span>
+<p>官方推荐：<a href="http://docs.OpenStack.org/high-availability-guide/content/ha-aa-db.html">MySQL with Galera</a></p>
 
-        <h2>
-          <a class="post-link" href="/openstack/2014/10/12/OpenStack%E7%9A%84HA%E6%96%B9%E6%A1%88.html">OpenStack的HA方案</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">Aug 12, 2014</span>
+<h2 id="amqp-active-active">AMQP(Active/Active):</h2>
 
-        <h2>
-          <a class="post-link" href="/openstack/2014/08/12/Nova%E5%BF%AB%E7%85%A7%E5%88%86%E6%9E%90.html">Nova快照分析</a>
-        </h2>
-      </li>
-    
-      <li>
-        <span class="post-meta">May 15, 2013</span>
+<p>官方推荐：<a href="https://OpenStack.redhat.com/RabbitMQ">RabbitMQ cluster</a></p>
 
-        <h2>
-          <a class="post-link" href="/photos/2013/05/15/%5B%E8%A1%8C%E6%91%84%5D%E9%9D%92%E6%B5%B7%E6%B9%96.html">[行摄]青海湖</a>
-        </h2>
-      </li>
-    
-  </ul>
+<h2 id="openstack-api-active-active">OpenStack API(Active/Active):</h2>
 
-  <p class="rss-subscribe">subscribe <a href="/feed.xml">via RSS</a></p>
+<p>Keystone, Glance-api, Glance-registry, Neutron-server, Ceilometer-api, Dashboard 均为 stateless 服务，通过 Load Balancer + Keepalive 保证 HA，部署于 Apache server 可提高性能，Haproxy(1.5.0)支持 SSL。</p>
 
-</div>
+<ul>
+<li><a href="http://OpenStack.redhat.com/Load_Balance_OpenStack_API">Loadbalance for OpenStack API</a></li>
+<li><a href="http://www.b2btech.in/implement-ssl-termination-haproxy-ubuntu-14-04">Configuration SSL for haproxy</a></li>
+<li><a href="http://andy.mc.it/2013/07/apache2-mod_wsgi-OpenStack-pt-2-nova-api-os-compute-nova-api-ec2/#comment-35">Runs OpenStack API in apache</a></li>
+</ul>
+
+<h2 id="openstack-scheduler-active-active">OpenStack scheduler(Active/Active):</h2>
+
+<p>Nova-scheduler, nova-conductor, nova-consoleauth, nova-novncproxy, ceilometer-collector, cinder-scheduler 等均为 stateless 服务，恰当的配置与 AMQP server 连接参数即可，具体详见<a href="http://docs.OpenStack.org/high-availability-guide/content/_run_OpenStack_api_and_schedulers.html">社区文档</a></p>
+
+<h2 id="memcached-active-active">Memcached(Active/Active):</h2>
+
+<ul>
+<li>提高 Dashboard 的性能</li>
+<li>解决 nova-consoleauth 单点问题</li>
+</ul>
+
+<h2 id="network">Network:</h2>
+
+<ul>
+<li>neutron DHCP agent(Active/Passive)</li>
+<li>neutron L3 agent(Active/Passive)</li>
+<li>neutron metadata agent(Active/Passive) </li>
+</ul>
+
+<p><a href="http://docs.OpenStack.org/high-availability-guide/content/ch-network.html">以上三者均由 Pacemaker + Corosync 配置</a>。</p>
+
+<h2 id="storage">Storage:</h2>
+
+<p><a href="http://www.ceph.com/docs/next/rbd/rbd-OpenStack/">Ceph 保证 Image storage, Volume storage, Nova backend 可靠性</a>。</p>
+
+  </div>
+
+</article>
 
       </div>
     </div>
