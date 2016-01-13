@@ -175,6 +175,16 @@ root@ubuntu:~# openstack user show demo
 | name      | demo             |
 +-----------+------------------+
 
+root@ubuntu:~# openstack user create hello --password 123456
++-----------+----------------------------------+
+| Field     | Value                            |
++-----------+----------------------------------+
+| domain_id | default                          |
+| enabled   | True                             |
+| id        | hello                            |
+| name      | hello                            |
++-----------+----------------------------------+
+
 root@ubuntu:~# openstack project create test_project
 +-------------+----------------------------------+
 | Field       | Value                            |
