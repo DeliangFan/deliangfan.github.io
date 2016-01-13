@@ -191,7 +191,7 @@ rpc_workers = $workers   </p>
 
 <p>让我们深入一点，假设的 CPU 足够强大，是不是可以解决 neutron-server 单进程的并发问题呢？我觉得未必，这又回到了 IO 问题。Monkey patch[4] 虽然把系统的 socket 库替换成自己提供的非阻塞 socket 库，从而避免某些阻塞 IO 阻塞了整个进程(主线程)。但是 OpenStack 访问 MySQL 使用的是 libmysqlclient 库，eventlet 并不能对这个使用了系统 socket 的 C 库使用 monky_patch，所以对 MySQL CRUD 的时候会阻塞主线程，意味着 neutron-server 在访问数据库也容易出现性能瓶颈。 </p>
 
-<p>解决上诉并发问题的方法之一就是启动更多的 api worker 和 rpc worker。在较新的版本，OpenStack 默认的 wokers 就是服务器的逻辑核数。另外一种办法是用 apache 替换 python http server，最近各个组件逐步提供了对 apache 的支持。</p>
+<p>解决上述并发问题的方法之一就是启动更多的 api worker 和 rpc worker。在较新的版本，OpenStack 默认的 wokers 就是服务器的逻辑核数。另外一种办法是用 apache 替换 python http server，最近各个组件逐步提供了对 apache 的支持。</p>
 
 <hr>
 
