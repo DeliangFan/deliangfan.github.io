@@ -6,12 +6,12 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 16 Jan 2016 15:19:31 +0800</pubDate>
-    <lastBuildDate>Sat, 16 Jan 2016 15:19:31 +0800</lastBuildDate>
+    <pubDate>Sat, 16 Jan 2016 15:21:33 +0800</pubDate>
+    <lastBuildDate>Sat, 16 Jan 2016 15:21:33 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
-        <title>Keystone Federation</title>
+        <title>Keystone Federation Identity</title>
         <description>&lt;hr&gt;
 
 &lt;p&gt;Keystone federation identity 涉及很多概念，安装配置复杂，官网的文档又不够清晰，下面 4 篇文章在安装配置方面阐述的非常详细。&lt;/p&gt;
@@ -470,8 +470,8 @@ service apache2 restart
 &lt;/ol&gt;
 </description>
         <pubDate>Thu, 14 Jan 2016 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/openstack/2016/01/14/Keystone-Federation.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/openstack/2016/01/14/Keystone-Federation.html</guid>
+        <link>http://wsfdl.com/openstack/2016/01/14/Keystone-Federation-Identity.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/openstack/2016/01/14/Keystone-Federation-Identity.html</guid>
         
         
         <category>openstack</category>

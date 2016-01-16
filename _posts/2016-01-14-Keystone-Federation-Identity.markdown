@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Keystone Federation"
+title:  "Keystone Federation Identity"
 categories: OpenStack
 ---
 
