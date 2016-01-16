@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 16 Jan 2016 15:21:33 +0800</pubDate>
-    <lastBuildDate>Sat, 16 Jan 2016 15:21:33 +0800</lastBuildDate>
+    <pubDate>Sat, 16 Jan 2016 15:30:30 +0800</pubDate>
+    <lastBuildDate>Sat, 16 Jan 2016 15:30:30 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -64,7 +64,7 @@
 &lt;ul&gt;
 &lt;li&gt;Identity Provider API: /OS-FEDERATION/identity_providers&lt;br&gt;
 管理 Keystone 信任的 Identity Providers。&lt;/li&gt;
-&lt;li&gt;Protocol API: /OS-FEDERATION/identity&lt;u&gt;providers/{idp&lt;/u&gt;id}/protocols&lt;br&gt;
+&lt;li&gt;Protocol API: /OS-FEDERATION/identity_providers/{idp_id}/protocols&lt;br&gt;
 管理 Keystone 和某个 Identity Provider 之间认证的协议，通常为 oidc(OpenID) 或 saml2(SAML)。&lt;/li&gt;
 &lt;li&gt;&lt;p&gt;Mapping API: /OS-FEDERATION/mappings&lt;br&gt;
 管理 Identity Provider 里的用户和 Keystone 里的用户之间的映射规则，通过该 API，管理员可以管理 IDP 中用户访问 Service 的权限。比如 IDP 有用户 A，B，通过配置 mapping rule，可以允许 A 有权限而 B 无权限访问。&lt;/p&gt;

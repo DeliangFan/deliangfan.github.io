@@ -44,9 +44,9 @@ Federation identity 具有以下优点：
 
 Federation identity 为 hybrid cloud 在用户管理层面提供了良好的解决方案。Keystone 从 Icehouse 开始逐步增加 federation identity 的功能，Icehouse 支持 Keystone 作为 Service Provider，Juno 版本新增了 Identity Provider，支持 SAML 和 OpenID 两种认证协议。OpenStack 作为云服务的解决方案，对外提供计算、存储和网络等服务，多数场景下 Keystone 常常作为服务端，对接其它的 Identity Provider，所以本节着重阐述 Service Provider 的原理和流程。首先先介绍 3 类重要的 [API](https://specs.openstack.org/openstack/keystone-specs/api/v3/identity-api-v3-os-federation-ext.html)。
 
-- Identity Provider API: /OS-FEDERATION/identity_providers         
+- Identity Provider API: /OS-FEDERATION/identity\_providers         
   管理 Keystone 信任的 Identity Providers。
-- Protocol API: /OS-FEDERATION/identity_providers/{idp_id}/protocols   
+- Protocol API: /OS-FEDERATION/identity\_providers/{idp\_id}/protocols   
   管理 Keystone 和某个 Identity Provider 之间认证的协议，通常为 oidc(OpenID) 或 saml2(SAML)。
 - Mapping API: /OS-FEDERATION/mappings    
   管理 Identity Provider 里的用户和 Keystone 里的用户之间的映射规则，通过该 API，管理员可以管理 IDP 中用户访问 Service 的权限。比如 IDP 有用户 A，B，通过配置 mapping rule，可以允许 A 有权限而 B 无权限访问。

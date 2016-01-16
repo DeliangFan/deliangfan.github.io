@@ -114,7 +114,7 @@
 <ul>
 <li>Identity Provider API: /OS-FEDERATION/identity_providers<br>
 管理 Keystone 信任的 Identity Providers。</li>
-<li>Protocol API: /OS-FEDERATION/identity<u>providers/{idp</u>id}/protocols<br>
+<li>Protocol API: /OS-FEDERATION/identity_providers/{idp_id}/protocols<br>
 管理 Keystone 和某个 Identity Provider 之间认证的协议，通常为 oidc(OpenID) 或 saml2(SAML)。</li>
 <li><p>Mapping API: /OS-FEDERATION/mappings<br>
 管理 Identity Provider 里的用户和 Keystone 里的用户之间的映射规则，通过该 API，管理员可以管理 IDP 中用户访问 Service 的权限。比如 IDP 有用户 A，B，通过配置 mapping rule，可以允许 A 有权限而 B 无权限访问。</p>
