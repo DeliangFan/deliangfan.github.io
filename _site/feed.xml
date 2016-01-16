@@ -6,32 +6,42 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 15 Jan 2016 23:38:41 +0800</pubDate>
-    <lastBuildDate>Fri, 15 Jan 2016 23:38:41 +0800</lastBuildDate>
+    <pubDate>Sat, 16 Jan 2016 15:19:31 +0800</pubDate>
+    <lastBuildDate>Sat, 16 Jan 2016 15:19:31 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
         <title>Keystone Federation</title>
         <description>&lt;hr&gt;
 
+&lt;p&gt;Keystone federation identity 涉及很多概念，安装配置复杂，官网的文档又不够清晰，下面 4 篇文章在安装配置方面阐述的非常详细。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://blog.rodrigods.com/it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo/&quot;&gt;Configure Keystone to Keystone Federation&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://bigjools.wordpress.com/2015/05/22/saml-federation-with-openstack/&quot;&gt;Configure Keystone to Testshib Federation with SAML&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://bigjools.wordpress.com/2015/04/27/federated-openstack-logins-using-kerberos/&quot;&gt;Configure Keystone federation with Kerberos&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://zenodo.org/record/11982/files/CERN_openlab_Luca_Tartarini.pdf&quot;&gt;Configure Keystone federation with multi-IDP&lt;/a&gt; &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr&gt;
+
 &lt;h1 id=&quot;1-federation-identity-简介&quot;&gt;1. Federation Identity 简介&lt;/h1&gt;
 
-&lt;p&gt;思索了许久，却未找到合适准确的中文词句定义 &lt;a href=&quot;https://en.wikipedia.org/wiki/Federated_identity&quot;&gt;federation identity&lt;/a&gt;，所以直接引用维基百科：&lt;/p&gt;
+&lt;p&gt;关于 &lt;a href=&quot;https://en.wikipedia.org/wiki/Federated_identity&quot;&gt;federation identity&lt;/a&gt;，维基百科的定义如下：&lt;/p&gt;
 
 &lt;blockquote&gt;
 &lt;p&gt;A federated identity is the means of linking a person&amp;#39;s electronic identity and attributes, stored across multiple distinct identity management systems(IDM).&lt;/p&gt;
 &lt;/blockquote&gt;
 
-&lt;p&gt;在多个认证管理系统(IDM)相互信任的基础上，federation identity 允许多个认证管理系统联邦认证各个系统的用户身份。它最重要的一个功能就是实现单点登录(SSO)，即用户仅需认证一次，便可访问这些相互授信的资源。假设 A, B 两个企业有独自的员工管理系统，A 公司员工需要访问 B 公司的某个服务，出于安全等因素，但不希望 B 存储 A 公司的员工信息，通过 federation identity 可为上述场景提供很好的解决方案，简单的说，它首先需要 A，B 公司互相信任，每当有 A 公司员工要访问 B 的服务时，B 依赖 A 的认证系统通过某种认证协议完成用户身份信息的确认。我们把 A 称之为 Identity Provider, B 称之为 Service Provider，员工称之为 Subject。&lt;/p&gt;
+&lt;p&gt;在多个认证管理系统互相信任的基础上，federation identity 允许多个认证管理系统联邦认证各个系统的用户身份。它最重要的一个功能就是实现单点登录(&lt;a href=&quot;https://en.wikipedia.org/wiki/Single_sign-on&quot;&gt;Single Sign On&lt;/a&gt;)，用户仅需认证一次，便可访问这些互相授信的资源。比如 A 公司员工需使用 AWS 公有云，出于安全考虑，不希望在 AWS 的 IAM 创建员工账户信息，通过 federation identity 打通二者之间的用户授权和认证，A 公司员工只需在本公司完成身份认证即可访问 AWS 资源。我们把 A 公司称之为 Identity Provider(IDP), AWS 称之为 Service Provider(SP)。&lt;/p&gt;
 
 &lt;ul&gt;
-&lt;li&gt;Subject: 可简单的理解成用户&lt;/li&gt;
-&lt;li&gt;Service Provider: 服务提供方，服务提供方只提供服务，依赖 Identity Provider 认证用户身份信息&lt;/li&gt;
-&lt;li&gt;Identity Provider: 断言(assertion)方，用于审核和认证用户身份&lt;/li&gt;
+&lt;li&gt;Service Provider: 服务提供方，它只提供服务，依赖 Identity Provider 认证用户身份&lt;/li&gt;
+&lt;li&gt;Identity Provider: 断言(assertion)方，用于认证用户身份&lt;/li&gt;
 &lt;li&gt;Assertion Protocol: 认证(断言)协议，Service Provider 和 Identity Provider 完成认证用户身份所用的协议，常用有 SAML, OpenID, Oauth 等&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;以 SAML 协议为例，典型的的 federation identity 的&lt;a href=&quot;http://www.searchsoa.com.cn/showcontent_1604.htm&quot;&gt;认证流程&lt;/a&gt;可分为 &lt;a href=&quot;https://en.wikipedia.org/wiki/SAML_2.0#HTTP_Redirect_Binding&quot;&gt;Redirect Bindings&lt;/a&gt; 和 &lt;a href=&quot;https://en.wikipedia.org/wiki/SAML_2.0#HTTP_Artifact_Binding&quot;&gt;Artifact/POST Bindings&lt;/a&gt; 两种。&lt;/p&gt;
+&lt;p&gt;以 SAML 协议为例，典型的&lt;a href=&quot;http://www.searchsoa.com.cn/showcontent_1604.htm&quot;&gt;认证流程&lt;/a&gt;分为 &lt;a href=&quot;https://en.wikipedia.org/wiki/SAML_2.0#HTTP_Redirect_Binding&quot;&gt;Redirect Bindings&lt;/a&gt; 和 &lt;a href=&quot;https://en.wikipedia.org/wiki/SAML_2.0#HTTP_Artifact_Binding&quot;&gt;Artifact/POST Bindings&lt;/a&gt; 两种。&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/Redirect%20Binding.png?imageView2/1/w/600/h/400/q/100&quot; alt=&quot;Redirect Bindings&quot;&gt;&lt;/p&gt;
 
@@ -41,17 +51,15 @@
 
 &lt;ul&gt;
 &lt;li&gt;支持 SSO 单点登录&lt;/li&gt;
-&lt;li&gt;避免向 Service Provider 暴露用户身份信息，提高安全性&lt;/li&gt;
+&lt;li&gt;避免向 Service Provider 暴露用户信息，提高安全性&lt;/li&gt;
 &lt;li&gt;避免用户注册多个账号，增加用户负担&lt;/li&gt;
 &lt;/ul&gt;
-
-&lt;p&gt;事实上，在 cloud 领域也有诸多 federation identity 场景需求，比如 A 公司的员工需使用 AWS 的公有云服务，但又不想在 AWS 中为每一个员工创建账户信息，那么通过 federation identity 就可以打通二者之间的用户认证和授权，使得 A 公司员工只需在本公司完成身份认证即可访问 AWS 资源。可以说，federation 为 hybrid cloud 在用户管理层面提供了良好的解决方案。&lt;/p&gt;
 
 &lt;hr&gt;
 
 &lt;h1 id=&quot;keystone-federation-的原理&quot;&gt;Keystone Federation 的原理&lt;/h1&gt;
 
-&lt;p&gt;鉴于 federation identity 的诸多优点，Keystone 从 Icehouse 开始逐步增加 federation identity 的功能，Icehouse 支持 Keystone 作为 Service Provider，Juno 版本新增了 Identity Provider，支持 SAML 和 OpenID 两种认证协议。OpenStack 作为云服务的解决方案，对外提供计算、存储和网络等服务，所以在 federation identity 的场景下，Keystone 更多的作为服务端，对接其它的 Identity Provider，所以本节着重阐述 Service Provider 的原理和流程。首先先介绍 3 类重要的 &lt;a href=&quot;https://specs.openstack.org/openstack/keystone-specs/api/v3/identity-api-v3-os-federation-ext.html&quot;&gt;API&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;Federation identity 为 hybrid cloud 在用户管理层面提供了良好的解决方案。Keystone 从 Icehouse 开始逐步增加 federation identity 的功能，Icehouse 支持 Keystone 作为 Service Provider，Juno 版本新增了 Identity Provider，支持 SAML 和 OpenID 两种认证协议。OpenStack 作为云服务的解决方案，对外提供计算、存储和网络等服务，多数场景下 Keystone 常常作为服务端，对接其它的 Identity Provider，所以本节着重阐述 Service Provider 的原理和流程。首先先介绍 3 类重要的 &lt;a href=&quot;https://specs.openstack.org/openstack/keystone-specs/api/v3/identity-api-v3-os-federation-ext.html&quot;&gt;API&lt;/a&gt;。&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Identity Provider API: /OS-FEDERATION/identity_providers&lt;br&gt;
@@ -67,30 +75,28 @@
 &lt;p&gt;为了支持 Service Provider，Keystone 必须运行在 Apache HTTPD 上，mod-shibboleth 作为 apache plugin 支持 SAML 认证协议，完成了 Keystone 和 IDP 之间用户的身份认证，&lt;a href=&quot;http://shop.oreilly.com/product/0636920045960.do&quot;&gt;流程&lt;/a&gt;如下。&lt;/p&gt;
 
 &lt;ol&gt;
-&lt;li&gt;用户访问  GET/POST  /OS-FEDERATION/identity_providers/{identity_provider}/protocols/{protocol}/auth，apache2 捕获该 URL 并触发 mod-shibboleth 重定向至外部的 Identity Provider。&lt;/li&gt;
+&lt;li&gt;用户访问 /OS-FEDERATION/identity_providers/{identity_provider}/protocols/{protocol}/auth，Apache 捕获该 URL 并触发 mod-shibboleth 重定向至外部的 Identity Provider。&lt;/li&gt;
 &lt;li&gt;外部的 Identity Provider 认证用户的身份并把用户的某些身份信息返回给 Apache，Apache 再把信息传给 Keystone。&lt;/li&gt;
-&lt;li&gt;Keystone 根据 mapping rule 把判断用户是否有访问权限，如果有访问权限，返回一个 unscoped token。用 unscoped token 查看可用的 project 并生成 scoped token，进而访问 OpenStack 的 API。&lt;/li&gt;
+&lt;li&gt;Keystone 根据 mapping rule 把判断用户是否有访问权限，如果有访问权限，返回一个 unscoped token。用户可拿 unscoped token 查看可用的 project 并生成 scoped token，进而访问 OpenStack 的 API。&lt;/li&gt;
 &lt;/ol&gt;
 
 &lt;hr&gt;
 
 &lt;h1 id=&quot;configure-keystone-as-a-service-provider&quot;&gt;Configure Keystone as a Service Provider&lt;/h1&gt;
 
-&lt;p&gt;本节开始介绍如何安装配置 Keystone to Keystone Federation，重点参考了 &lt;a href=&quot;http://blog.rodrigods.com/it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo/&quot;&gt;it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo&lt;/a&gt;(原文的2处配置有误，本文已给予纠正)。 我们有两个服务器，分别作为 SP 和 IDP，二者均需按照&lt;a href=&quot;http://docs.openstack.org/kilo/install-guide/install/apt/content/ch_keystone.html&quot;&gt;官网的手册&lt;/a&gt;安装 Keystone。&lt;/p&gt;
+&lt;p&gt;本节开始介绍如何安装配置 Keystone to Keystone Federation，重点参考了 &lt;a href=&quot;http://blog.rodrigods.com/it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo/&quot;&gt;it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo&lt;/a&gt;(原文存在 2 处配置错误，本文已给予纠正)。 我们有两个服务器，分别作为 SP 和 IDP，二者均需按照&lt;a href=&quot;http://docs.openstack.org/kilo/install-guide/install/apt/content/ch_keystone.html&quot;&gt;官网的手册&lt;/a&gt;安装 Keystone。&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;Linux: Ubuntu 14.04 LTS&lt;/li&gt;
 &lt;li&gt;OpenStack: Kilo&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;先修改 SP 配置如下：&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;keystone.conf
-
-[auth]
+&lt;p&gt;更新 keystone.conf 如下配置：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;[auth]
 methods = external,password,token,oauth1,saml2
 saml2 = keystone.auth.plugins.mapped.Mapped 
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;Apache 的配置如下：&lt;/p&gt;
+&lt;p&gt;Apache 新增如下配置：&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;Listen 5000
 Listen 35357
 
@@ -132,7 +138,7 @@ Listen 35357
 
 &lt;span class=&quot;nt&quot;&gt;&amp;lt;MetadataProvider&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;XML&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;uri=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;http://idp:5000/v3/OS-FEDERATION/saml2/metadata&amp;quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;  
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;启动 Shibboleth 并重启 apache HTTPD：&lt;/p&gt;
+&lt;p&gt;启动 shibboleth 并重启 apache：&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;shib-keygen  
 service apache2 restart
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
@@ -144,7 +150,7 @@ Module shib2 already enabled
 
 &lt;h1 id=&quot;configure-keystone-as-an-identity-provider&quot;&gt;Configure Keystone as an Identity Provider&lt;/h1&gt;
 
-&lt;p&gt;对于 IDP，需先安装 xmlsec1 和 pysaml2：&lt;/p&gt;
+&lt;p&gt;安装 xmlsec1 和 pysaml2：&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo apt-get install xmlsec1  
 sudo pip install pysaml2
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
@@ -1107,6 +1113,44 @@ rpc_workers = $workers   &lt;/p&gt;
       </item>
     
       <item>
+        <title>OpenStack日志搜集分析之ELK</title>
+        <description>&lt;hr&gt;
+
+&lt;p&gt;集群达到一定规模时，日志管理和分析显得日益重要，良好统一的日志管理和分析平台有助于快速定位问题。Fuel 便集成了 ELK。
+Logstash：负责日志的收集，处理和储存。
+Elasticsearch：负责日志检索和分析。
+Kibana：负责日志的可视化。
+优点
+迅速查询全局 ERROR 级别的日志。
+ 某个 API 的请求频率。 
+ 通过 request ID, 可得到一个 API 整个流程的日志。&lt;/p&gt;
+
+&lt;p&gt;规划与设计
+部署架构
+控制节点作为日志服务器，存储计算节点的 OpenStack 相关日志。logstash 部署于所有节点，收集本节点下所需收集的日志，然后以网络(node/http)方式输送给控制节点的 elasticsearch，kibana 作为 web portal 提供展示日志信息，如下图：
+日志格式
+为了提供快速直观的检索功能，对于每一条 OpenStack 日志，我们希望它能包含以下属性，用于过滤日志信息：
+Host: 如 controller01，compute01 等
+Service Name: 如 nova-api, neutron-server 等
+Module: 如 nova.filters 
+Log Level: 如 DEBUG, INFO, ERROR 等
+Log date
+以上属性可以通过 logstash 实现，通过提前日志的关键信息，从而获上述几种属性。&lt;/p&gt;
+
+&lt;p&gt;安装配置
+安装手册可参考为：http://www.icyfire.me/2014/11/13/logstash-es-kibana.html
+配置，OpenStack logstash 的配置为： https://github.com/osops/tools-logging/blob/master/logstash/basic/logstash.conf&lt;/p&gt;
+</description>
+        <pubDate>Fri, 14 Aug 2015 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/openstack/2015/08/14/OpenStack%E6%97%A5%E5%BF%97%E6%90%9C%E9%9B%86%E5%88%86%E6%9E%90%E4%B9%8BELK.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/openstack/2015/08/14/OpenStack%E6%97%A5%E5%BF%97%E6%90%9C%E9%9B%86%E5%88%86%E6%9E%90%E4%B9%8BELK.html</guid>
+        
+        
+        <category>openstack</category>
+        
+      </item>
+    
+      <item>
         <title>Nova是如何统计OpenStack资源</title>
         <description>&lt;hr&gt;
 
@@ -1737,104 +1781,6 @@ service libvirtd restart
         <pubDate>Sun, 12 Oct 2014 00:00:00 +0800</pubDate>
         <link>http://wsfdl.com/openstack/2014/10/12/OpenStack%E7%9A%84HA%E6%96%B9%E6%A1%88.html</link>
         <guid isPermaLink="true">http://wsfdl.com/openstack/2014/10/12/OpenStack%E7%9A%84HA%E6%96%B9%E6%A1%88.html</guid>
-        
-        
-        <category>openstack</category>
-        
-      </item>
-    
-      <item>
-        <title>Nova快照分析</title>
-        <description>&lt;h1 id=&quot;snapshot-overview&quot;&gt;Snapshot Overview&lt;/h1&gt;
-
-&lt;p&gt;对OpenStack而言，虚拟机的快照即是镜像，快照做完后以镜像形式存于glance。虽然OpenStack的快照是基于libvirt(qemu-kvm)，但是二者在实现上有很大区别：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;libvirt 主流快照实现: 采用virDomainSnapshotCreateXML()函数(CLI为virsh snapshot-create)。 新建的快照与虚拟机有关联：若为内置快照，快照信息和虚拟机存在同一个qcow2镜像中；若为外置快照，新建一个qcow2文件，原虚拟机的disk将变为一个read only的模板镜像，新qcow2镜像仅记录与2.模板镜像的差异数据。这种快照包含快照链信息，可保留disk和ram信息，可回滚至快照点。&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;OpenStack快照实现: OpenStack并未采用virDomainSnapshotCreateXML()来实现快照，而是单纯的对虚拟机镜像做转换和拷贝，生成一个与虚拟机无关联的镜像，最后上传至glance中。这种快照不包含快照链信息，只保留disk信息，无法回滚至快照点，只能采用该快照镜像创建一个新的虚拟机。&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h1 id=&quot;cold-snapshot-amp-live-snapshot&quot;&gt;Cold Snapshot &amp;amp; Live Snapshot&lt;/h1&gt;
-
-&lt;ul&gt;
-&lt;li&gt;cold snapshot: 创建snapshot时，需暂停虚拟机。&lt;/li&gt;
-&lt;li&gt;live snapshot: 创建snapshot时，无需暂停虚拟机。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h1 id=&quot;cold-snapshot-流程&quot;&gt;cold snapshot 流程:&lt;/h1&gt;
-
-&lt;p&gt;1.Save the state and stop a running guest, then detach pci devices&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;virsh managedsave vm
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;2.Create a qemu internal snapshot&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;qemu-img snapshot -c snap1 vm_snapshot
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;3.Extract the internal snapshot, convert it to qcow2 and export it a file, then upload to glance&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;qemu-img convert -f qcow2 vm -O qcow2 vm_snapshot
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;4.Start the guest again
-virsh start vm&lt;/p&gt;
-
-&lt;h1 id=&quot;live-snapshot-流程&quot;&gt;live snapshot 流程&lt;/h1&gt;
-
-&lt;p&gt;1.Abort any failed/finished block operations:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;virsh blockjob vm vda --abort
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;2.Undefine a running domain. (Note: Undefining a running domain does not kill the domain, it just converts it from persistent to transient.)&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;virsh undefine vm
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;3.create a destination image with the original backing file and matching size of the instance root disk.&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;qemu-img create -f qcow2 vm_copy --backing_file&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;backing_file --size&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;root_disk_size
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;4.Invoke &amp;#39;virsh blockcopy&amp;#39; (This will take time, depending on the size of disk image vm1):&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;virsh blockcopy --domain vm vda vm_copy --wait --verbose
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;5.Abort any failed/finished block operations:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;virsh blockjob vm vda --abort
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;6.Define the guest again (to make it persistent):&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;virsh define vm
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;7.From the obtained new copy, convert the QCOW2 with a backing file to a qcow2 image with no backing file, then upload to glance:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;qemu-img convert -f qcow2 -O raw vm_copy vm_convert
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;h1 id=&quot;virsh-snapshot-create-as-snapshot-create-快照简析&quot;&gt;virsh snapshot-create-as/snapshot-create 快照简析&lt;/h1&gt;
-
-&lt;ul&gt;
-&lt;li&gt;默认为内置快照，支持快照链，支持快照回滚，支持内存信息。&lt;/li&gt;
-&lt;li&gt;快照过程中，虚拟机短暂卡顿。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;不知 OpenStack 为什么不通过该方法实现主流快照 ？！&lt;/p&gt;
-
-&lt;h1 id=&quot;conclusion&quot;&gt;conclusion&lt;/h1&gt;
-
-&lt;p&gt;支持功能&lt;/p&gt;
-
-&lt;p&gt;虚拟机快照（快照存放于glance）
-卷快照（LVM快照存放于本地）
-限制与缺点&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;没有快照链信息，不支持revert恢复虚拟机到某一个快照点&lt;/li&gt;
-&lt;li&gt;只对系统盘进行快照，不支持内存快照，不支持同时对虚拟机和磁盘做快照&lt;/li&gt;
-&lt;li&gt;需要用户进行一致性操作&lt;/li&gt;
-&lt;li&gt;不支持含元数据导出，不支持含元数据导入&lt;/li&gt;
-&lt;li&gt;只支持虚拟机全量数据快照（与快照的实现方式有关，因为是通过image进行保存的），过程较长（需要先通过存储快照，然后抽取并上传至glance)，快照以Image方式保存，而非以cinder卷方式保存，无法充分利用存储本身能力加快快照的创建和使用&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h1 id=&quot;参考资料：&quot;&gt;参考资料：&lt;/h1&gt;
-
-&lt;ol&gt;
-&lt;li&gt;https://www.redhat.com/archives/libvirt-users/2012-April/msg00142.html&lt;/li&gt;
-&lt;li&gt;http://blog.csdn.net/halcyonbaby/article/details/19998155&lt;/li&gt;
-&lt;li&gt;http://itxx.sinaapp.com/blog/content/130&lt;/li&gt;
-&lt;li&gt;http://kashyapc.com/2012/09/14/externaland-live-snapshots-with-libvirt/&lt;/li&gt;
-&lt;/ol&gt;
-</description>
-        <pubDate>Tue, 12 Aug 2014 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/openstack/2014/08/12/Nova%E5%BF%AB%E7%85%A7%E5%88%86%E6%9E%90.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/openstack/2014/08/12/Nova%E5%BF%AB%E7%85%A7%E5%88%86%E6%9E%90.html</guid>
         
         
         <category>openstack</category>
