@@ -17,7 +17,7 @@ ELK 安装配置简单，用于管理 OpenStack 日志时需注意两点：
 
 #ELK 简介
 
-ELK 是一款优秀的日志搜集、存储和查询的开源软件，广泛用于日志系统。当 OpenStack 集群达到一定规模时，日志管理和分析显得日益重要，良好统一的日志管理和分析平台有助于快速定位问题。Mirantis 的 fuel 和 HPE 的 helion 均集成了 ELK。
+ELK 是一套优秀的日志搜集、存储和查询的开源软件，广泛用于日志系统。当 OpenStack 集群达到一定规模时，日志管理和分析显得日益重要，良好统一的日志管理和分析平台有助于快速定位问题。Mirantis 的 fuel 和 HPE 的 helion 均集成了 ELK。
 
 - [Logstash](http://logstash.net/)：日志的收集和传送
 - [Elasticsearch](https://www.elastic.co/products/elasticsearch)：日志的存储和检索
@@ -25,9 +25,9 @@ ELK 是一款优秀的日志搜集、存储和查询的开源软件，广泛用�
 
 采用 ELK 管理 OpenStack 的日志具有以下优点：
 
-- 迅速查询全局 ERROR 级别的日志。
-- 某个 API 的请求频率。 
-- 通过 request ID, 可得到一个 API 整个流程的日志
+- 迅速查询全局 ERROR 级别日志
+- 某个 API 的请求频率
+- 通过 request ID, 可过滤出某个 API 整个流程的日志
 
 ------------------
 
@@ -35,21 +35,22 @@ ELK 是一款优秀的日志搜集、存储和查询的开源软件，广泛用�
 
 ##部署架构
 
-控制节点作为日志服务器，存储计算节点的 OpenStack 相关日志。logstash 部署于所有节点，收集本节点下所需收集的日志，然后以网络(node/http)方式输送给控制节点的 elasticsearch，kibana 作为 web portal 提供展示日志信息：
+控制节点作为日志服务器，存储所有 OpenStack 及其相关日志。Logstash 部署于所有节点，收集本节点下所需收集的日志，然后以网络(node/http)方式输送给控制节点的 Elasticsearch，Kibana 作为 web portal 提供展示日志信息：
 
 ![ELK](http://7xp2eu.com1.z0.glb.clouddn.com/ELK.png?imageView2/1/w/600/h/300/q/100)
 
 ##日志格式
 
-为了提供快速直观的检索功能，对于每一条 OpenStack 日志，我们希望它能包含以下属性，用于过滤日志信息：
+为了提供快速直观的检索功能，对于每一条 OpenStack 日志，我们希望它能包含以下属性，用于检索和过滤：
 
 - Host: 如 controller01，compute01 等
 - Service Name: 如 nova-api, neutron-server 等
 - Module: 如 nova.filters 
 - Log Level: 如 DEBUG, INFO, ERROR 等
 - Log date
+- Request ID: 某次请求的 Request ID
 
-以上属性可以通过 logstash 实现，通过提取日志的关键字段，从而获上述几种属性，并在 elasticsearch 建立索引，用于查询。
+以上属性可以通过 Logstash 实现，通过提取日志的关键字段，从而获上述几种属性，并在 Elasticsearch 建立索引。
 
 -------------
 
