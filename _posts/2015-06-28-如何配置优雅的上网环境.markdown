@@ -1,0 +1,12 @@
+---
+layout: post
+title:  "如何配置优雅的上网环境"
+categories: OpenStack
+---
+
+- [VPN](https://en.wikipedia.org/wiki/Virtual_private_network)
+- [SOCKS](https://zh.wikipedia.org/wiki/SOCKS)
+- [Proxy Auto Config](https://en.wikipedia.org/wiki/Proxy_auto-config)
+
+
+![Proxy Comparing](http://7xp2eu.com1.z0.glb.clouddn.com/proxy%20comparing.png?imageView2/1/w/600/h/400/q/100)
