@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>OpenStack日志搜集分析之ELK</title>
-  <meta name="description" content="集群达到一定规模时，日志管理和分析显得日益重要，良好统一的日志管理和分析平台有助于快速定位问题。Fuel 便集成了 ELK。Logstash：负责日志的收集，处理和储存。Elasticsearch：负责日志检索和分析。Kibana：负责日志的可视化。优点迅速查询全局 ERROR 级别的日志。 某个 API 的请求...">
+  <meta name="description" content="">
 
   <link rel="stylesheet" href="/css/main.css">
   <link rel="canonical" href="http://wsfdl.com/openstack/2015/08/14/OpenStack%E6%97%A5%E5%BF%97%E6%90%9C%E9%9B%86%E5%88%86%E6%9E%90%E4%B9%8BELK.html">
@@ -64,31 +64,251 @@
   <div class="post-content" itemprop="articleBody">
     <hr>
 
-<p>集群达到一定规模时，日志管理和分析显得日益重要，良好统一的日志管理和分析平台有助于快速定位问题。Fuel 便集成了 ELK。
-Logstash：负责日志的收集，处理和储存。
-Elasticsearch：负责日志检索和分析。
-Kibana：负责日志的可视化。
-优点
-迅速查询全局 ERROR 级别的日志。
- 某个 API 的请求频率。 
- 通过 request ID, 可得到一个 API 整个流程的日志。</p>
+<p>ELK 安装配置简单，用于管理 OpenStack 日志时需注意两点：</p>
 
-<p>规划与设计
-部署架构
-控制节点作为日志服务器，存储计算节点的 OpenStack 相关日志。logstash 部署于所有节点，收集本节点下所需收集的日志，然后以网络(node/http)方式输送给控制节点的 elasticsearch，kibana 作为 web portal 提供展示日志信息，如下图：
-日志格式
-为了提供快速直观的检索功能，对于每一条 OpenStack 日志，我们希望它能包含以下属性，用于过滤日志信息：
-Host: 如 controller01，compute01 等
-Service Name: 如 nova-api, neutron-server 等
-Module: 如 nova.filters 
-Log Level: 如 DEBUG, INFO, ERROR 等
-Log date
-以上属性可以通过 logstash 实现，通过提前日志的关键信息，从而获上述几种属性。</p>
+<ul>
+<li>Logstash 配置文件的编写</li>
+<li>Elasticsearch 日志存储空间的容量规划</li>
+</ul>
 
-<p>安装配置
-安装手册可参考为：http://www.icyfire.me/2014/11/13/logstash-es-kibana.html
-配置，OpenStack logstash 的配置为： https://github.com/osops/tools-logging/blob/master/logstash/basic/logstash.conf</p>
+<p>另外推荐 <a href="http://kibana.logstash.es/content/">ELKstack 中文指南</a>。</p>
 
+<hr>
+
+<h1 id="elk-简介">ELK 简介</h1>
+
+<p>ELK 是一套优秀的日志搜集、存储和查询的开源软件，广泛用于日志系统。当 OpenStack 集群达到一定规模时，日志管理和分析显得日益重要，良好统一的日志管理和分析平台有助于快速定位问题。Mirantis 的 fuel 和 HPE 的 helion 均集成了 ELK。</p>
+
+<ul>
+<li><a href="http://logstash.net/">Logstash</a>：日志的收集和传送</li>
+<li><a href="https://www.elastic.co/products/elasticsearch">Elasticsearch</a>：日志的存储和检索</li>
+<li><a href="https://www.elastic.co/products/kibana">Kibana</a>：日志的可视化，一个很炫的 portal</li>
+</ul>
+
+<p>采用 ELK 管理 OpenStack 的日志具有以下优点：</p>
+
+<ul>
+<li>迅速查询全局 ERROR 级别日志</li>
+<li>某个 API 的请求频率</li>
+<li>通过 request ID, 可过滤出某个 API 整个流程的日志</li>
+</ul>
+
+<hr>
+
+<h1 id="规划与设计">规划与设计</h1>
+
+<h2 id="部署架构">部署架构</h2>
+
+<p>控制节点作为日志服务器，存储所有 OpenStack 及其相关日志。Logstash 部署于所有节点，收集本节点下所需收集的日志，然后以网络(node/http)方式输送给控制节点的 Elasticsearch，Kibana 作为 web portal 提供展示日志信息：</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/ELK.png?imageView2/1/w/600/h/300/q/100" alt="ELK"></p>
+
+<h2 id="日志格式">日志格式</h2>
+
+<p>为了提供快速直观的检索功能，对于每一条 OpenStack 日志，我们希望它能包含以下属性，用于检索和过滤：</p>
+
+<ul>
+<li>Host: 如 controller01，compute01 等</li>
+<li>Service Name: 如 nova-api, neutron-server 等</li>
+<li>Module: 如 nova.filters </li>
+<li>Log Level: 如 DEBUG, INFO, ERROR 等</li>
+<li>Log date</li>
+<li>Request ID: 某次请求的 Request ID</li>
+</ul>
+
+<p>以上属性可以通过 Logstash 实现，通过提取日志的关键字段，从而获上述几种属性，并在 Elasticsearch 建立索引。</p>
+
+<hr>
+
+<h1 id="安装与配置">安装与配置</h1>
+
+<h2 id="安装">安装</h2>
+
+<p>ELK 的安装步骤非常简单，可参考 <a href="http://www.icyfire.me/2014/11/13/logstash-es-kibana.html">logstash-es-Kibana</a> 安装，如遇异常，请 Google。</p>
+
+<h2 id="配置">配置</h2>
+
+<p>Logstash 的配置文件有专门的一套语法，学习的成本比较高，可参考 <a href="https://github.com/osops/tools-logging/blob/master/logstash/basic/logstash.conf">openstack logstash config</a> 后，再根据自身需求改写：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">input {
+  file {
+    path =&gt; [&#39;/var/log/nova/nova-api.log&#39;]
+    tags =&gt; [&#39;nova&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;nova-api&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/nova/nova-conductor.log&#39;]
+    tags =&gt; [&#39;nova-conductor&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;nova&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/nova/nova-manage.log&#39;]
+    tags =&gt; [&#39;nova-manage&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;nova&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/nova/nova-scheduler.log&#39;]
+    tags =&gt; [&#39;nova-scheduler&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;nova&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/nova/nova-spicehtml5proxy.log&#39;]
+    tags =&gt; [&#39;nova-spice&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;nova&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/keystone/keystone-all.log&#39;]
+    tags =&gt; [&#39;keystone&#39;, &#39;keystonefmt&#39;]
+    type =&gt; &quot;keystone&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/keystone/keystone-manage.log&#39;]
+    tags =&gt; [&#39;keystone&#39;, &#39;keystonefmt&#39;]
+    type =&gt; &quot;keystone&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/glance/api.log&#39;]
+    tags =&gt; [&#39;glance&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;glance-api&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/glance/registry.log&#39;]
+    tags =&gt; [&#39;glance&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;glance-registry&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/glance/scrubber.log&#39;]
+    tags =&gt; [&#39;glance&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;glance-scrubber&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/ceilometer/ceilometer-agent-central.log&#39;]
+    tags =&gt; [&#39;ceilometer&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;ceilometer-agent-central&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/ceilometer/ceilometer-alarm-notifier.log&#39;]
+    tags =&gt; [&#39;ceilometer&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;ceilometer-alarm-notifier&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/ceilometer/ceilometer-api.log&#39;]
+    tags =&gt; [&#39;ceilometer&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;ceilometer-api&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/ceilometer/ceilometer-alarm-evaluator.log&#39;]
+    tags =&gt; [&#39;ceilometer&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;ceilometer-alarm-evaluator&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/ceilometer/ceilometer-collector.log&#39;]
+    tags =&gt; [&#39;ceilometer&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;ceilometer-collector&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/heat/heat.log&#39;]
+    tags =&gt; [&#39;heat&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;heat&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/neutron/neutron-server.log&#39;]
+    tags =&gt; [&#39;neutron&#39;, &#39;oslofmt&#39;]
+    type =&gt; &quot;neutron-server&quot;
+  }
+# Not collecting RabbitMQ logs for the moment
+#  file {
+#   path =&gt; [&#39;/var/log/rabbitmq/rabbit@&lt;%= @hostname %&gt;.log&#39;]
+#   tags =&gt; [&#39;rabbitmq&#39;, &#39;oslofmt&#39;]
+#   type =&gt; &quot;rabbitmq&quot;
+#  }
+  file {
+    path =&gt; [&#39;/var/log/httpd/access_log&#39;]
+    tags =&gt; [&#39;horizon&#39;]
+    type =&gt; &quot;horizon&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/httpd/error_log&#39;]
+    tags =&gt; [&#39;horizon&#39;]
+    type =&gt; &quot;horizon&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/httpd/horizon_access_log&#39;]
+    tags =&gt; [&#39;horizon&#39;]
+    type =&gt; &quot;horizon&quot;
+  }
+  file {
+    path =&gt; [&#39;/var/log/httpd/horizon_error_log&#39;]
+    tags =&gt; [&#39;horizon&#39;]
+    type =&gt; &quot;horizon&quot;
+  }
+}
+filter {
+  if &quot;oslofmt&quot; in [tags] {
+    multiline {
+      negate =&gt; true
+      pattern =&gt; &quot;^%{TIMESTAMP_ISO8601} &quot;
+      what =&gt; &quot;previous&quot;
+    }
+    multiline {
+      negate =&gt; false
+      pattern =&gt; &quot;^%{TIMESTAMP_ISO8601}%{SPACE}%{NUMBER}?%{SPACE}?TRACE&quot;
+      what =&gt; &quot;previous&quot;
+    }
+    grok {
+      # Do multiline matching as the above mutliline filter may add newlines
+      # to the log messages.
+      # TODO move the LOGLEVELs into a proper grok pattern.
+      match =&gt; { &quot;message&quot; =&gt; &quot;(?m)^%{TIMESTAMP_ISO8601:logdate}%{SPACE}%{NUMBER:pid}?%{SPACE}?(?&lt;loglevel&gt;AUDIT|CRITICAL|DEBUG|INFO|TRACE|WARNING|ERROR) \[?\b%{NOTSPACE:module}\b\]?%{SPACE}?%{GREEDYDATA:logmessage}?&quot; }
+      add_field =&gt; { &quot;received_at&quot; =&gt; &quot;%{@timestamp}&quot; }
+    }
+  } else if &quot;keystonefmt&quot; in [tags] {
+    grok {
+      # Do multiline matching as the above mutliline filter may add newlines
+      # to the log messages.
+      # TODO move the LOGLEVELs into a proper grok pattern.
+      match =&gt; { &quot;message&quot; =&gt; &quot;(?m)^%{TIMESTAMP_ISO8601:logdate}%{SPACE}%{NUMBER:pid}?%{SPACE}?(?&lt;loglevel&gt;AUDIT|CRITICAL|DEBUG|INFO|TRACE|WARNING|ERROR) \[?\b%{NOTSPACE:module}\b\]?%{SPACE}?%{GREEDYDATA:logmessage}?&quot; }
+      add_field =&gt; { &quot;received_at&quot; =&gt; &quot;%{@timestamp}&quot; }
+    }
+    if [module] == &quot;iso8601.iso8601&quot; {
+  #log message for each part of the date?  Really?
+  drop {}
+    }
+  } else if &quot;libvirt&quot; in [tags] {
+    grok {
+       match =&gt; { &quot;message&quot; =&gt; &quot;(?m)^%{TIMESTAMP_ISO8601:logdate}:%{SPACE}%{NUMBER:code}:?%{SPACE}\[?\b%{NOTSPACE:loglevel}\b\]?%{SPACE}?:?%{SPACE}\[?\b%{NOTSPACE:module}\b\]?%{SPACE}?%{GREEDYDATA:logmessage}?&quot; }
+       add_field =&gt; { &quot;received_at&quot; =&gt; &quot;%{@timestamp}&quot;}
+    }
+    mutate {
+       uppercase =&gt; [ &quot;loglevel&quot; ]
+    }
+  } else if [type] == &quot;syslog&quot; {
+     grok {
+        match =&gt; { &quot;message&quot; =&gt; &quot;%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:logmessage}&quot; }
+        add_field =&gt; [ &quot;received_at&quot;, &quot;%{@timestamp}&quot; ]
+     }
+     syslog_pri {
+        severity_labels =&gt; [&quot;ERROR&quot;, &quot;ERROR&quot;, &quot;ERROR&quot;, &quot;ERROR&quot;, &quot;WARNING&quot;, &quot;INFO&quot;, &quot;INFO&quot;, &quot;DEBUG&quot; ]
+     }
+     date {
+        match =&gt; [ &quot;syslog_timestamp&quot;, &quot;MMM  d HH:mm:ss&quot;, &quot;MMM dd HH:mm:ss&quot; ]
+     }
+     if !(&quot;_grokparsefailure&quot; in [tags]) {
+        mutate {
+           replace =&gt; [ &quot;@source_host&quot;, &quot;%{syslog_hostname}&quot; ]
+        }
+     }
+     mutate {
+        remove_field =&gt; [ &quot;syslog_hostname&quot;, &quot;syslog_timestamp&quot; ]
+        add_field =&gt; [ &quot;loglevel&quot;, &quot;%{syslog_severity}&quot; ]
+        add_field =&gt; [ &quot;module&quot;, &quot;%{syslog_program}&quot; ]
+     }
+  }
+}
+
+output {
+    elasticsearch { host =&gt; controller }
+}
+</code></pre></div>
   </div>
 
 </article>

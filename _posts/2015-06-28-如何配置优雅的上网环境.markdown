@@ -1,12 +1,89 @@
 ---
 layout: post
-title:  "如何配置优雅的上网环境"
+title:  "如何配置优雅的代理"
 categories: OpenStack
 ---
 
-- [VPN](https://en.wikipedia.org/wiki/Virtual_private_network)
-- [SOCKS](https://zh.wikipedia.org/wiki/SOCKS)
-- [Proxy Auto Config](https://en.wikipedia.org/wiki/Proxy_auto-config)
+----------------
+
+#1. 三种代理简介
+
+VPN、SOCKS 和 PAC 是三种常见的代理方式，本文以 QQ 和访问网站为例，深入浅出图解三者区别，并推荐最优雅的代理方式——PAC。
+
+- QQ：假设朋友也在国内
+- 优酷视频：假设优酷服务器(和 CDN) 都在国内
+- 网站 G：假设网站 G 在国外
+
+[VPN](https://en.wikipedia.org/wiki/Virtual_private_network)：可理解为全局代理，如果使用位于韩国的 VPN，所有应用的网络都必需先经韩国再到目的地。如此 QQ 聊天延时高，看优酷视频容易卡顿。
+
+![VNP](http://7xp2eu.com1.z0.glb.clouddn.com/new_vpn.png?imageView2/1/w/750/h/350/q/100)
+
+[SOCKS](https://zh.wikipedia.org/wiki/SOCKS)：给某个应用做代理，如果为浏览器陪置位于韩国的 SOCKS，那么所有网页的访问都必需先途径韩国再到目的地。如此 QQ 聊天顺畅，看优酷视频容易卡顿。
+
+![SOCKS](http://7xp2eu.com1.z0.glb.clouddn.com/new_sock.png?imageView2/1/w/750/h/350/q/100)
+
+[Proxy Auto Config](https://en.wikipedia.org/wiki/Proxy_auto-config)：在 SOCKS 基础之上，配置浏览器使之访问某些特定网页时使用代理。如此 QQ 聊天顺畅，可流畅的观看优酷视频。
+
+![PACK](http://7xp2eu.com1.z0.glb.clouddn.com/new_pac.png?imageView2/1/w/750/h/350/q/100)
+
+从网络协议的角度出发，VPN 协议的报文是 overlay 格式，它为计算机新增一块虚拟网卡并分配 IP，通常情况下路由表默认报文从该虚拟网卡发出，所以 VPN 几乎会代理所有协议；SOCKS 协议工作在会话层，需用户指定哪些应用需要代理；PAC 并不是网络协议，它只是一个 javascript 文件，通过正则匹配域名来告知浏览器哪些 HTTP 请求需要采用 SOCKS 代理，因为 HTTP 是应用层协议，所以 PAC 只影响应用层。
+
+![Proxy Comparing](http://7xp2eu.com1.z0.glb.clouddn.com/proxy%20comparing.png?imageView2/1/w/550/h/400/q/100)
+
+----------------
+
+#2. 如何配置 PAC
+
+配置 PAC 主要有两个步骤
+
+- 搭建 SOCKS 服务器
+- 编写 PAC 脚本
+
+##2.1 搭建 SOCKS 服务器
+
+在云计算百花齐放的时代，假设你已有服务器，只需安装 ss5 即可搭建 SOCKS 服务器，步骤非常简单，可参考[此文](http://cstriker1407.info/blog/centos-build-socks5-proxy-using-ss5/)：
+
+```bash
+#安装依赖
+yum install make automake gcc gcc-c++ pam-devel openssl-devel openldap-devel cyrus-sasl-devel
+
+#下载与安装
+wget http://sourceforge.net/projects/ss5/files/ss5/3.8.9-5/ss5-3.8.9-5.tar.gz/download
+tar -zxvf ss5-3.8.9-5.tar.gz
+cd ss5-3.8.9
+./configure
+make
+make install
+
+#设置开机启动
+chmod +x /etc/init.d/ss5
+chkconfig --add ss5
+chkconfig --level 345 ss5 on
 
 
-![Proxy Comparing](http://7xp2eu.com1.z0.glb.clouddn.com/proxy%20comparing.png?imageView2/1/w/600/h/400/q/100)
+#设置无密码不限制 IP 访问，更新 /etc/opt/ss5/ss5.conf 如下配置：
+#           SHost           SPort   Authentication
+auth        0.0.0.0/0       –       –
+permit –    0.0.0.0/0       –       0.0.0.0/0
+
+#启动服务
+service ss5 start
+
+```
+
+
+##2.2 编写 PAC 文件
+
+PAC 的编写更为简单，请参考[此文](http://www.truevue.org/javascript/pac-format)，假设 SOCKS 服务器 IP 和端口为 1.2.3.4:1080，下例代码表示如果网站的域名包含 a.com，则使用 SOCKS 代理，更多样例请参考 github.com。
+
+```js
+SOCKS5 1.2.3.4:1080
+
+function FindProxyForURL(url, host) {
+   if (shExpMatch(url,"*.a.com*")) {
+     return "PROXY 192.168.1.1:3128";
+   }
+
+   return "DIRECT"; 
+}
+```

@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 16 Jan 2016 15:30:30 +0800</pubDate>
-    <lastBuildDate>Sat, 16 Jan 2016 15:30:30 +0800</lastBuildDate>
+    <pubDate>Tue, 19 Jan 2016 01:07:23 +0800</pubDate>
+    <lastBuildDate>Tue, 19 Jan 2016 01:07:23 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -1116,34 +1116,345 @@ rpc_workers = $workers   &lt;/p&gt;
         <title>OpenStack日志搜集分析之ELK</title>
         <description>&lt;hr&gt;
 
-&lt;p&gt;集群达到一定规模时，日志管理和分析显得日益重要，良好统一的日志管理和分析平台有助于快速定位问题。Fuel 便集成了 ELK。
-Logstash：负责日志的收集，处理和储存。
-Elasticsearch：负责日志检索和分析。
-Kibana：负责日志的可视化。
-优点
-迅速查询全局 ERROR 级别的日志。
- 某个 API 的请求频率。 
- 通过 request ID, 可得到一个 API 整个流程的日志。&lt;/p&gt;
+&lt;p&gt;ELK 安装配置简单，用于管理 OpenStack 日志时需注意两点：&lt;/p&gt;
 
-&lt;p&gt;规划与设计
-部署架构
-控制节点作为日志服务器，存储计算节点的 OpenStack 相关日志。logstash 部署于所有节点，收集本节点下所需收集的日志，然后以网络(node/http)方式输送给控制节点的 elasticsearch，kibana 作为 web portal 提供展示日志信息，如下图：
-日志格式
-为了提供快速直观的检索功能，对于每一条 OpenStack 日志，我们希望它能包含以下属性，用于过滤日志信息：
-Host: 如 controller01，compute01 等
-Service Name: 如 nova-api, neutron-server 等
-Module: 如 nova.filters 
-Log Level: 如 DEBUG, INFO, ERROR 等
-Log date
-以上属性可以通过 logstash 实现，通过提前日志的关键信息，从而获上述几种属性。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Logstash 配置文件的编写&lt;/li&gt;
+&lt;li&gt;Elasticsearch 日志存储空间的容量规划&lt;/li&gt;
+&lt;/ul&gt;
 
-&lt;p&gt;安装配置
-安装手册可参考为：http://www.icyfire.me/2014/11/13/logstash-es-kibana.html
-配置，OpenStack logstash 的配置为： https://github.com/osops/tools-logging/blob/master/logstash/basic/logstash.conf&lt;/p&gt;
-</description>
+&lt;p&gt;另外推荐 &lt;a href=&quot;http://kibana.logstash.es/content/&quot;&gt;ELKstack 中文指南&lt;/a&gt;。&lt;/p&gt;
+
+&lt;hr&gt;
+
+&lt;h1 id=&quot;elk-简介&quot;&gt;ELK 简介&lt;/h1&gt;
+
+&lt;p&gt;ELK 是一套优秀的日志搜集、存储和查询的开源软件，广泛用于日志系统。当 OpenStack 集群达到一定规模时，日志管理和分析显得日益重要，良好统一的日志管理和分析平台有助于快速定位问题。Mirantis 的 fuel 和 HPE 的 helion 均集成了 ELK。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;http://logstash.net/&quot;&gt;Logstash&lt;/a&gt;：日志的收集和传送&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://www.elastic.co/products/elasticsearch&quot;&gt;Elasticsearch&lt;/a&gt;：日志的存储和检索&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://www.elastic.co/products/kibana&quot;&gt;Kibana&lt;/a&gt;：日志的可视化，一个很炫的 portal&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;采用 ELK 管理 OpenStack 的日志具有以下优点：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;迅速查询全局 ERROR 级别日志&lt;/li&gt;
+&lt;li&gt;某个 API 的请求频率&lt;/li&gt;
+&lt;li&gt;通过 request ID, 可过滤出某个 API 整个流程的日志&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr&gt;
+
+&lt;h1 id=&quot;规划与设计&quot;&gt;规划与设计&lt;/h1&gt;
+
+&lt;h2 id=&quot;部署架构&quot;&gt;部署架构&lt;/h2&gt;
+
+&lt;p&gt;控制节点作为日志服务器，存储所有 OpenStack 及其相关日志。Logstash 部署于所有节点，收集本节点下所需收集的日志，然后以网络(node/http)方式输送给控制节点的 Elasticsearch，Kibana 作为 web portal 提供展示日志信息：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/ELK.png?imageView2/1/w/600/h/300/q/100&quot; alt=&quot;ELK&quot;&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;日志格式&quot;&gt;日志格式&lt;/h2&gt;
+
+&lt;p&gt;为了提供快速直观的检索功能，对于每一条 OpenStack 日志，我们希望它能包含以下属性，用于检索和过滤：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Host: 如 controller01，compute01 等&lt;/li&gt;
+&lt;li&gt;Service Name: 如 nova-api, neutron-server 等&lt;/li&gt;
+&lt;li&gt;Module: 如 nova.filters &lt;/li&gt;
+&lt;li&gt;Log Level: 如 DEBUG, INFO, ERROR 等&lt;/li&gt;
+&lt;li&gt;Log date&lt;/li&gt;
+&lt;li&gt;Request ID: 某次请求的 Request ID&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;以上属性可以通过 Logstash 实现，通过提取日志的关键字段，从而获上述几种属性，并在 Elasticsearch 建立索引。&lt;/p&gt;
+
+&lt;hr&gt;
+
+&lt;h1 id=&quot;安装与配置&quot;&gt;安装与配置&lt;/h1&gt;
+
+&lt;h2 id=&quot;安装&quot;&gt;安装&lt;/h2&gt;
+
+&lt;p&gt;ELK 的安装步骤非常简单，可参考 &lt;a href=&quot;http://www.icyfire.me/2014/11/13/logstash-es-kibana.html&quot;&gt;logstash-es-Kibana&lt;/a&gt; 安装，如遇异常，请 Google。&lt;/p&gt;
+
+&lt;h2 id=&quot;配置&quot;&gt;配置&lt;/h2&gt;
+
+&lt;p&gt;Logstash 的配置文件有专门的一套语法，学习的成本比较高，可参考 &lt;a href=&quot;https://github.com/osops/tools-logging/blob/master/logstash/basic/logstash.conf&quot;&gt;openstack logstash config&lt;/a&gt; 后，再根据自身需求改写：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;input {
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/nova/nova-api.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;nova&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;nova-api&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/nova/nova-conductor.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;nova-conductor&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;nova&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/nova/nova-manage.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;nova-manage&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;nova&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/nova/nova-scheduler.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;nova-scheduler&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;nova&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/nova/nova-spicehtml5proxy.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;nova-spice&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;nova&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/keystone/keystone-all.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;keystone&amp;#39;, &amp;#39;keystonefmt&amp;#39;]
+    type =&amp;gt; &amp;quot;keystone&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/keystone/keystone-manage.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;keystone&amp;#39;, &amp;#39;keystonefmt&amp;#39;]
+    type =&amp;gt; &amp;quot;keystone&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/glance/api.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;glance&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;glance-api&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/glance/registry.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;glance&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;glance-registry&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/glance/scrubber.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;glance&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;glance-scrubber&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/ceilometer/ceilometer-agent-central.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;ceilometer&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;ceilometer-agent-central&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/ceilometer/ceilometer-alarm-notifier.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;ceilometer&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;ceilometer-alarm-notifier&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/ceilometer/ceilometer-api.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;ceilometer&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;ceilometer-api&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/ceilometer/ceilometer-alarm-evaluator.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;ceilometer&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;ceilometer-alarm-evaluator&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/ceilometer/ceilometer-collector.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;ceilometer&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;ceilometer-collector&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/heat/heat.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;heat&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;heat&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/neutron/neutron-server.log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;neutron&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+    type =&amp;gt; &amp;quot;neutron-server&amp;quot;
+  }
+# Not collecting RabbitMQ logs for the moment
+#  file {
+#   path =&amp;gt; [&amp;#39;/var/log/rabbitmq/rabbit@&amp;lt;%= @hostname %&amp;gt;.log&amp;#39;]
+#   tags =&amp;gt; [&amp;#39;rabbitmq&amp;#39;, &amp;#39;oslofmt&amp;#39;]
+#   type =&amp;gt; &amp;quot;rabbitmq&amp;quot;
+#  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/httpd/access_log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;horizon&amp;#39;]
+    type =&amp;gt; &amp;quot;horizon&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/httpd/error_log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;horizon&amp;#39;]
+    type =&amp;gt; &amp;quot;horizon&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/httpd/horizon_access_log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;horizon&amp;#39;]
+    type =&amp;gt; &amp;quot;horizon&amp;quot;
+  }
+  file {
+    path =&amp;gt; [&amp;#39;/var/log/httpd/horizon_error_log&amp;#39;]
+    tags =&amp;gt; [&amp;#39;horizon&amp;#39;]
+    type =&amp;gt; &amp;quot;horizon&amp;quot;
+  }
+}
+filter {
+  if &amp;quot;oslofmt&amp;quot; in [tags] {
+    multiline {
+      negate =&amp;gt; true
+      pattern =&amp;gt; &amp;quot;^%{TIMESTAMP_ISO8601} &amp;quot;
+      what =&amp;gt; &amp;quot;previous&amp;quot;
+    }
+    multiline {
+      negate =&amp;gt; false
+      pattern =&amp;gt; &amp;quot;^%{TIMESTAMP_ISO8601}%{SPACE}%{NUMBER}?%{SPACE}?TRACE&amp;quot;
+      what =&amp;gt; &amp;quot;previous&amp;quot;
+    }
+    grok {
+      # Do multiline matching as the above mutliline filter may add newlines
+      # to the log messages.
+      # TODO move the LOGLEVELs into a proper grok pattern.
+      match =&amp;gt; { &amp;quot;message&amp;quot; =&amp;gt; &amp;quot;(?m)^%{TIMESTAMP_ISO8601:logdate}%{SPACE}%{NUMBER:pid}?%{SPACE}?(?&amp;lt;loglevel&amp;gt;AUDIT|CRITICAL|DEBUG|INFO|TRACE|WARNING|ERROR) \[?\b%{NOTSPACE:module}\b\]?%{SPACE}?%{GREEDYDATA:logmessage}?&amp;quot; }
+      add_field =&amp;gt; { &amp;quot;received_at&amp;quot; =&amp;gt; &amp;quot;%{@timestamp}&amp;quot; }
+    }
+  } else if &amp;quot;keystonefmt&amp;quot; in [tags] {
+    grok {
+      # Do multiline matching as the above mutliline filter may add newlines
+      # to the log messages.
+      # TODO move the LOGLEVELs into a proper grok pattern.
+      match =&amp;gt; { &amp;quot;message&amp;quot; =&amp;gt; &amp;quot;(?m)^%{TIMESTAMP_ISO8601:logdate}%{SPACE}%{NUMBER:pid}?%{SPACE}?(?&amp;lt;loglevel&amp;gt;AUDIT|CRITICAL|DEBUG|INFO|TRACE|WARNING|ERROR) \[?\b%{NOTSPACE:module}\b\]?%{SPACE}?%{GREEDYDATA:logmessage}?&amp;quot; }
+      add_field =&amp;gt; { &amp;quot;received_at&amp;quot; =&amp;gt; &amp;quot;%{@timestamp}&amp;quot; }
+    }
+    if [module] == &amp;quot;iso8601.iso8601&amp;quot; {
+  #log message for each part of the date?  Really?
+  drop {}
+    }
+  } else if &amp;quot;libvirt&amp;quot; in [tags] {
+    grok {
+       match =&amp;gt; { &amp;quot;message&amp;quot; =&amp;gt; &amp;quot;(?m)^%{TIMESTAMP_ISO8601:logdate}:%{SPACE}%{NUMBER:code}:?%{SPACE}\[?\b%{NOTSPACE:loglevel}\b\]?%{SPACE}?:?%{SPACE}\[?\b%{NOTSPACE:module}\b\]?%{SPACE}?%{GREEDYDATA:logmessage}?&amp;quot; }
+       add_field =&amp;gt; { &amp;quot;received_at&amp;quot; =&amp;gt; &amp;quot;%{@timestamp}&amp;quot;}
+    }
+    mutate {
+       uppercase =&amp;gt; [ &amp;quot;loglevel&amp;quot; ]
+    }
+  } else if [type] == &amp;quot;syslog&amp;quot; {
+     grok {
+        match =&amp;gt; { &amp;quot;message&amp;quot; =&amp;gt; &amp;quot;%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:logmessage}&amp;quot; }
+        add_field =&amp;gt; [ &amp;quot;received_at&amp;quot;, &amp;quot;%{@timestamp}&amp;quot; ]
+     }
+     syslog_pri {
+        severity_labels =&amp;gt; [&amp;quot;ERROR&amp;quot;, &amp;quot;ERROR&amp;quot;, &amp;quot;ERROR&amp;quot;, &amp;quot;ERROR&amp;quot;, &amp;quot;WARNING&amp;quot;, &amp;quot;INFO&amp;quot;, &amp;quot;INFO&amp;quot;, &amp;quot;DEBUG&amp;quot; ]
+     }
+     date {
+        match =&amp;gt; [ &amp;quot;syslog_timestamp&amp;quot;, &amp;quot;MMM  d HH:mm:ss&amp;quot;, &amp;quot;MMM dd HH:mm:ss&amp;quot; ]
+     }
+     if !(&amp;quot;_grokparsefailure&amp;quot; in [tags]) {
+        mutate {
+           replace =&amp;gt; [ &amp;quot;@source_host&amp;quot;, &amp;quot;%{syslog_hostname}&amp;quot; ]
+        }
+     }
+     mutate {
+        remove_field =&amp;gt; [ &amp;quot;syslog_hostname&amp;quot;, &amp;quot;syslog_timestamp&amp;quot; ]
+        add_field =&amp;gt; [ &amp;quot;loglevel&amp;quot;, &amp;quot;%{syslog_severity}&amp;quot; ]
+        add_field =&amp;gt; [ &amp;quot;module&amp;quot;, &amp;quot;%{syslog_program}&amp;quot; ]
+     }
+  }
+}
+
+output {
+    elasticsearch { host =&amp;gt; controller }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
         <pubDate>Fri, 14 Aug 2015 00:00:00 +0800</pubDate>
         <link>http://wsfdl.com/openstack/2015/08/14/OpenStack%E6%97%A5%E5%BF%97%E6%90%9C%E9%9B%86%E5%88%86%E6%9E%90%E4%B9%8BELK.html</link>
         <guid isPermaLink="true">http://wsfdl.com/openstack/2015/08/14/OpenStack%E6%97%A5%E5%BF%97%E6%90%9C%E9%9B%86%E5%88%86%E6%9E%90%E4%B9%8BELK.html</guid>
+        
+        
+        <category>openstack</category>
+        
+      </item>
+    
+      <item>
+        <title>如何配置优雅的代理</title>
+        <description>&lt;hr&gt;
+
+&lt;h1 id=&quot;1-三种代理简介&quot;&gt;1. 三种代理简介&lt;/h1&gt;
+
+&lt;p&gt;VPN、SOCKS 和 PAC 是三种常见的代理方式，本文以 QQ 和访问网站为例，深入浅出图解三者区别，并推荐最优雅的代理方式——PAC。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;QQ：假设朋友也在国内&lt;/li&gt;
+&lt;li&gt;优酷视频：假设优酷服务器(和 CDN) 都在国内&lt;/li&gt;
+&lt;li&gt;网站 G：假设网站 G 在国外&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Virtual_private_network&quot;&gt;VPN&lt;/a&gt;：可理解为全局代理，如果使用位于韩国的 VPN，所有应用的网络都必需先经韩国再到目的地。如此 QQ 聊天延时高，看优酷视频容易卡顿。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/new_vpn.png?imageView2/1/w/750/h/350/q/100&quot; alt=&quot;VNP&quot;&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://zh.wikipedia.org/wiki/SOCKS&quot;&gt;SOCKS&lt;/a&gt;：给某个应用做代理，如果为浏览器陪置位于韩国的 SOCKS，那么所有网页的访问都必需先途径韩国再到目的地。如此 QQ 聊天顺畅，看优酷视频容易卡顿。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/new_sock.png?imageView2/1/w/750/h/350/q/100&quot; alt=&quot;SOCKS&quot;&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Proxy_auto-config&quot;&gt;Proxy Auto Config&lt;/a&gt;：在 SOCKS 基础之上，配置浏览器使之访问某些特定网页时使用代理。如此 QQ 聊天顺畅，可流畅的观看优酷视频。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/new_pac.png?imageView2/1/w/750/h/350/q/100&quot; alt=&quot;PACK&quot;&gt;&lt;/p&gt;
+
+&lt;p&gt;从网络协议的角度出发，VPN 协议的报文是 overlay 格式，它为计算机新增一块虚拟网卡并分配 IP，通常情况下路由表默认报文从该虚拟网卡发出，所以 VPN 几乎会代理所有协议；SOCKS 协议工作在会话层，需用户指定哪些应用需要代理；PAC 并不是网络协议，它只是一个 javascript 文件，通过正则匹配域名来告知浏览器哪些 HTTP 请求需要采用 SOCKS 代理，因为 HTTP 是应用层协议，所以 PAC 只影响应用层。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/proxy%20comparing.png?imageView2/1/w/550/h/400/q/100&quot; alt=&quot;Proxy Comparing&quot;&gt;&lt;/p&gt;
+
+&lt;hr&gt;
+
+&lt;h1 id=&quot;2-如何配置-pac&quot;&gt;2. 如何配置 PAC&lt;/h1&gt;
+
+&lt;p&gt;配置 PAC 主要有两个步骤&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;搭建 SOCKS 服务器&lt;/li&gt;
+&lt;li&gt;编写 PAC 脚本&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;2-1-搭建-socks-服务器&quot;&gt;2.1 搭建 SOCKS 服务器&lt;/h2&gt;
+
+&lt;p&gt;在云计算百花齐放的时代，假设你已有服务器，只需安装 ss5 即可搭建 SOCKS 服务器，步骤非常简单，可参考&lt;a href=&quot;http://cstriker1407.info/blog/centos-build-socks5-proxy-using-ss5/&quot;&gt;此文&lt;/a&gt;：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;c&quot;&gt;#安装依赖&lt;/span&gt;
+yum install make automake gcc gcc-c++ pam-devel openssl-devel openldap-devel cyrus-sasl-devel
+
+&lt;span class=&quot;c&quot;&gt;#下载与安装&lt;/span&gt;
+wget http://sourceforge.net/projects/ss5/files/ss5/3.8.9-5/ss5-3.8.9-5.tar.gz/download
+tar -zxvf ss5-3.8.9-5.tar.gz
+&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;ss5-3.8.9
+./configure
+make
+make install
+
+&lt;span class=&quot;c&quot;&gt;#设置开机启动&lt;/span&gt;
+chmod +x /etc/init.d/ss5
+chkconfig --add ss5
+chkconfig --level &lt;span class=&quot;m&quot;&gt;345&lt;/span&gt; ss5 on
+
+
+&lt;span class=&quot;c&quot;&gt;#设置无密码不限制 IP 访问，更新 /etc/opt/ss5/ss5.conf 如下配置：&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;#           SHost           SPort   Authentication&lt;/span&gt;
+auth        0.0.0.0/0       –       –
+permit –    0.0.0.0/0       –       0.0.0.0/0
+
+&lt;span class=&quot;c&quot;&gt;#启动服务&lt;/span&gt;
+service ss5 start
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h2 id=&quot;2-2-编写-pac-文件&quot;&gt;2.2 编写 PAC 文件&lt;/h2&gt;
+
+&lt;p&gt;PAC 的编写更为简单，请参考&lt;a href=&quot;http://www.truevue.org/javascript/pac-format&quot;&gt;此文&lt;/a&gt;，假设 SOCKS 服务器 IP 和端口为 1.2.3.4:1080，下例代码表示如果网站的域名包含 a.com，则使用 SOCKS 代理，更多样例请参考 github.com。&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-js&quot; data-lang=&quot;js&quot;&gt;&lt;span class=&quot;nx&quot;&gt;SOCKS5&lt;/span&gt; &lt;span class=&quot;mf&quot;&gt;1.2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mf&quot;&gt;3.4&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1080&lt;/span&gt;
+
+&lt;span class=&quot;kd&quot;&gt;function&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;FindProxyForURL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;host&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+   &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;shExpMatch&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;*.a.com*&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+     &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;PROXY 192.168.1.1:3128&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+   &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+   &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;DIRECT&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+        <pubDate>Sun, 28 Jun 2015 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/openstack/2015/06/28/%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AE%E4%BC%98%E9%9B%85%E7%9A%84%E4%B8%8A%E7%BD%91%E7%8E%AF%E5%A2%83.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/openstack/2015/06/28/%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AE%E4%BC%98%E9%9B%85%E7%9A%84%E4%B8%8A%E7%BD%91%E7%8E%AF%E5%A2%83.html</guid>
         
         
         <category>openstack</category>
@@ -1711,76 +2022,6 @@ service libvirtd restart
         <pubDate>Mon, 17 Nov 2014 00:00:00 +0800</pubDate>
         <link>http://wsfdl.com/openstack/2014/11/17/Nova-KVM%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98.html</link>
         <guid isPermaLink="true">http://wsfdl.com/openstack/2014/11/17/Nova-KVM%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98.html</guid>
-        
-        
-        <category>openstack</category>
-        
-      </item>
-    
-      <item>
-        <title>OpenStack的HA方案</title>
-        <description>&lt;hr&gt;
-
-&lt;p&gt;根据服务自身状况，HA 分为 Active/Active 和 Active/Passive 两种&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Active/Active:   适合于 stateless/stateful 服务，常用 Load Balancer + Keepalive(VIP) 配置 HA&lt;/li&gt;
-&lt;li&gt;Active/Passive: 适用于 stateful 服务，常用 Load Balancer + Keepalive(VIP) + Pacemaker + Corosync 配置 HA&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;hr&gt;
-
-&lt;h1 id=&quot;openstack-ha-实现&quot;&gt;OpenStack HA 实现&lt;/h1&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/HA.png?imageView2/1/w/600/q/100&quot; alt=&quot;OpenStack HA&quot;&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;database-active-active&quot;&gt;Database(Active/Active):&lt;/h2&gt;
-
-&lt;p&gt;官方推荐：&lt;a href=&quot;http://docs.OpenStack.org/high-availability-guide/content/ha-aa-db.html&quot;&gt;MySQL with Galera&lt;/a&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;amqp-active-active&quot;&gt;AMQP(Active/Active):&lt;/h2&gt;
-
-&lt;p&gt;官方推荐：&lt;a href=&quot;https://OpenStack.redhat.com/RabbitMQ&quot;&gt;RabbitMQ cluster&lt;/a&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;openstack-api-active-active&quot;&gt;OpenStack API(Active/Active):&lt;/h2&gt;
-
-&lt;p&gt;Keystone, Glance-api, Glance-registry, Neutron-server, Ceilometer-api, Dashboard 均为 stateless 服务，通过 Load Balancer + Keepalive 保证 HA，部署于 Apache server 可提高性能，Haproxy(1.5.0)支持 SSL。&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&quot;http://OpenStack.redhat.com/Load_Balance_OpenStack_API&quot;&gt;Loadbalance for OpenStack API&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&quot;http://www.b2btech.in/implement-ssl-termination-haproxy-ubuntu-14-04&quot;&gt;Configuration SSL for haproxy&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&quot;http://andy.mc.it/2013/07/apache2-mod_wsgi-OpenStack-pt-2-nova-api-os-compute-nova-api-ec2/#comment-35&quot;&gt;Runs OpenStack API in apache&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;openstack-scheduler-active-active&quot;&gt;OpenStack scheduler(Active/Active):&lt;/h2&gt;
-
-&lt;p&gt;Nova-scheduler, nova-conductor, nova-consoleauth, nova-novncproxy, ceilometer-collector, cinder-scheduler 等均为 stateless 服务，恰当的配置与 AMQP server 连接参数即可，具体详见&lt;a href=&quot;http://docs.OpenStack.org/high-availability-guide/content/_run_OpenStack_api_and_schedulers.html&quot;&gt;社区文档&lt;/a&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;memcached-active-active&quot;&gt;Memcached(Active/Active):&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;提高 Dashboard 的性能&lt;/li&gt;
-&lt;li&gt;解决 nova-consoleauth 单点问题&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;network&quot;&gt;Network:&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;neutron DHCP agent(Active/Passive)&lt;/li&gt;
-&lt;li&gt;neutron L3 agent(Active/Passive)&lt;/li&gt;
-&lt;li&gt;neutron metadata agent(Active/Passive) &lt;/li&gt;
-&lt;li&gt;neutron DVR&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;a href=&quot;http://docs.OpenStack.org/high-availability-guide/content/ch-network.html&quot;&gt;以上三者均由 Pacemaker + Corosync 配置&lt;/a&gt;。&lt;/p&gt;
-
-&lt;h2 id=&quot;storage&quot;&gt;Storage:&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;http://www.ceph.com/docs/next/rbd/rbd-OpenStack/&quot;&gt;Ceph 保证 Image storage, Volume storage, Nova backend 可靠性&lt;/a&gt;。&lt;/p&gt;
-</description>
-        <pubDate>Sun, 12 Oct 2014 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/openstack/2014/10/12/OpenStack%E7%9A%84HA%E6%96%B9%E6%A1%88.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/openstack/2014/10/12/OpenStack%E7%9A%84HA%E6%96%B9%E6%A1%88.html</guid>
         
         
         <category>openstack</category>
