@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 19 Jan 2016 01:07:23 +0800</pubDate>
-    <lastBuildDate>Tue, 19 Jan 2016 01:07:23 +0800</lastBuildDate>
+    <pubDate>Wed, 20 Jan 2016 22:48:24 +0800</pubDate>
+    <lastBuildDate>Wed, 20 Jan 2016 22:48:24 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -1113,6 +1113,60 @@ rpc_workers = $workers   &lt;/p&gt;
       </item>
     
       <item>
+        <title>[行摄]青岛</title>
+        <description>&lt;hr&gt;
+
+&lt;p&gt;是不是滨海的名城都如此的小资，它们毗邻的大海是不是如此的多情，青岛和厦门宛如一对孪生姐妹，有山有海有洋气，名声之大，远远的超过省会济南和福州。&lt;/p&gt;
+
+&lt;p&gt;据说青岛专名指海湾内一座终年郁郁葱葱的小岛，在万历年间建港口，于 1897 年被德国租借，并设立总督府(见P5)，此后近 30 多年，各国陆续设立领事馆，这些领事馆多分布在八大关，红瓦黄墙，格调优雅，非常宜居。&lt;/p&gt;
+
+&lt;hr&gt;
+
+&lt;p&gt;&amp;nbsp;&amp;nbsp; &amp;nbsp;
+&amp;nbsp;&amp;nbsp; &amp;nbsp; &lt;/p&gt;
+
+&lt;p&gt;P1. 海&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P1.JPG?imageView2/1/w/600/h/400/q/100&quot; alt=&quot;p1&quot;&gt;&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;&amp;nbsp; &amp;nbsp;
+&amp;nbsp;&amp;nbsp; &amp;nbsp; &lt;/p&gt;
+
+&lt;p&gt;P2. 海&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P5.JPG?imageView2/1/w/600/h/400/q/100&quot; alt=&quot;p2&quot;&gt;&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;&amp;nbsp; &amp;nbsp;
+&amp;nbsp;&amp;nbsp; &amp;nbsp;&lt;/p&gt;
+
+&lt;p&gt;P3. 领事馆&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P2.JPG?imageView2/1/w/600/h/400/q/100&quot; alt=&quot;p3&quot;&gt;&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;&amp;nbsp; &amp;nbsp;
+&amp;nbsp;&amp;nbsp; &amp;nbsp;&lt;/p&gt;
+
+&lt;p&gt;P4. 信号山&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P3.JPG?imageView2/1/w/600/h/400/q/100&quot; alt=&quot;p4&quot;&gt;&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;&amp;nbsp; &amp;nbsp;
+&amp;nbsp;&amp;nbsp; &amp;nbsp;&lt;/p&gt;
+
+&lt;p&gt;P5. 德总督府&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P4.JPG?imageView2/1/w/600/h/400/q/100&quot; alt=&quot;p5&quot;&gt;&lt;/p&gt;
+</description>
+        <pubDate>Mon, 05 Oct 2015 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/photos/2015/10/05/%5B%E8%A1%8C%E6%91%84%5D%E9%9D%92%E5%B2%9B.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/photos/2015/10/05/%5B%E8%A1%8C%E6%91%84%5D%E9%9D%92%E5%B2%9B.html</guid>
+        
+        
+        <category>photos</category>
+        
+      </item>
+    
+      <item>
         <title>OpenStack日志搜集分析之ELK</title>
         <description>&lt;hr&gt;
 
@@ -1396,7 +1450,7 @@ output {
 
 &lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/new_pac.png?imageView2/1/w/750/h/350/q/100&quot; alt=&quot;PACK&quot;&gt;&lt;/p&gt;
 
-&lt;p&gt;从网络协议的角度出发，VPN 协议的报文是 overlay 格式，它为计算机新增一块虚拟网卡并分配 IP，通常情况下路由表默认报文从该虚拟网卡发出，所以 VPN 几乎会代理所有协议；SOCKS 协议工作在会话层，需用户指定哪些应用需要代理；PAC 并不是网络协议，它只是一个 javascript 文件，通过正则匹配域名来告知浏览器哪些 HTTP 请求需要采用 SOCKS 代理，因为 HTTP 是应用层协议，所以 PAC 只影响应用层。&lt;/p&gt;
+&lt;p&gt;从网络协议的角度出发，VPN 协议的报文是 overlay 格式，它为计算机新增一块虚拟网卡并分配 IP，通常情况下路由表默认报文从该虚拟网卡发出，所以 VPN 几乎会代理所有协议；SOCKS 协议工作在会话层，需用户指定哪些应用需要代理；PAC 并不是网络协议，它只是一个 javascript 文件，通过正则匹配域名来告知浏览器哪些 HTTP 请求需要采用 SOCKS 代理，因为 HTTP 是应用层协议，所以 PAC 只影响应用层。由于 QQ 消息一般为 UDP 报文，视频一般基于 HTTP 协议，所以不难理解上述现象。&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/proxy%20comparing.png?imageView2/1/w/550/h/400/q/100&quot; alt=&quot;Proxy Comparing&quot;&gt;&lt;/p&gt;
 
@@ -1871,160 +1925,6 @@ frontend nova-api-cluster
         
         
         <category>devops</category>
-        
-      </item>
-    
-      <item>
-        <title>Nova-KVM性能调优</title>
-        <description>&lt;blockquote&gt;
-&lt;p&gt;前言：请勿轻易调优，除非很清楚在干什么&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;KVM 作为 Nova 的虚拟化 Driver，是真正意义上负责虚拟机生命周期管理虚拟化基础设施，所以，如果清楚 KVM 的某些调优参数和策略，就有可能为 Nova 提供调优的基础和入口。Qemu-KVM 负责虚拟机的 CPU、Memory、存储和网络的虚拟化，所以可从该四个方面进行调优。&lt;/p&gt;
-
-&lt;hr&gt;
-
-&lt;h1 id=&quot;1-cpu-tuning&quot;&gt;1. CPU Tuning&lt;/h1&gt;
-
-&lt;h2 id=&quot;1-1-cache-share-tuning&quot;&gt;1.1 Cache share tuning&lt;/h2&gt;
-
-&lt;p&gt;对于物理 CPU，同一个 core 的 threads 共享 L2 Cache，同一个 socket 的 cores 共享 L3 cache，所以虚拟机的 vcpu 应当尽可能在同一个 core 和 同一个 socket 中，增加 cache 的命中率，从而提高性能。IBM 测试过，&lt;a href=&quot;https://www-01.ibm.com/support/knowledgecenter/api/content/nl/en-us/linuxonibm/liaat/liaattuning_pdf.pdf&quot;&gt;合理绑定 vcpu&lt;/a&gt; 能给 JVM 来的 16% 的性能提升。&lt;/p&gt;
-
-&lt;p&gt;虚拟机 vcpu 尽可能限定在一个 core 或者一个 socket 中。例如：当 vcpu 为 2 时，2 个 vcpu 应限定在同一个 core 中，当 vcpu 大于 2 小于 12 时，应限定在同一个 socket 中。对 Nova 而言，需要搜集 CPU 详细的拓扑信息，并根据虚拟机 vcpu 的信息和绑定策略生成 libvirt 所需要的 xml 文件。&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;vcpu&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;placement=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;static&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;cpuset=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;0-5&amp;#39;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;4&lt;span class=&quot;nt&quot;&gt;&amp;lt;/vcpu&amp;gt;&lt;/span&gt;       # cpuset 限定 vcpu
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;h2 id=&quot;1-2-numa-tuning&quot;&gt;1.2 NUMA tuning&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://www.ibm.com/developerworks/cn/cloud/library/1408_zhangxl_openstack/&quot;&gt;网易运维团队测试&lt;/a&gt;得出：2 个 vcpu 分别绑定到不同 numa 节点的非超线程核上和分配到一对相邻的超线程核上的性能相差有 30%~40%(通过 SPEC CPU2006 工具测试)。可见，同一个虚拟机的 vcpu 需限定在同一个 NUMA 节点，并且分配该 NUMA 节点下的内存给虚拟机，保证虚拟机尽可能访问 local memory 而非 remote memory。对 Nova 而言，可增加配置项，并在 nova/virt/libvirt/config.py 代码中增加该字段。 &lt;/p&gt;
-
-&lt;p&gt;关于 memory allocation mode: If memory is overcommitted in strict mode and the guest does not have sufficient swap space, the kernel will kill some guest processes to retrieve additonal memory. Red Hat recommends using preferred allocation and specifying a single nodeset (for example, nodeset=&amp;#39;0&amp;#39;) to prevent this situation[1].&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;numatune&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;memory&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;mode=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;preferred&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;nodeset=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;0&amp;quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt; 
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;/numatune&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;h2 id=&quot;1-3-irq-tuning&quot;&gt;1.3 IRQ tuning&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://www.ibm.com/developerworks/cn/cloud/library/1408_zhangxl_openstack/&quot;&gt;CPU0 常用于处理中断请求&lt;/a&gt;，本身负荷较重。事实上，线上环境 CPU0 完全处理 eth0 的 IRQ，eth1 的 IRQ 完全由另一个 CPU 处理，同时 CPU0 处理着大量的 CAL 类型中断。预留 2 个或者 4 个物理 CPU，这些 CPU 和对应网卡中断做绑定，使得其它 CPU 更好更完整的为云主机所用。对 Nova 而言，在生成 libvirt 所需要的 xml 文件时，需避免写入 cpu0等信息。&lt;/p&gt;
-
-&lt;hr&gt;
-
-&lt;h1 id=&quot;2-disk-io-tuning&quot;&gt;2. Disk IO Tuning&lt;/h1&gt;
-
-&lt;h2 id=&quot;2-1-disk-io-cache-tuning&quot;&gt;2.1 Disk IO cache Tuning&lt;/h2&gt;
-
-&lt;p&gt;kvm 支持多种虚拟机多种 IO Cache 方式：writeback, none, writethrough 等。&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;性能上： writeback &amp;gt; none &amp;gt; writethrough&lt;/li&gt;
-&lt;li&gt;安全上 writeback &amp;lt; none &amp;lt; writethrough。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/disk%20io%20cache.png&quot; alt=&quot;Disk IO cache&quot;&gt;&lt;/p&gt;
-
-&lt;p&gt;权衡安全性和性能，Kvm 推荐使用 none，Nova 也是默认选用 none cache mode。&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;disk&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;file&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;device=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;disk&amp;#39;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;driver&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;qemu&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;qcow2&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;cache=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;none&amp;#39;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;  # cache 可为 writeback, none, writethrough，directsync，unsafe 等
-  ...
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;/disk&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;h2 id=&quot;2-2-disk-io-scheduler&quot;&gt;2.2 Disk IO scheduler&lt;/h2&gt;
-
-&lt;p&gt;Linux kernel 提供了三种 Disk IO 的调度策略，分别为 noop，deadline，cfq。&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;noop: noop is often the best choice for memory-backed block devices (e.g. ramdisks) and other non-rotational media (flash) where trying to reschedule I/O is a waste of resources&lt;/li&gt;
-&lt;li&gt;deadline: deadline is a lightweight scheduler which tries to put a hard limit on latency&lt;/li&gt;
-&lt;li&gt;cfq: cfq tries to maintain system-wide fairness of I/O bandwidth&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;由于一个宿主机上会运行大量虚拟机，为了防止某个因某个虚拟机频繁的 IO 操作影响其它虚拟机，所以应该选择 cfq 这种公平的调度策略。&lt;/p&gt;
-
-&lt;h2 id=&quot;2-3-disk-format&quot;&gt;2.3 Disk format&lt;/h2&gt;
-
-&lt;p&gt;KVM 常用 Raw 和 Qcow2 格式作为虚拟机的镜像文件。对虚拟机而言，通俗的说，Raw 格式相当于裸盘，Qcow2 是 copy on write，二者对比如下：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;性能：Raw &amp;gt; Qcow2&lt;/li&gt;
-&lt;li&gt;节省空间：Qcow2 &amp;gt; Raw&lt;/li&gt;
-&lt;li&gt;安全：Qcow2 &amp;gt; Raw&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Qcow2 格式发展到现在，&lt;a href=&quot;http://www.linux-kvm.org/page/Qcow2&quot;&gt;已经有和 Raw 相近的性能&lt;/a&gt;，同时能较好的节省空间，所以 Nova 推荐使用 Qcow2 镜像，但是要最大可能的发挥性能，使用 Raw 格式也未尝不可。&lt;/p&gt;
-
-&lt;hr&gt;
-
-&lt;h1 id=&quot;3-memory-tuning&quot;&gt;3. Memory Tuning&lt;/h1&gt;
-
-&lt;h2 id=&quot;3-1-disable-ksm&quot;&gt;3.1. Disable KSM&lt;/h2&gt;
-
-&lt;p&gt;When KSM merges across nodes on a NUMA host with multiple guest virtual machines, guests and CPUs from more distant nodes can suffer a significant increase of access latency to the merged &lt;a href=&quot;https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html&quot;&gt;KSM page&lt;/a&gt;.
-Disable KSM 方式有两种：&lt;/p&gt;
-
-&lt;p&gt;1) 禁止某个 Guest 与其它 Guest 共享内存，XML 文件可配置为:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;memoryBacking&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;nosharepages/&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;/memoryBacking&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;2) 禁止所有 Guest 直接共享内存，Host 配置为:&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; &amp;gt; /sys/kernel/mm/ksm/pages_shared
-&lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; &amp;gt; /sys/kernel/mm/ksm/pages_sharing
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;h2 id=&quot;3-2-open-huge-page&quot;&gt;3.2 Open huge page&lt;/h2&gt;
-
-&lt;p&gt;KVM guests can be deployed with huge page memory support in order to &lt;a href=&quot;https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html&quot;&gt;improve performance by increasing CPU cache hits against the Transaction Lookaside Buffer (TLB)&lt;/a&gt;。打开透明大页方式有两种：&lt;/p&gt;
-
-&lt;p&gt;1) 允许某个 Guest 开启透明大页&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;memoryBacking&amp;gt;&lt;/span&gt;
-   &lt;span class=&quot;nt&quot;&gt;&amp;lt;hugepages/&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;/memoryBacking&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;25000&lt;/span&gt; &amp;gt; /pro c/sys/vm/nr_hugepages
-mount -t hugetlbfs hugetlbfs /dev/hugepages
-service libvirtd restart
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;2) 允许 Host 中所有 Guest 开启透明大页&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;always &amp;gt; /sys/kernel/mm/transparent_hugepage/enabled
-&lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;never &amp;gt; /sys/kernel/mm/transparent_hugepage/defrag
-&lt;span class=&quot;nb&quot;&gt;echo &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt; &amp;gt; /sys/kernel/mm/transparent_hugepage/khugepaged/defrag
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;hr&gt;
-
-&lt;h1 id=&quot;4-network-io-tuning&quot;&gt;4. Network IO Tuning&lt;/h1&gt;
-
-&lt;h2 id=&quot;4-1-enable-vhost_net&quot;&gt;4.1 Enable vhost_net&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;http://www.linux-kvm.org/page/UsingVhost&quot;&gt;VhostNet&lt;/a&gt; provides better latency (10% less than e1000 on my system) and greater throughput (8x the normal virtio, around 7~8 Gigabits/sec here) for network.&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;modprobe vhost-net
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;h2 id=&quot;4-2-mutil-queue&quot;&gt;4.2 Mutil-queue&lt;/h2&gt;
-
-&lt;p&gt;对虚拟机而言，virtio-net 不能并行的处理网络包，当网络流量很大时，单个 vCPU 有限的处理能力将直接影响虚拟机的网络流量，所以可以通过&lt;a href=&quot;http://www.linux-kvm.org/page/Multiqueue&quot;&gt;多队列的 virtio-net&lt;/a&gt; 提高虚拟机网络吞吐量，&lt;a href=&quot;https://blueprints.launchpad.net/nova/+spec/libvirt-virtio-net-multiqueue&quot;&gt;该特性&lt;/a&gt;已合入 L 版本。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/virt-net%20mutil-queue.jpg&quot; alt=&quot;Multi-queue&quot;&gt;&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;  &lt;span class=&quot;nt&quot;&gt;&amp;lt;devices&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;interface&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;network&amp;#39;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
-      ...
-      &lt;span class=&quot;nt&quot;&gt;&amp;lt;driver&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;vhost&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;txmode=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;iothread&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;ioeventfd=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;on&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;event_idx=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;off&amp;#39;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;queues=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;N&amp;#39;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;  #queues=N
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/interface&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/devices&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;h1 id=&quot;5-一次调优的悲剧&quot;&gt;5. 一次调优的悲剧&lt;/h1&gt;
-
-&lt;p&gt;Libvirt &lt;a href=&quot;https://libvirt.org/formatdomain.html#elementsCPU&quot;&gt;CPU host passthrough&lt;/a&gt;支持把宿主机的 CPU 指令集透传给虚拟机，如此虚拟机尽可能的利用宿主机的指令集，从而提升效率。事实上，更改后的短短的三天时间里，有多台宿主机莫名其妙的 kernel panic，虽然未能查明具体原因，但是禁止该配置后，宿主机和虚拟机稳定如初。&lt;/p&gt;
-
-&lt;h1 id=&quot;reference&quot;&gt;Reference&lt;/h1&gt;
-
-&lt;ol&gt;
-&lt;li&gt;&lt;a href=&quot;https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html&quot;&gt;Red Hat Enterprise Linux 6 Virtualization Tuning Optimization Guide&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&quot;https://www-01.ibm.com/support/knowledgecenter/api/content/nl/en-us/linuxonibm/liaat/liaattuning_pdf.pdf&quot;&gt;Tuning KVM for performance&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&quot;https://www.ibm.com/developerworks/cn/cloud/library/1408_zhangxl_openstack/&quot;&gt;网易 openstack 部署运维实战&lt;/a&gt;&lt;/li&gt;
-&lt;/ol&gt;
-</description>
-        <pubDate>Mon, 17 Nov 2014 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/openstack/2014/11/17/Nova-KVM%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/openstack/2014/11/17/Nova-KVM%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98.html</guid>
-        
-        
-        <category>openstack</category>
         
       </item>
     

@@ -86,7 +86,7 @@
 
 <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/new_pac.png?imageView2/1/w/750/h/350/q/100" alt="PACK"></p>
 
-<p>从网络协议的角度出发，VPN 协议的报文是 overlay 格式，它为计算机新增一块虚拟网卡并分配 IP，通常情况下路由表默认报文从该虚拟网卡发出，所以 VPN 几乎会代理所有协议；SOCKS 协议工作在会话层，需用户指定哪些应用需要代理；PAC 并不是网络协议，它只是一个 javascript 文件，通过正则匹配域名来告知浏览器哪些 HTTP 请求需要采用 SOCKS 代理，因为 HTTP 是应用层协议，所以 PAC 只影响应用层。</p>
+<p>从网络协议的角度出发，VPN 协议的报文是 overlay 格式，它为计算机新增一块虚拟网卡并分配 IP，通常情况下路由表默认报文从该虚拟网卡发出，所以 VPN 几乎会代理所有协议；SOCKS 协议工作在会话层，需用户指定哪些应用需要代理；PAC 并不是网络协议，它只是一个 javascript 文件，通过正则匹配域名来告知浏览器哪些 HTTP 请求需要采用 SOCKS 代理，因为 HTTP 是应用层协议，所以 PAC 只影响应用层。由于 QQ 消息一般为 UDP 报文，视频一般基于 HTTP 协议，所以不难理解上述现象。</p>
 
 <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/proxy%20comparing.png?imageView2/1/w/550/h/400/q/100" alt="Proxy Comparing"></p>
 
