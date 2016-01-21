@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>搭建 RPM 和 Pypi 源</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/devops/2014/09/10/Build-Yum-Repo.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">搭建 RPM 和 Pypi 源</h1>
+    <p class="post-meta"><time datetime="2014-09-10T00:00:00+08:00" itemprop="datePublished">Sep 10, 2014</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <hr>
+
+<p>对于企业的 Openstack 私有云，出于安全和某些因素的考虑，有些服务器无法访问公网，导致服务器无法更新某些 RPM 包，同时内部常有 Openstack 新特性开发需求、版本的维护与升级，因此非常有必要构建企业私有的 openstack yum 源。 构建 openstack yum 源有两个步骤：1.同步(下载)官方的源至企业 yum 服务器中；2. 重新创建 repo 并通过 nginx(apache)发布。</p>
+
+<p>Overview
+     以 Redhat Openstack 官网安装手册为例，安装 Openstack 需要用到两类共计 8 个 repo，
+    1). Centos 源
+       CentOS-Base.repo  CentOS-Debuginfo.repo  CentOS-Media.repo  CentOS-Vault.repo
+    2). openstack 源及相关依赖源(epel, foreman, puppet)： 
+        epel.repo  foreman.repo  puppetlabs.repo  rdo-release.repo</p>
+
+<p>构建本地源步骤</p>
+
+<p>1.yum源文件下载
+(1).下载必要工具：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ yum install wget createrepo
+
+(2).下载yum源到本地：
+[root@yumserver ~]# mkdir -p /wget-yum
+[root@yumserver ~]# cd /wget-yum：
+
+下载 Centos, foreman, epel, puppetlabs, openstack 源的所有 rpm。
+$ wget -S -c -r -np -L http://mirrors.sohu.com/centos/6.5/
+$ wget -S -c -r -np -L http://yum.theforeman.org/plugins/1.5/el6/
+$ wget -S -c -r -np -L http://yum.theforeman.org/releases/1.5/el6/
+$ wget -S -c -r -np -L http://mirrors.yun-idc.com/epel/6/
+$ wget -S -c -r -np -L https://yum.puppetlabs.com/el/6/
+$ wget -S -c -r -np -L https://repos.fedorapeople.org/repos/openstack/openstack-icehouse/
+
+(3).删除不需要的软件包和文件：
+$ find ./ -name index.html* | xarge rm -rf
+$ find ./ -name fedora-20 | xarge rm -rf
+$ find ./ -name fedora-19 | xarge rm -rf
+$ find ./ -name i386 | xarge rm -rf
+
+(4).调整目录结构：
+[root@yumserver wget-yum]# mkdir foreman
+$ mv yum.theforeman.org/plugins foreman/
+$ mv yum.theforeman.org/releases foreman/
+$ mv repos.fedorapeople.org/repos/openstack ./
+$ mv yum.puppetlabs.com/el /puppetlabs/
+$ mv mirrors.yun-idc.com/epel ./
+$ mkdir puppetlabs
+$ rm -rf mirrors.yun-idc.com
+$ rm -rf yum.puppetlabs.com
+$ rm -rf yum.theforeman.org
+$ rm -rf repos.fedorapeople.org
+[root@yumserver wget-yum]# ls
+centos  epel  foreman  openstack  puppetlabs
+
+2.nginx配置：
+[root@yumserver wget-yum]# rpm -ivh http://nginx.org/packages/centos/6/noarch/RPMS/nginx-release-centos-6-0.el6.ngx.noarch.rpm
+[root@yumserver wget-yum]# yum -y install nginx
+[root@yumserver wget-yum]# vi /etc/nginx/nginx.conf
+
+[root@yumserver wget-yum]# /etc/init.d/nginx restart
+
+
+3. release.rpm制作：
+(1).下载icehouse源码包：
+[root@yumserver ~]# wget https://repos.fedorapeople.org/repos/openstack/openstack-icehouse/rdo-release-icehouse-4.src.rpm
+
+(2).创建padraig用户和组：
+[root@yumserver ~]# groupadd -g 2000 padraig
+[root@yumserver ~]# useradd -u 2000 -g padraig -m padraig -d /home -s /bin/bash
+
+(3).解压rpm，并修改各个 .repo 文件的 url：
+[root@yumserver ~]# rpm -i rdo-release-icehouse-4.src.rpm
+修改 .repo 文件，以 rdo-release.repo 为例llllh
+(3).解压rpm，并修改各个 .repo 文件的 url：
+[root@yumserver ~]# rpm -i rdo-release-icehouse-4.src.rpm
+修改 .repo 文件，以 rdo-release.repo 为例
+</code></pre></div>
+<p>(4).修改 .spec 文件内容：
+[root@yumserver ~]# cd rpmbuild/
+[root@yumserver rpmbuild]# 
+SOURCES  SPECS
+[root@yumserver ~]# cd SPECS
+[root@yumserver SPECS]# vi rdo-release.spec 
+URL:            https://github.com/redhat-openstack/rdo-release
+Source0:        rdo-release.repo
+Source1:        RPM-GPG-KEY-RDO-Icehouse
+Source2:        foreman.repo
+Source3:        RPM-GPG-KEY-foreman
+Source4:        puppetlabs.repo
+Source5:        RPM-GPG-KEY-puppetlabs
+Source6:        epel.repo
+Source7:        RPM-GPG-KEY-EPEL-6</p>
+
+<p>%install
+install -p -D -m 644 %{SOURCE0} %{buildroot}%{<u>sysconfdir}/yum.repos.d/rdo-release.repo
+install -p -D -m 644 %{SOURCE2} %{buildroot}%{</u>sysconfdir}/yum.repos.d/foreman.repo
+install -p -D -m 644 %{SOURCE4} %{buildroot}%{<u>sysconfdir}/yum.repos.d/puppetlabs.repo
+install -p -D -m 644 %{SOURCE6} %{buildroot}%{</u>sysconfdir}/yum.repos.d/epel.repo</p>
+
+<h1 id="gpg-keys">GPG Keys</h1>
+
+<p>install -Dpm 644 %{SOURCE1} %{buildroot}%{<u>sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-RDO-Icehouse
+install -Dpm 644 %{SOURCE3} %{buildroot}%{</u>sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-foreman
+install -Dpm 644 %{SOURCE5} %{buildroot}%{<u>sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-puppetlabs
+install -Dpm 644 %{SOURCE7} %{buildroot}%{</u>sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6</p>
+
+<p>for repo in rdo-release foreman puppetlabs epel ; do</p>
+
+<p>(5).修改SOURCES文件内容，并增加相应文件：
+[root@yumserver SPECS]# cd ../SOURCES
+[root@yumserver SOURCES]# ls
+epel.repo  foreman.repo  puppetlabs.repo  rdo-release.repo  RPM-GPG-KEY-EPEL-6  RPM-GPG-KEY-foreman  RPM-GPG-KEY-puppetlabs  RPM-GPG-KEY-RDO-Icehouse</p>
+
+<p>(6).重新打包rpm：
+[root@yumserver SPECS]# yum -y install rpm-build
+[root@yumserver SPECS]# pwd
+/root/rpmbuild/SPECS
+[root@yumserver SPECS]# rpmbuild -ba rdo-release.spec</p>
+
+<ol>
+<li><p>解决依赖关系，创建仓库：
+[root@yumserver updates]# ls
+repodata  x86<u>64
+[root@yumserver updates]# pwd
+yum-repo/openstack/openstack-icehouse/updates
+[root@yumserver updates]# createrepo x86</u>64</p></li>
+<li><p>repo 更新 RPM 包：
+createrepo x86_64 --update</p></li>
+</ol>
+
+<p>编译后的rpm源码包示例：
+new-rdo-release-icehouse-4.0.src.rpm
+```</p>
+
+<p>troubleshooting:
+ yum repolist 出现
+[root@controller yum.repos.d]# yum repolist
+Loaded plugins: axelget, fastestmirror, security
+Loading mirror speeds from cached hostfile
+http://openstack-yum-server/ceph/el6/x86_64/repodata/repomd.xml: [Errno 14] PYCURL ERROR 22 - &quot;The requested URL returned error: 403 Forbidden&quot;
+Trying other mirror.
+http://openstack-yum-server/ceph/el6/noarch/repodata/repomd.xml: [Errno 14] PYCURL ERROR 22 - &quot;The requested URL returned error: 403 Forbidden&quot;
+Trying other mirror.
+.....</p>
+
+<p>解决方案：
+1)
+      每个 repo 配置新增 proxy=None
+      [openstack-havana-updates]
+      .....
+      <u>proxy</u>=None
+2)
+     关闭防火墙， service iptables stop</p>
+
+<p>注：此博文由陈尚华和本人所作。</p>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

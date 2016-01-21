@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "OpenStack日志搜集分析之ELK"
-categories: OpenStack
+categories: DevOps 
 ---
 ------------------
 
