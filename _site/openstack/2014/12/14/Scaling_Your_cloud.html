@@ -125,7 +125,7 @@
 +----+-------+-------------------+---------------+--------------------------------+
 </code></pre></div>
 <p>创建虚拟机时，指定 AZ 名字即可。</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ nova boot –flavor m1.small –image cirros –availability-zone AZ-01 vm
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ nova boot --flavor m1.small --image cirros --availability-zone AZ-01 vm
 </code></pre></div>
 <h2 id="how-to-use-host-aggregates-zone">How to use host aggregates zone</h2>
 
@@ -157,7 +157,7 @@
 +----+--------+-------------------+---------------+-----------------+
 </code></pre></div>
 <p>创建 flavor：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>nova flavor-create m1.ssd auto <span class="m">4096</span> <span class="m">10</span> <span class="m">2</span> –is-public <span class="nb">true</span>
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>nova flavor-create m1.ssd auto <span class="m">4096</span> <span class="m">10</span> <span class="m">2</span> --is-public <span class="nb">true</span>
 +----+--------+-----------+------+-----------+------+-------+------------+-----------+---------------+
 <span class="p">|</span> ID <span class="p">|</span>  Name  <span class="p">|</span> Memory_MB <span class="p">|</span> Disk <span class="p">|</span> Ephemeral <span class="p">|</span> Swap <span class="p">|</span> VCPUs <span class="p">|</span> RXTX_Factor<span class="p">|</span> Is_Public <span class="p">|</span> extra_specs   <span class="p">|</span>
 +----+--------+-----------+------+-----------+------+-------+------------+-----------+---------------+
@@ -175,7 +175,7 @@
 +----+--------+-----------+------+-----------+------+-------+------------+-----------+------------------+
 </code></pre></div>
 <p>采用 m1.ssd 创建虚拟机：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>nova boot –flavor m1.ssd –image cirros vm_ssd
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>nova boot --flavor m1.ssd --image cirros vm_ssd
 </code></pre></div>
 <hr>
 

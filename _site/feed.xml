@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 21 Jan 2016 16:55:28 +0800</pubDate>
-    <lastBuildDate>Thu, 21 Jan 2016 16:55:28 +0800</lastBuildDate>
+    <pubDate>Thu, 21 Jan 2016 19:29:55 +0800</pubDate>
+    <lastBuildDate>Thu, 21 Jan 2016 19:29:55 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -1685,246 +1685,91 @@ memory_limit - used_memory &amp;lt; flavor[&amp;#39;ram&amp;#39;]，表示内存
       </item>
     
       <item>
-        <title>Haproxy与OpenStack-API安全</title>
+        <title>Openstack 性能测试之 Rally</title>
         <description>&lt;hr&gt;
 
-&lt;p&gt;&lt;a href=&quot;http://docs.openstack.org/ha-guide/controller-ha-haproxy.html&quot;&gt;Haproxy&lt;/a&gt; 作为优秀的软件负载均衡器，常常作为服务的前端，为外界提供服务的入口，同时隐藏服务端内部的细节，通过负载均衡提高服务端的并发量。随着 Haproxy 的发展，它的安全性也不断的提升。&lt;/p&gt;
+&lt;h1 id=&quot;what-is-rally&quot;&gt;What is Rally&lt;/h1&gt;
 
-&lt;ul&gt;
-&lt;li&gt;作为负载均衡器，提高服务端的并发处理能力&lt;/li&gt;
-&lt;li&gt;保证服务高可靠性&lt;/li&gt;
-&lt;li&gt;增强安全性&lt;/li&gt;
-&lt;/ul&gt;
+&lt;p&gt;Rally 集成了部署、API测试、压力测试功能(如下图)，但我们一般用 devstack 部署，tempest 做 API 测试，因此 Rally 常用于模拟高并发场景的压力测试。Rally 测试 openstack 在并发下 API 的相应时间和请求成功率，从而测试出 openstack 集群的性能。&lt;/p&gt;
 
-&lt;p&gt;OpenStack 社区在 &lt;a href=&quot;http://docs.openstack.org/ha-guide/intro-ha-arch-keepalived.html&quot;&gt;High Availability&lt;/a&gt; (高可靠) 推荐 Controller 端部署 Haproxy 和 Keepalived，前者负责转发外部 http 请求到正常的 OpenStack API 节点，后者通过 VRRP 协议管理 VIP 的漂移，如下图：&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/Controller%20HA.png?imageView2/1/w/800/q/100&quot; alt=&quot;Controller HA&quot;&gt;&lt;/p&gt;
-
-&lt;p&gt;本文重点关注其安全特性，首先，它作为服务的唯一入口，对外隐藏了 OpenStack API 服务器的细节；其次，支持 HTTPS，保证客户端和服务端通信的安全性；再次，它配合内核 IP/TCP 协议栈，能够较好的抵抗 DDOS 攻击，还能限制单个 IP 的连接数和请求速率等，防止用户的恶意行为。&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;作为服务端唯一入口，隐藏服务端的细节&lt;/li&gt;
-&lt;li&gt;支持 SSL/TSL, 提供 HTTPS&lt;/li&gt;
-&lt;li&gt;通过配置 ACL，在一定程度上防止 DDOS 攻击 &lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Haproxy 配置参数多的一塌糊涂，功能丰富，灵活多样，本文抛砖引玉，在文章末尾给出 nova-api 的配置样例，更多的安全和其它功能请详见&lt;a href=&quot;https://cbonte.github.io/haproxy-dconv/index.html&quot;&gt;官网手册&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/rally.jpg&quot; alt=&quot;rally&quot;&gt;&lt;/p&gt;
 
 &lt;hr&gt;
 
-&lt;h1 id=&quot;https&quot;&gt;HTTPS&lt;/h1&gt;
-
-&lt;p&gt;1.5.0 版本的 Release Notes 有下面这么一行话，意味着从该版本开始， haproxy 支持由 HTTPS 加密客户端和服务端的通信消息，避免明文传输。&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;Update [2012/09/11] : native SSL support was implemented in 1.5-dev12.
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/https-http.png?imageView2/1/w/800/q/100&quot; alt=&quot;https-http&quot;&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://www.digitalocean.com/community/tutorials/how-to-implement-ssl-termination-with-haproxy-on-ubuntu-14-04&quot;&gt;how-to-implement-ssl-termination-with-haproxy&lt;/a&gt; 详细的说明如何配置 HTTPS，主要包括证书 和 SSL 相关配置项。证书可以到 CA 机构购买，也可用 openssl 自制证书，甚至可用 &lt;a href=&quot;http://docs.openstack.org/developer/keystone/configuration.html#ssl&quot;&gt;keystone 生成证书&lt;/a&gt;。&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;[eventlet_server_ssl]
-enable = True
-certfile = &amp;lt;path to keystone.pem&amp;gt;
-keyfile = &amp;lt;path to keystonekey.pem&amp;gt;
-ca_certs = &amp;lt;path to ca.pem&amp;gt;
-cert_required = False
-
-[ssl]
-ca_key = &amp;lt;path to cakey.pem&amp;gt;
-key_size = 1024
-valid_days=3650
-cert_subject=/C=US/ST=Unset/L=Unset/O=Unset/CN=localhost
-
-keystone-manage ssl_setup
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;配置样例如下：&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;global
-    ...
-
-defaults
-    ...
-
-frontend ft_web
-    bind &amp;lt;Virtual IP&amp;gt;:443 ssl crt /etc/haproxy/https.pem #证书
-    reqadd X-Forwarded-Proto:\ https #相关配置
-    default_backend bk_web
-
-backend bk_web
-    balance roundrobin
-    redirect scheme https if !{ ssl_fc } #相关配置
-    server http-server-01 private_IP1:8080 check inter 10s
-    server http-server-02 private_IP2:8080 check inter 10s
+&lt;h1 id=&quot;deploy-rally&quot;&gt;Deploy  Rally&lt;/h1&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;git clone https://git.openstack.org/stackforge/rally
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;./rally/install_rally.sh -v
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;hr&gt;
 
-&lt;h1 id=&quot;ddos&quot;&gt;DDOS&lt;/h1&gt;
-
-&lt;p&gt;Haproxy 可在一定程度上提高服务端抗击 DDOS 攻击能力，DDOS 主要有 UDP，TCP sync flood，Http slowloris attack 等攻击手段，&lt;a href=&quot;http://blog.haproxy.com/2012/02/27/use-a-load-balancer-as-a-first-row-of-defense-against-ddos/&quot;&gt;use-a-load-balancer-as-a-first-row-of-defense-against-ddos&lt;/a&gt; 详细的阐述了配置过程，主要表现在以下几个方面：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;TCP syn flood attacks&lt;/li&gt;
-&lt;li&gt;Slowloris like attacks&lt;/li&gt;
-&lt;li&gt;Limiting the number of connections per users&lt;/li&gt;
-&lt;li&gt;Limiting the connection rate per user&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;tcp-syn-flood-attacks&quot;&gt;TCP syn flood attacks&lt;/h2&gt;
-
-&lt;p&gt;通过向服务器发送大量的 TCP syn 分组，恶意用户实现了了 TCP syn flood 攻击，幸运的是，简单的配置内核网络参数即可防止这种攻击。 &lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;/etc/sysctl.conf
-net.ipv4.tcp_syncookies &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; 1
-net.ipv4.conf.all.rp_filter &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; 1
-net.ipv4.tcp_max_syn_backlog &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1024&lt;/span&gt; 
-
-sysctl -p
+&lt;h1 id=&quot;configure-rally&quot;&gt;Configure Rally&lt;/h1&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; /opt/rally/bin/activate
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;初始化 Rally，把所需测试 openstack 集群的 keystone url，用户租户信息写入到 existing.json 中&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;rally deployment create --filename&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;existing.json --name&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;openstack
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;查看集群的 service&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;rally deployment check
+keystone endpoints are valid and following services are available:
++------------+----------------+-----------+
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; services   &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;type&lt;/span&gt;           &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; status    &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
++------------+----------------+-----------+
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; ceilometer &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; metering       &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; Available &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; cinder     &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; volume         &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; Available &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; cinderv2   &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; volumev2       &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; Available &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; ec2        &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; ec2            &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; Available &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; glance     &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; image          &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; Available &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; heat       &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; cloudformation &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; Available &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; heat       &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; orchestration  &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; Available &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; keystone   &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; identity       &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; Available &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; neutron    &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; network        &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; Available &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; nova       &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; compute        &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; Available &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; novav3     &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; computev3      &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; Available &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; s3         &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; s3             &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; Available &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; trove      &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; database       &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; Available &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
++------------+----------------+-----------+
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;hr&gt;
 
-&lt;h2 id=&quot;slowloris-like-attacks&quot;&gt;Slowloris like attacks&lt;/h2&gt;
+&lt;h1 id=&quot;benchmark-openstack-peformance&quot;&gt;Benchmark  Openstack Peformance&lt;/h1&gt;
 
-&lt;p&gt;一个 HTTP 请求通常包括头部、url、methods 等，服务器需要接收整个请求后才能做出响应。如果恶意用户发送缓慢的请求，比如一个字节一个字节的发送头部，服务器将一直处于 waiting 状态，耗费服务器的资源。通过配置 timeout http-request 参数，当一个用户的请求时间超过设定值时，haproxy 自动断开该连接。&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;defaults
-  option http-server-close
-  mode http
-  timeout connect 10s  #限制链接时间，该参数不宜过大
-  timeout server  15s  #限制链接时间，该参数不宜过大
-  timeout client  15s  #限制链接时间，该参数不宜过大
+&lt;p&gt;在 rally/doc/samples/tasks/scenarios/ 里头包含各个组件的配置文件，直接使用即可，举例：&lt;/p&gt;
 
-frontend ft_web
-    ...
-
-backend bk_web
-    ...
+&lt;p&gt;测试 keystone 创建-删除用户性能&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;rally -v task start rally/doc/samples/tasks/scenarios/keystone/create-and-delete-user.json
++--------------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; action                   &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; min &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;sec&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; avg &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;sec&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; max &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;sec&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;90&lt;/span&gt; percentile &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;95&lt;/span&gt; percentile &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; success &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; count &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
++--------------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; keystone.create_user     &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 0.653     &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 2.117     &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 4.912     &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 2.921         &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 3.259         &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 100.0%  &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;100&lt;/span&gt;   &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; keystone.delete_resource &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 0.112     &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 0.534     &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 1.684     &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 0.934         &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 1.119         &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 100.0%  &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;100&lt;/span&gt;   &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; total                    &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 1.461     &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 2.651     &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 5.351     &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 3.512         &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 3.924         &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; 100.0%  &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;100&lt;/span&gt;   &lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;
++--------------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;通过 telnet 登录验证结果：&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;telnet 127.0.0.1 8080
-Trying 127.0.0.1...
-Connected to 127.0.0.1.
-Escape character is &lt;span class=&quot;s1&quot;&gt;&amp;#39;^]&amp;#39;&lt;/span&gt;.
-HTTP/1.0 &lt;span class=&quot;m&quot;&gt;408&lt;/span&gt; Request Time-out
-Cache-Control: no-cache
-Connection: close
-Content-Type: text/html
-&lt;span class=&quot;m&quot;&gt;408&lt;/span&gt; Request Time-out
-Your browser didn&lt;span class=&quot;err&quot;&gt;&amp;#39;&lt;/span&gt;t send a &lt;span class=&quot;nb&quot;&gt;complete &lt;/span&gt;request in time.
-Connection closed by foreign host.
+&lt;p&gt;测试 nova 创建-删除虚拟机性能&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;$ rally -v task start rally/doc/samples/tasks/scenarios/nova/boot-and-delete.json
++--------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
+| action             | min (sec) | avg (sec) | max (sec) | 90 percentile | 95 percentile | success | count |
++--------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
+| nova.boot_server   | 2.594     | 2.686     | 2.772     | 2.736         | 2.754         | 100.0%  | 10   |
+| nova.delete_server | 2.227     | 2.293     | 2.459     | 2.355         | 2.407         | 100.0%  | 10   |
+| total              | 4.861     | 4.981     | 5.113     | 5.081         | 5.096         | 100.0%  | 10   |
++--------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;hr&gt;
 
-&lt;h2 id=&quot;limiting-the-number-of-connections-per-users&quot;&gt;Limiting the number of connections per users&lt;/h2&gt;
-
-&lt;p&gt;普通用户访问某个 OpenStack 服务时，如果恶意打开了大量 TCP 链接，会耗费服务器内存资源，影响其它用户的体验，因此我们需要根据实际情况，限制同一个用户的链接并发数。&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;defaults
-    ...
-
-frontend ft_web
-  bind &amp;lt;Virtual IP&amp;gt;:8080
-  # Allow clean known IPs to bypass the filter
-  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst } #白名单
-  # Shut the new connection as long as the client has already 10 opened  #限制单个用户的连接数
-  tcp-request connection reject if { src_conn_cur ge 10 }                #限制单个用户的连接数
-  tcp-request connection track-sc1 src&amp;lt;/span&amp;gt;
-
-  default_backend bk_web
-
-backend bk_web
-    ...
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;&lt;strong&gt;注&lt;/strong&gt;：若某些用户在同一个私有网段通过 NAT 访问网站，这样的配置存在不合理之处，最好把 NAT 处的公网地址添加到 whitelist.lst 文件中。&lt;/p&gt;
-
-&lt;p&gt;利用 apache 测试工具做验证，和服务器一直保持建立 10 个链接。&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;ab -n &lt;span class=&quot;m&quot;&gt;50000000&lt;/span&gt; -c &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt; http://127.0.0.1:8080/
-用 telnet 打开第 &lt;span class=&quot;m&quot;&gt;11&lt;/span&gt; 个链接，服务器拒绝该链接。
-telnet 127.0.0.1 8080
-Trying 127.0.0.1...
-Connected to 127.0.0.1.
-Escape character is &lt;span class=&quot;s1&quot;&gt;&amp;#39;^]&amp;#39;&lt;/span&gt;.
-Connection closed by foreign host.
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;hr&gt;
-
-&lt;h2 id=&quot;limiting-the-connection-rate-per-user&quot;&gt;Limiting the connection rate per user&lt;/h2&gt;
-
-&lt;p&gt;仅仅限制单个用户的并发链接数并意味着万事大吉，如果用户在短时间内向服务器不断的发送建立和关闭链接请求，也会耗费服务器资源，影响服务器端的性能，因此需要控制单个用户的访问速率。通常情况下，我们认为普通用户在 3 秒内不应该向某个 openstack api 发送的请求不应该超过 20 次。&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;defaults
-    ...
-
-frontend ft_web
-  bind &amp;lt;Virtual IP&amp;gt;:8080
-  stick-table type ip size 100k expire 30s store conn_cur, conn_rate(3s) # Table definition 
-
-  # Allow clean known IPs to bypass the filter
-  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst } #白名单
-  # Shut the new connection as long as the client has already 10 opened or rate more than 20
-  tcp-request connection reject if { src_conn_cur ge 10 }|| { src_conn_rate ge 20} #限制单个用户链接数和访问速率
-  tcp-request connection track-sc1 src
-
-  default_backend bk_web
-
-backend bk_web
-    ...
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;测试步骤如下：&lt;/p&gt;
+&lt;h1 id=&quot;refference&quot;&gt;Refference&lt;/h1&gt;
 
 &lt;ol&gt;
-&lt;li&gt;采用 ab 打开 20 个链接。(本次测试把 限制单个用户并发数功能 去掉)&lt;/li&gt;
-&lt;li&gt;ab -n 20 -c 1 -r http://127.0.0.1:8080/&lt;/li&gt;
-&lt;li&gt;再用 telnet 打开第 21 个链接，服务器拒绝该请求。&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://wiki.openstack.org/wiki/Rally&quot;&gt;https://wiki.openstack.org/wiki/Rally&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;http://prajnagarden.com/openstack/2014/05/06/rally-guide-01/&quot;&gt;http://prajnagarden.com/openstack/2014/05/06/rally-guide-01/&lt;/a&gt;&lt;/li&gt;
 &lt;/ol&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;telnet 127.0.0.1 8080
-Trying 127.0.0.1...
-Connected to 127.0.0.1.
-Escape character is &lt;span class=&quot;s1&quot;&gt;&amp;#39;^]&amp;#39;&lt;/span&gt;.
-Connection closed by foreign host.
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;hr&gt;
-
-&lt;h1 id=&quot;样例-nova-api&quot;&gt;样例 nova-api&lt;/h1&gt;
-
-&lt;p&gt;根据上述内容，以 nova-api 为例，其配置如下：&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;global
-  chroot  /var/lib/haproxy
-  daemon
-  group  haproxy
-  maxconn  4000
-  pidfile  /var/run/haproxy.pid
-  user  haproxy
-
-defaults
-  log  global
-  maxconn  4000
-  option  redispatch
-  retries  3
-  timeout  http-request 10s
-  timeout  queue 1m
-  timeout  connect 10s
-  timeout  client 15s
-  timeout  server 15s
-  timeout  check 10s
-
-frontend nova_api_VIP
-  bind &amp;lt;Virtual IP&amp;gt;:443 ssl crt /etc/haproxy/https.pem
-  reqadd X-Forwarded-Proto:\ https
-
-  stick-table type ip size 100k expire 30s store conn_cur, conn_rate(3s)
-  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst }
-  tcp-request connection reject if { src_conn_cur ge 10 }|| { src_conn_rate ge 20}
-  tcp-request connection track-sc1 src
-
-  default_backend nova-api-cluster
-
-frontend nova-api-cluster
-  balance  source
-  option  httpchk
-  redirect scheme https if !{ ssl_fc }
-  server controller1 10.0.0.1:8774 check inter 2000 rise 2 fall 5
-  server controller2 10.0.0.2:8774 check inter 2000 rise 2 fall 5
-  server controller3 10.0.0.3:8774 check inter 2000 rise 2 fall 5
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
-        <pubDate>Wed, 24 Dec 2014 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/devops/2014/12/24/Haproxy%E4%B8%8EOpenStack-API%E5%AE%89%E5%85%A8.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/devops/2014/12/24/Haproxy%E4%B8%8EOpenStack-API%E5%AE%89%E5%85%A8.html</guid>
+</description>
+        <pubDate>Sun, 18 Jan 2015 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/openstack/2015/01/18/Rally.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/openstack/2015/01/18/Rally.html</guid>
         
         
-        <category>devops</category>
+        <category>openstack</category>
         
       </item>
     

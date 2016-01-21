@@ -1,0 +1,99 @@
+---
+layout: post
+title:  "Openstack 性能测试之 Rally"
+categories: OpenStack
+---
+
+----------------
+
+#What is Rally
+
+Rally 集成了部署、API测试、压力测试功能(如下图)，但我们一般用 devstack 部署，tempest 做 API 测试，因此 Rally 常用于模拟高并发场景的压力测试。Rally 测试 openstack 在并发下 API 的相应时间和请求成功率，从而测试出 openstack 集群的性能。
+
+![rally](http://7xp2eu.com1.z0.glb.clouddn.com/rally.jpg)
+
+----------------
+
+#Deploy  Rally
+
+```bash
+$ git clone https://git.openstack.org/stackforge/rally
+$ ./rally/install_rally.sh -v
+```
+
+----------------
+
+# Configure Rally
+
+```bash
+$ source /opt/rally/bin/activate
+```
+
+初始化 Rally，把所需测试 openstack 集群的 keystone url，用户租户信息写入到 existing.json 中
+
+```bash
+$ rally deployment create --filename=existing.json --name=openstack
+```
+
+查看集群的 service
+
+```bash
+$ rally deployment check
+keystone endpoints are valid and following services are available:
++------------+----------------+-----------+
+| services   | type           | status    |
++------------+----------------+-----------+
+| ceilometer | metering       | Available |
+| cinder     | volume         | Available |
+| cinderv2   | volumev2       | Available |
+| ec2        | ec2            | Available |
+| glance     | image          | Available |
+| heat       | cloudformation | Available |
+| heat       | orchestration  | Available |
+| keystone   | identity       | Available |
+| neutron    | network        | Available |
+| nova       | compute        | Available |
+| novav3     | computev3      | Available |
+| s3         | s3             | Available |
+| trove      | database       | Available |
++------------+----------------+-----------+
+```
+
+----------------
+
+#Benchmark  Openstack Peformance
+
+在 rally/doc/samples/tasks/scenarios/ 里头包含各个组件的配置文件，直接使用即可，举例：
+
+测试 keystone 创建-删除用户性能
+
+```bash
+$ rally -v task start rally/doc/samples/tasks/scenarios/keystone/create-and-delete-user.json
++--------------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
+| action                   | min (sec) | avg (sec) | max (sec) | 90 percentile | 95 percentile | success | count |
++--------------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
+| keystone.create_user     | 0.653     | 2.117     | 4.912     | 2.921         | 3.259         | 100.0%  | 100   |
+| keystone.delete_resource | 0.112     | 0.534     | 1.684     | 0.934         | 1.119         | 100.0%  | 100   |
+| total                    | 1.461     | 2.651     | 5.351     | 3.512         | 3.924         | 100.0%  | 100   |
++--------------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
+```
+
+测试 nova 创建-删除虚拟机性能
+
+```
+$ rally -v task start rally/doc/samples/tasks/scenarios/nova/boot-and-delete.json
++--------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
+| action             | min (sec) | avg (sec) | max (sec) | 90 percentile | 95 percentile | success | count |
++--------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
+| nova.boot_server   | 2.594     | 2.686     | 2.772     | 2.736         | 2.754         | 100.0%  | 10   |
+| nova.delete_server | 2.227     | 2.293     | 2.459     | 2.355         | 2.407         | 100.0%  | 10   |
+| total              | 4.861     | 4.981     | 5.113     | 5.081         | 5.096         | 100.0%  | 10   |
++--------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
+```
+
+----------------
+
+#Refference
+
+1. [https://wiki.openstack.org/wiki/Rally](https://wiki.openstack.org/wiki/Rally)
+2. [http://prajnagarden.com/openstack/2014/05/06/rally-guide-01/](http://prajnagarden.com/openstack/2014/05/06/rally-guide-01/)
