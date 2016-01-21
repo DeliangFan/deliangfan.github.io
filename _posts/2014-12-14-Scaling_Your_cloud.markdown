@@ -74,7 +74,7 @@ $ nova aggregate-add-host 3 compute01
 创建虚拟机时，指定 AZ 名字即可。
 
 ```
-$ nova boot –flavor m1.small –image cirros –availability-zone AZ-01 vm
+$ nova boot --flavor m1.small --image cirros --availability-zone AZ-01 vm
 ```
 
 ##How to use host aggregates zone
@@ -121,7 +121,7 @@ $ nova aggregate-add-host 4 compute02
 创建 flavor：
 
 ```bash
-$ nova flavor-create m1.ssd auto 4096 10 2 –is-public true
+$ nova flavor-create m1.ssd auto 4096 10 2 --is-public true
 +----+--------+-----------+------+-----------+------+-------+------------+-----------+---------------+
 | ID |  Name  | Memory_MB | Disk | Ephemeral | Swap | VCPUs | RXTX_Factor| Is_Public | extra_specs   |
 +----+--------+-----------+------+-----------+------+-------+------------+-----------+---------------+
@@ -145,7 +145,7 @@ $ nova flavor-show m1.ssd
 采用 m1.ssd 创建虚拟机：
 
 ```bash
-$ nova boot –flavor m1.ssd –image cirros vm_ssd
+$ nova boot --flavor m1.ssd --image cirros vm_ssd
 ```
 
 -----------------
