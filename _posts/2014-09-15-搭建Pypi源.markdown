@@ -1,0 +1,147 @@
+---
+layout: post
+title:  "搭建 pypi 源"
+categories: DevOps
+---
+
+----------
+
+出于安全因素，企业内多数服务器不能访问外网，这些服务可能有安装某些 python package 的需求，此外，在 OpenStack 的开发测试中，也经常需要安装一些 python package，所以很有必要搭建企业私有的 pypi 源。[Bandersnatch](https://pypi.python.org/pypi/bandersnatch) 是一个用于同步 pypi 源的工具，采用它下载和同步官网所有 package 到本地，最后由 nginx 发布。
+
+- 准备 300G 或以上的存储空间
+- bandersnatch：下载某个源的所有 package 到本地
+- nginx：发布本地 pypi
+
+-----------
+
+#Installation
+
+采用 pip 安装：
+
+```bash
+$ pip install bandersnatch
+```
+采用源码安装：
+
+```bash
+$ wget https://pypi.python.org/packages/source/b/bandersnatch/bandersnatch-1.5.tar.gz
+$ tar -zxvf bandersnatch-1.5.tar.gz
+$ cd bandersnatch-1.5
+$ python setup.py install
+```
+
+-----------
+
+#Configure
+
+生成配置文件 /etc/bandersnatch.conf。
+
+```bash
+$ bandersnatch mirror
+2014-09-15 09:37:30,631 WARNING: Config file '/etc/bandersnatch.conf' missing, creating default config.
+2014-09-15 09:37:30,631 WARNING: Please review the config file, then run 'bandersnatch' again.
+```
+
+根据实际情况，重点修改以下两个配置，directory 指 package 在本地存放的位置，master 指被同步的源。
+
+```
+[mirror]
+; The directory where the mirror data will be stored.
+directory = /srv/pypi
+
+; The PyPI server which will be mirrored.
+; master = https://testpypi.python.org
+; scheme for PyPI server MUST be https
+master = https://pypi.python.org
+```
+[OpenStack 官网](http://docs.openstack.org/infra/system-config/bandersnatch.html)推荐以下可用源：
+
+```	
+http://pypi.openstack.org (deprecated)
+http://pypi.bhs1.openstack.org
+http://pypi.dfw.openstack.org
+http://pypi.gra1.openstack.org
+http://pypi.iad.openstack.org
+http://pypi.nyj01.openstack.org
+http://pypi.ord.openstack.org
+http://pypi.region-b.geo-1.openstack.org
+http://pypi.regionone.openstack.org
+```
+
+----------
+# Download & Synchronize
+
+下载所有 package 至本地：
+
+```bash
+$ bandersnatch mirror
+2014-01-15 09:49:26,556 INFO: bandersnatch/1.5 (CPython 2.7.6-final0, Linux 3.19.0-37-generic x86_64)
+2014-01-15 09:49:26,558 INFO: Setting up mirror directory: /srv/pypi/
+2014-01-15 09:49:26,559 INFO: Setting up mirror directory: /srv/pypi/web/simple
+2014-01-15 09:49:26,560 INFO: Setting up mirror directory: /srv/pypi/web/packages
+2014-01-15 09:49:26,560 INFO: Setting up mirror directory: /srv/pypi/web/local-stats/days
+2014-01-15 09:49:26,561 INFO: Generation file missing. Reinitialising status files.
+......
+```
+
+更新本地的 pacakge：
+
+```bash
+$ bandersnatch mirror
+2014-09-15 09:54:35,813 INFO: bandersnatch/1.5 (CPython 2.7.6-final0, Linux 3.19.0-37-generic x86_64)
+2014-09-15 09:54:35,814 INFO: Status file missing. Starting over.
+2014-09-15 09:54:35,814 INFO: Syncing with https://pypi.python.org.
+2014-09-15 09:54:35,815 INFO: Current mirror serial: 0
+2014-09-15 09:54:35,815 INFO: Resuming interrupted sync from local todo list.
+......
+```
+
+----------
+
+#Config nginx
+
+安装 nginx：
+
+```bash
+$ apt-get install nginx
+```
+
+在 /etc/nginx/sites-available/default 和 /etc/nginx/sites-available/default 配置如下：
+```
+server {
+    listen *:80;
+    server_name pypi_server;
+    root /srv/pypi/web;
+    autoindex on;
+    charset utf-8;
+}
+```
+
+启动 nginx：
+
+```bash
+$ /etc/init.d/nginx start
+```
+
+----------
+
+#Test
+
+客户端 pip 配置为：
+
+```bash
+$ cat ~/.pip/pip.conf
+[global]
+index-url = http://your_pipy/simple
+```
+
+测试如下：
+
+```bash
+$ pip install apasvo
+Downloading/unpacking apasvo
+  http://10.10.1.100/simple/apasvo/ uses an insecure transport scheme (http). Consider using https if 10.10.1.100 has it available
+  Downloading APASVO-0.0.5-py2-none-any.whl (226kB): 226kB downloaded
+......
+```
+Note: 本机 IP 为 10.10.1.100

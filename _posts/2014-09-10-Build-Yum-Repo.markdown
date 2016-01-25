@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "搭建 RPM 和 Pypi 源"
+title:  "搭建 yum 源"
 categories: DevOps 
 ---
 
