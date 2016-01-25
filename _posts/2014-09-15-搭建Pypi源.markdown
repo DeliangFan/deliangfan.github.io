@@ -132,7 +132,7 @@ $ /etc/init.d/nginx start
 ```bash
 $ cat ~/.pip/pip.conf
 [global]
-index-url = http://your_pipy/simple
+index-url = http://<your_pipy>/simple
 ```
 
 测试如下：
@@ -140,8 +140,7 @@ index-url = http://your_pipy/simple
 ```bash
 $ pip install apasvo
 Downloading/unpacking apasvo
-  http://10.10.1.100/simple/apasvo/ uses an insecure transport scheme (http). Consider using https if 10.10.1.100 has it available
+  http://<your_pipy>/simple/apasvo/ uses an insecure transport scheme (http). Consider using https if <your_pipy> has it available
   Downloading APASVO-0.0.5-py2-none-any.whl (226kB): 226kB downloaded
 ......
 ```
-Note: 本机 IP 为 10.10.1.100
