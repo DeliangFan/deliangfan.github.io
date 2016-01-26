@@ -145,17 +145,15 @@ http://pypi.regionone.openstack.org
 <p>安装 nginx：</p>
 <div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>apt-get install nginx
 </code></pre></div>
-<p>在 /etc/nginx/sites-available/default 和 /etc/nginx/sites-available/default 配置如下：
-<code>
-server {
+<p>在 /etc/nginx/sites-available/default 和 /etc/nginx/sites-available/default 配置如下：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">server {
     listen *:80;
     server_name pypi_server;
     root /srv/pypi/web;
     autoindex on;
     charset utf-8;
 }
-</code></p>
-
+</code></pre></div>
 <p>启动 nginx：</p>
 <div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>/etc/init.d/nginx start
 </code></pre></div>
@@ -166,17 +164,15 @@ server {
 <p>客户端 pip 配置为：</p>
 <div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>cat ~/.pip/pip.conf
 <span class="o">[</span>global<span class="o">]</span>
-index-url <span class="o">=</span> http://your_pipy/simple
+index-url <span class="o">=</span> http://&lt;your_pypi&gt;/simple
 </code></pre></div>
 <p>测试如下：</p>
 <div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>pip install apasvo
 Downloading/unpacking apasvo
-  http://10.10.1.100/simple/apasvo/ uses an insecure transport scheme <span class="o">(</span>http<span class="o">)</span>. Consider using https <span class="k">if</span> 10.10.1.100 has it available
+  http://&lt;your_pypi&gt;/simple/apasvo/ uses an insecure transport scheme <span class="o">(</span>http<span class="o">)</span>. Consider using https <span class="k">if</span> &lt;your_pypi&gt; has it available
   Downloading APASVO-0.0.5-py2-none-any.whl <span class="o">(</span>226kB<span class="o">)</span>: 226kB downloaded
 ......
 </code></pre></div>
-<p>Note: 本机 IP 为 10.10.1.100</p>
-
   </div>
 
 </article>

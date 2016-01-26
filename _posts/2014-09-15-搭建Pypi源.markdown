@@ -107,6 +107,7 @@ $ apt-get install nginx
 ```
 
 在 /etc/nginx/sites-available/default 和 /etc/nginx/sites-available/default 配置如下：
+
 ```
 server {
     listen *:80;
@@ -132,7 +133,7 @@ $ /etc/init.d/nginx start
 ```bash
 $ cat ~/.pip/pip.conf
 [global]
-index-url = http://<your_pipy>/simple
+index-url = http://<your_pypi>/simple
 ```
 
 测试如下：
@@ -140,7 +141,7 @@ index-url = http://<your_pipy>/simple
 ```bash
 $ pip install apasvo
 Downloading/unpacking apasvo
-  http://<your_pipy>/simple/apasvo/ uses an insecure transport scheme (http). Consider using https if <your_pipy> has it available
+  http://<your_pypi>/simple/apasvo/ uses an insecure transport scheme (http). Consider using https if <your_pypi> has it available
   Downloading APASVO-0.0.5-py2-none-any.whl (226kB): 226kB downloaded
 ......
 ```
