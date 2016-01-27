@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "[行摄]雪后黄山"
+title:  "[行摄] 雪后黄山"
 categories: Photos
 ---
 

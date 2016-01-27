@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "[行摄]北京海坨山"
+title:  "[行摄] 北京海坨山"
 categories: Photos
 ---
 

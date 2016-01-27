@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "[行摄]内蒙古"
+title:  "[行摄] 内蒙古"
 categories: Photos
 ---
 

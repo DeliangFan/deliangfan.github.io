@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "[行摄]青海湖"
+title:  "[行摄] 青海湖"
 categories: Photos
 ---
 
