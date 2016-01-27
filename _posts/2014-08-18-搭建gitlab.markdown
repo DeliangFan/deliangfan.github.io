@@ -63,6 +63,8 @@ external_url 'http://<your_gitlab_host>'
 $ gitlab-ctl reconfigure
 ```
 
+更多的配置和说明请见[官网文档](http://doc.gitlab.com/omnibus/)。
+
 ----------
 #Test
 
