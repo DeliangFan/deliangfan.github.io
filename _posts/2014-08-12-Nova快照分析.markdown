@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Nova快照分析"
+title:  "Nova 快照分析"
 categories: OpenStack
 ---
 

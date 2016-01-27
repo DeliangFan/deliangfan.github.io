@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "OpenStack的HA方案"
+title:  "OpenStack 的 HA 方案"
 categories: OpenStack
 ---
 

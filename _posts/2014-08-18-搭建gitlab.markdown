@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "搭建 pypi 源"
+title:  "搭建 Gitlab"
 categories: DevOps
 ---
 

@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "理解Keystone的四种Token"
+title:  "理解 Keystone 的四种 Token"
 categories: OpenStack
 ---
 

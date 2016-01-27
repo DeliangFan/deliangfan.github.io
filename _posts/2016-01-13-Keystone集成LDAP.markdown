@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Keystone集成LDAP"
+title:  "Keystone 集成 LDAP"
 categories: OpenStack
 ---
 

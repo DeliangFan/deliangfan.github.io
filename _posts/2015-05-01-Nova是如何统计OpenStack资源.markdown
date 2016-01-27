@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Nova是如何统计OpenStack资源"
+title:  "Nova 是如何统计 OpenStack 资源"
 categories: OpenStack
 ---
 
