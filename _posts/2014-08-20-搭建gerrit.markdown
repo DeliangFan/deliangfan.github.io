@@ -1,0 +1,79 @@
+---
+layout: post
+title:  "搭建 Gerrit"
+categories: DevOps
+---
+
+----------
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![gerrit](http://7xp2eu.com1.z0.glb.clouddn.com/gerrit_logo.png?imageView2/1/w/150/h/150/q/100)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+
+[Gerrit](https://code.google.com/p/gerrit/) 一款非常优秀的搭建 code review 的软件，是 CI-CD 的重要组成部分，团队在项目开发的时候，常常需要进行代码 review，只有通过才能被 merge，并同步到 [GitLab](http://wsfdl.com/devops/2014/08/18/%E6%90%AD%E5%BB%BAgitlab.html) 中，本文介绍 gerrit 的安装流程。
+
+- Linux: Ubuntu 14.04 LTS
+- GitLab: gerrit-2.11.5.war
+
+-----------
+
+# Installation
+
+Gerrit 的[安装](https://gerrit-review.googlesource.com/Documentation/install-quick.html)非常简便，首先安装 java 后，下载安装包：
+
+```
+$ apt-get install default-jre
+$ wget https://www.gerritcodereview.com/download/gerrit-2.11.5.war
+```
+
+创建 gerrit2 用户，并切换至该用户：
+
+```
+$ adduser gerrit2
+$ su gerrit
+```
+
+启动 gerrit：
+
+```
+$ java -jar gerrit-2.11.5.war  init --batch -d ~/gerrit_site
+```
+
+-----------
+
+# Configuration
+
+根据需求，重点更新 \<gerrit_site\>/etc/gerrit.config 以下配置项，
+
+```
+[gerrit]
+        canonicalWebUrl = http://<your_host>:9090/
+
+[sshd]
+        listenAddress = *:29418
+        
+[httpd]
+        listenUrl = http://*:9090/
+```
+
+重新启动 gerrit
+
+```
+$ <gerrit_site>/bin/gerrit.sh restart
+```
+
+
+----------
+#Test
+
+浏览器登录 <your_host>:9090，即可见如下页面：
+
+![gerrit-demo](http://7xp2eu.com1.z0.glb.clouddn.com/gerrit_demo.png)
+
+附一张 OpenStack Gerrit 样图：
+
+![openstack gerrit](http://7xp2eu.com1.z0.glb.clouddn.com/openstack_gerrit.png)

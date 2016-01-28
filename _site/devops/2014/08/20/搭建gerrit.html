@@ -6,11 +6,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>搭建 GitLab</title>
-  <meta name="description" content="">
+  <title>搭建 Gerrit</title>
+  <meta name="description" content="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;">
 
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="http://wsfdl.com/devops/2014/08/18/%E6%90%AD%E5%BB%BAgitlab.html">
+  <link rel="canonical" href="http://wsfdl.com/devops/2014/08/20/%E6%90%AD%E5%BB%BAgerrit.html">
   <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
 </head>
 
@@ -57,79 +57,69 @@
         <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title" itemprop="name headline">搭建 GitLab</h1>
-    <p class="post-meta"><time datetime="2014-08-18T00:00:00+08:00" itemprop="datePublished">Aug 18, 2014</time></p>
+    <h1 class="post-title" itemprop="name headline">搭建 Gerrit</h1>
+    <p class="post-meta"><time datetime="2014-08-20T00:00:00+08:00" itemprop="datePublished">Aug 20, 2014</time></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
     <hr>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/gitlab.png" alt="gitlab"></p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
 
-<p><a href="http:%5Cgithub.com">Github</a> 一个非常优秀的代码托管平台，但是私有的项目是收费的。出于安全等因素考虑，企业很有必要搭建属于自己的代码托管平台，<a href="https://about.gitlab.com/">GitLab</a> 就是一款优秀的构建私有代码托管平台的软件，和 github 非常相像。</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img src="http://7xp2eu.com1.z0.glb.clouddn.com/gerrit_logo.png?imageView2/1/w/150/h/150/q/100" alt="gerrit"></p>
+
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+
+<p><a href="https://code.google.com/p/gerrit/">Gerrit</a> 一款非常优秀的搭建 code review 的软件，是 CI-CD 的重要组成部分，团队在项目开发的时候，常常需要进行代码 review，只有通过才能被 merge，并同步到 <a href="http://wsfdl.com/devops/2014/08/18/%E6%90%AD%E5%BB%BAgitlab.html">GitLab</a> 中，本文介绍 gerrit 的安装流程。</p>
 
 <ul>
 <li>Linux: Ubuntu 14.04 LTS</li>
-<li>GitLab: gitlab-ce_8.4.0-ce.0_amd64.deb</li>
+<li>GitLab: gerrit-2.11.5.war</li>
 </ul>
 
 <hr>
 
 <h1 id="installation">Installation</h1>
 
-<p>GitLab 的<a href="https://about.gitlab.com/installation/">安装</a>非常简便，有多种方式：</p>
-
-<ul>
-<li><a href="https://about.gitlab.com/downloads/">Omnibus package installation</a> (recommended)</li>
-<li><a href="https://gitlab.com/gitlab-org/gitlab-development-kit/blob/master/README.md">GitLab Development Kit</a></li>
-<li><a href="https://gitlab.com/gitlab-org/cookbook-omnibus-gitlab/blob/master/README.md">GitLab Omnibus Cookbook</a></li>
-<li><a href="https://gitlab.com/gitlab-org/gitlab-ce/blob/master/doc/install/installation.md">Installation from source guide</a></li>
-<li><a href="https://gitlab.com/gitlab-org/gitlab-ce/tree/master/docker">Docker installation instructions</a></li>
-<li>GitLab as a Service In Cloud Platform</li>
-</ul>
-
-<p>本文采用官网推荐的第一种安装方式，即 Omnibus package installation，首先安装依赖</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>apt-get install curl openssh-server ca-certificates postfix
+<p>Gerrit 的<a href="https://gerrit-review.googlesource.com/Documentation/install-quick.html">安装</a>非常简便，首先安装 java 后，下载安装包：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ apt-get install default-jre
+$ wget https://www.gerritcodereview.com/download/gerrit-2.11.5.war
 </code></pre></div>
-<p>下载并安装 gitlab：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>curl -LJO https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/trusty/gitlab-ce_8.4.0-ce.0_amd64.deb/download
-<span class="nv">$ </span>dpkg -i gitlab-ce_8.4.0-ce.0_amd64.deb
+<p>创建 gerrit2 用户，并切换至该用户：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ adduser gerrit2
+$ su gerrit
 </code></pre></div>
-<p>GitLab 安装包大约为 300 MB，里面包含多个常用的服务：</p>
-
-<ul>
-<li>Redis：缓存服务</li>
-<li>Nginx：Web 服务</li>
-<li>Ldap：用户管理服务</li>
-<li>SMTP：邮件服务</li>
-<li>Postgres：数据库服务</li>
-<li>Logs: 日志管理服务</li>
-</ul>
-
+<p>启动 gerrit：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ java -jar gerrit-2.11.5.war  init --batch -d ~/gerrit_site
+</code></pre></div>
 <hr>
 
-<h1 id="configure">Configure</h1>
+<h1 id="configuration">Configuration</h1>
 
-<p>更新 /etc/gitlab/gitlab.rb 的如下配置项：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">external_url &#39;http://&lt;your_gitlab_host&gt;&#39;
-</code></pre></div>
-<p>重启 GitLab：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>gitlab-ctl reconfigure
-</code></pre></div>
-<p>更多的配置和说明请见<a href="http://doc.gitlab.com/omnibus/">官网文档</a>。</p>
+<p>根据需求，重点更新 &lt;gerrit_site&gt;/etc/gerrit.config 以下配置项，</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">[gerrit]
+        canonicalWebUrl = http://&lt;your_host&gt;:9090/
 
+[sshd]
+        listenAddress = *:29418
+
+[httpd]
+        listenUrl = http://*:9090/
+</code></pre></div>
+<p>重新启动 gerrit</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ &lt;gerrit_site&gt;/bin/gerrit.sh restart
+</code></pre></div>
 <hr>
 
 <h1 id="test">Test</h1>
 
-<p>打开浏览器，输入 &lt;your_gitlab_host&gt; 登录 GitLab，默认的用户名和密码为：</p>
+<p>浏览器登录 <your_host>:9090，即可见如下页面：</p>
 
-<ul>
-<li>Username: root </li>
-<li>Password: 5iveL!fe</li>
-</ul>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/gerrit_demo.png" alt="gerrit-demo"></p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/gitlab_example.png" alt="example"></p>
+<p>附一张 OpenStack Gerrit 样图：</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/openstack_gerrit.png" alt="openstack gerrit"></p>
 
   </div>
 
