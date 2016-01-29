@@ -17,7 +17,7 @@ categories: DevOps
 [Gerrit](https://code.google.com/p/gerrit/) 一款非常优秀的搭建 code review 的软件，是 CI-CD 的重要组成部分，团队在项目开发的时候，常常需要进行代码 review，只有通过才能被 merge，并同步到 [GitLab](http://wsfdl.com/devops/2014/08/18/%E6%90%AD%E5%BB%BAgitlab.html) 中，本文介绍 gerrit 的安装流程。
 
 - Linux: Ubuntu 14.04 LTS
-- GitLab: gerrit-2.11.5.war
+- Gerrit: gerrit-2.11.5.war
 
 -----------
 
