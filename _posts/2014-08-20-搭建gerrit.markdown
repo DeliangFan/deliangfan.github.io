@@ -70,7 +70,7 @@ $ <gerrit_site>/bin/gerrit.sh restart
 ----------
 #Test
 
-浏览器登录 <your_host>:9090，即可见如下页面：
+浏览器登录 \<your_host\>:9090，即可见如下页面：
 
 ![gerrit-demo](http://7xp2eu.com1.z0.glb.clouddn.com/gerrit_demo.png)
 
