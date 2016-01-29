@@ -64,84 +64,101 @@
   <div class="post-content" itemprop="articleBody">
     <hr>
 
-<p>对于企业的 Openstack 私有云，出于安全和某些因素的考虑，有些服务器无法访问公网，导致服务器无法更新某些 RPM 包，同时内部常有 Openstack 新特性开发需求、版本的维护与升级，因此非常有必要构建企业私有的 openstack yum 源。 构建 openstack yum 源有两个步骤：1.同步(下载)官方的源至企业 yum 服务器中；2. 重新创建 repo 并通过 nginx(apache)发布。</p>
+<blockquote>
+<p>注：此博文由陈尚华和本人整理所作。</p>
+</blockquote>
 
-<p>Overview
-     以 Redhat Openstack 官网安装手册为例，安装 Openstack 需要用到两类共计 8 个 repo，
-    1). Centos 源
-       CentOS-Base.repo  CentOS-Debuginfo.repo  CentOS-Media.repo  CentOS-Vault.repo
-    2). openstack 源及相关依赖源(epel, foreman, puppet)： 
-        epel.repo  foreman.repo  puppetlabs.repo  rdo-release.repo</p>
+<p>对于企业的 Openstack 私有云，出于安全和某些因素的考虑，有些服务器无法访问公网，导致服务器无法更新某些 RPM 包，同时常有私有特性开发需求、版本的维护与升级，因此非常有必要构建企业私有 yum repo，主要有三个步骤。</p>
 
-<p>构建本地源步骤</p>
+<ul>
+<li>下载官方的 repository</li>
+<li>制作 release rpm</li>
+<li>nginx 发布</li>
+</ul>
 
-<p>1.yum源文件下载
-(1).下载必要工具：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ yum install wget createrepo
+<p>以 Redhat 官网安装手册为例，安装 Openstack 需要用到两类共计 8 个 repo，</p>
 
-(2).下载yum源到本地：
-[root@yumserver ~]# mkdir -p /wget-yum
-[root@yumserver ~]# cd /wget-yum：
+<ul>
+<li>Centos 源：CentOS-Base.repo，CentOS-Debuginfo.repo，CentOS-Media.repo，CentOS-Vault.repo</li>
+<li>OpenStack 源及相源(epel, foreman, puppet)：epel.repo，foreman.repo，puppetlabs.repo，rdo-release.repo</li>
+</ul>
 
-下载 Centos, foreman, epel, puppetlabs, openstack 源的所有 rpm。
-$ wget -S -c -r -np -L http://mirrors.sohu.com/centos/6.5/
+<p>环境</p>
+
+<ul>
+<li>Linux: Centos 6.5</li>
+<li>OpenStack: Icehouse</li>
+</ul>
+
+<hr>
+
+<h1 id="下载官网-repository">下载官网 repository</h1>
+
+<p>安装必要工具：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ yum install wget createrepo rpm-build
+</code></pre></div>
+<p>下载 Centos, foreman, epel, puppetlabs, OpenStack 源的所有 rpm。</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ wget -S -c -r -np -L http://mirrors.sohu.com/centos/6.5/
 $ wget -S -c -r -np -L http://yum.theforeman.org/plugins/1.5/el6/
 $ wget -S -c -r -np -L http://yum.theforeman.org/releases/1.5/el6/
 $ wget -S -c -r -np -L http://mirrors.yun-idc.com/epel/6/
 $ wget -S -c -r -np -L https://yum.puppetlabs.com/el/6/
 $ wget -S -c -r -np -L https://repos.fedorapeople.org/repos/openstack/openstack-icehouse/
-
-(3).删除不需要的软件包和文件：
-$ find ./ -name index.html* | xarge rm -rf
+</code></pre></div>
+<p>删除不需要的文件：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ find ./ -name index.html* | xarge rm -rf
 $ find ./ -name fedora-20 | xarge rm -rf
 $ find ./ -name fedora-19 | xarge rm -rf
 $ find ./ -name i386 | xarge rm -rf
-
-(4).调整目录结构：
-[root@yumserver wget-yum]# mkdir foreman
+</code></pre></div>
+<p>调整目录结构，使其更为直观可读：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ mkdir foreman puppetlabs
 $ mv yum.theforeman.org/plugins foreman/
 $ mv yum.theforeman.org/releases foreman/
 $ mv repos.fedorapeople.org/repos/openstack ./
 $ mv yum.puppetlabs.com/el /puppetlabs/
 $ mv mirrors.yun-idc.com/epel ./
-$ mkdir puppetlabs
 $ rm -rf mirrors.yun-idc.com
 $ rm -rf yum.puppetlabs.com
 $ rm -rf yum.theforeman.org
 $ rm -rf repos.fedorapeople.org
-[root@yumserver wget-yum]# ls
-centos  epel  foreman  openstack  puppetlabs
-
-2.nginx配置：
-[root@yumserver wget-yum]# rpm -ivh http://nginx.org/packages/centos/6/noarch/RPMS/nginx-release-centos-6-0.el6.ngx.noarch.rpm
-[root@yumserver wget-yum]# yum -y install nginx
-[root@yumserver wget-yum]# vi /etc/nginx/nginx.conf
-
-[root@yumserver wget-yum]# /etc/init.d/nginx restart
-
-
-3. release.rpm制作：
-(1).下载icehouse源码包：
-[root@yumserver ~]# wget https://repos.fedorapeople.org/repos/openstack/openstack-icehouse/rdo-release-icehouse-4.src.rpm
-
-(2).创建padraig用户和组：
-[root@yumserver ~]# groupadd -g 2000 padraig
-[root@yumserver ~]# useradd -u 2000 -g padraig -m padraig -d /home -s /bin/bash
-
-(3).解压rpm，并修改各个 .repo 文件的 url：
-[root@yumserver ~]# rpm -i rdo-release-icehouse-4.src.rpm
-修改 .repo 文件，以 rdo-release.repo 为例llllh
-(3).解压rpm，并修改各个 .repo 文件的 url：
-[root@yumserver ~]# rpm -i rdo-release-icehouse-4.src.rpm
-修改 .repo 文件，以 rdo-release.repo 为例
 </code></pre></div>
-<p>(4).修改 .spec 文件内容：
-[root@yumserver ~]# cd rpmbuild/
-[root@yumserver rpmbuild]# 
-SOURCES  SPECS
-[root@yumserver ~]# cd SPECS
-[root@yumserver SPECS]# vi rdo-release.spec 
-URL:            https://github.com/redhat-openstack/rdo-release
+<p>调整后目录如下：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ ls
+centos  epel  foreman  openstack  puppetlabs
+</code></pre></div>
+<p>依次重新制作 repository，以 OpenStack 为例：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ createrepo openstack/openstack-icehouse/updates
+$ createrepo openstack/openstack-icehouse/epel-6
+</code></pre></div>
+<p>如果有新 rpm，则加入 updates 目录中，并执行：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ createrepo openstack/openstack-icehouse/updates --update
+</code></pre></div>
+<hr>
+
+<h1 id="release-rpm-制作：">Release RPM 制作：</h1>
+
+<p>创建padraig用户和组，用于编译制作 rpm：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ groupadd -g 2000 padraig
+$ useradd -u 2000 -g padraig -m padraig -d /home -s /bin/bash
+</code></pre></div>
+<p>下载并解压 Icehouse 源码包：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ wget https://repos.fedorapeople.org/repos/openstack/openstack-icehouse/rdo-release-icehouse-4.src.rpm
+$ rpm -i rdo-release-icehouse-4.src.rpm
+</code></pre></div>
+<p>修改各个 *.repo 文件的 url，以 rdo-release.repo 为例，更新 url 如下：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">[openstack-icehouse]
+name=OpenStack Icehouse Repository
+baseurl=http://&lt;your_yum_server&gt;/openstack/openstack-icehouse/epel-6/
+enabled=1
+skip_if_unavailable=0
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-RDO-Icehouse
+priority=98
+</code></pre></div>
+<p>更新 rpmbuild/SPECS/rdo-release.spec 文件内容：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">......
+
 Source0:        rdo-release.repo
 Source1:        RPM-GPG-KEY-RDO-Icehouse
 Source2:        foreman.repo
@@ -149,70 +166,79 @@ Source3:        RPM-GPG-KEY-foreman
 Source4:        puppetlabs.repo
 Source5:        RPM-GPG-KEY-puppetlabs
 Source6:        epel.repo
-Source7:        RPM-GPG-KEY-EPEL-6</p>
+Source7:        RPM-GPG-KEY-EPEL-6
 
-<p>%install
-install -p -D -m 644 %{SOURCE0} %{buildroot}%{<u>sysconfdir}/yum.repos.d/rdo-release.repo
-install -p -D -m 644 %{SOURCE2} %{buildroot}%{</u>sysconfdir}/yum.repos.d/foreman.repo
-install -p -D -m 644 %{SOURCE4} %{buildroot}%{<u>sysconfdir}/yum.repos.d/puppetlabs.repo
-install -p -D -m 644 %{SOURCE6} %{buildroot}%{</u>sysconfdir}/yum.repos.d/epel.repo</p>
+%install
+install -p -D -m 644 %{SOURCE0} %{buildroot}%{_sysconfdir}/yum.repos.d/rdo-release.repo
+install -p -D -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/yum.repos.d/foreman.repo
+install -p -D -m 644 %{SOURCE4} %{buildroot}%{_sysconfdir}/yum.repos.d/puppetlabs.repo
+install -p -D -m 644 %{SOURCE6} %{buildroot}%{_sysconfdir}/yum.repos.d/epel.repo
 
-<h1 id="gpg-keys">GPG Keys</h1>
+#GPG Keys
+install -Dpm 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-RDO-Icehouse
+install -Dpm 644 %{SOURCE3} %{buildroot}%{_sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-foreman
+install -Dpm 644 %{SOURCE5} %{buildroot}%{_sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-puppetlabs
+install -Dpm 644 %{SOURCE7} %{buildroot}%{_sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6
 
-<p>install -Dpm 644 %{SOURCE1} %{buildroot}%{<u>sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-RDO-Icehouse
-install -Dpm 644 %{SOURCE3} %{buildroot}%{</u>sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-foreman
-install -Dpm 644 %{SOURCE5} %{buildroot}%{<u>sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-puppetlabs
-install -Dpm 644 %{SOURCE7} %{buildroot}%{</u>sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-EPEL-6</p>
+for repo in rdo-release foreman puppetlabs epel ; do
+......
+</code></pre></div>
+<p>更新 rpmbuild/SOURCES/ 文件内容如下：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ ls rpmbuild/SOURCES/
+epel.repo  foreman.repo  puppetlabs.repo  rdo-release.repo  RPM-GPG-KEY-EPEL-6  RPM-GPG-KEY-foreman  RPM-GPG-KEY-puppetlabs  RPM-GPG-KEY-RDO-Icehouse
+</code></pre></div>
+<p>重新编译制作 release rpm：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ rpmbuild -ba rpmbuild/SPECS/rdo-release.spec
+</code></pre></div>
+<hr>
 
-<p>for repo in rdo-release foreman puppetlabs epel ; do</p>
+<h1 id="nginx-发布：">Nginx 发布：</h1>
 
-<p>(5).修改SOURCES文件内容，并增加相应文件：
-[root@yumserver SPECS]# cd ../SOURCES
-[root@yumserver SOURCES]# ls
-epel.repo  foreman.repo  puppetlabs.repo  rdo-release.repo  RPM-GPG-KEY-EPEL-6  RPM-GPG-KEY-foreman  RPM-GPG-KEY-puppetlabs  RPM-GPG-KEY-RDO-Icehouse</p>
+<p>安装 Nginx：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ rpm -ivh http://nginx.org/packages/centos/6/noarch/RPMS/nginx-release-centos-6-0.el6.ngx.noarch.rpm
+$ yum -y install nginx
+</code></pre></div>
+<p>/etc/nginx/conf.d/default.conf 的配置可参考如下：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">server {  
+    listen       80;  
+    server_name  &lt;your_server_name&gt;;  
+    location / {  
+        root &lt;your_yum_path&gt;;  
+        autoindex on; 
+        index  index.html index.htm;  
+    }  
+    error_page   500 502 503 504  /50x.html;  
+    location = /50x.html {  
+        root   /usr/share/nginx/html;  
+    }  
+}
+</code></pre></div>
+<p>重启 nginx：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ /etc/init.d/nginx restart
+</code></pre></div>
+<hr>
 
-<p>(6).重新打包rpm：
-[root@yumserver SPECS]# yum -y install rpm-build
-[root@yumserver SPECS]# pwd
-/root/rpmbuild/SPECS
-[root@yumserver SPECS]# rpmbuild -ba rdo-release.spec</p>
+<h1 id="troubleshooting">Troubleshooting:</h1>
 
-<ol>
-<li><p>解决依赖关系，创建仓库：
-[root@yumserver updates]# ls
-repodata  x86<u>64
-[root@yumserver updates]# pwd
-yum-repo/openstack/openstack-icehouse/updates
-[root@yumserver updates]# createrepo x86</u>64</p></li>
-<li><p>repo 更新 RPM 包：
-createrepo x86_64 --update</p></li>
-</ol>
-
-<p>编译后的rpm源码包示例：
-new-rdo-release-icehouse-4.0.src.rpm
-```</p>
-
-<p>troubleshooting:
- yum repolist 出现
-[root@controller yum.repos.d]# yum repolist
-Loaded plugins: axelget, fastestmirror, security
-Loading mirror speeds from cached hostfile
+<p>yum repolist 出现</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ yum repolist
+...
 http://openstack-yum-server/ceph/el6/x86_64/repodata/repomd.xml: [Errno 14] PYCURL ERROR 22 - &quot;The requested URL returned error: 403 Forbidden&quot;
 Trying other mirror.
-http://openstack-yum-server/ceph/el6/noarch/repodata/repomd.xml: [Errno 14] PYCURL ERROR 22 - &quot;The requested URL returned error: 403 Forbidden&quot;
-Trying other mirror.
-.....</p>
+.....
+</code></pre></div>
+<p>解决方案：</p>
 
-<p>解决方案：
-1)
-      每个 repo 配置新增 proxy=None
-      [openstack-havana-updates]
-      .....
-      <u>proxy</u>=None
-2)
-     关闭防火墙， service iptables stop</p>
-
-<p>注：此博文由陈尚华和本人所作。</p>
+<ul>
+<li>每个 repo 配置新增 proxy=None</li>
+</ul>
+<div class="highlight"><pre><code class="language-text" data-lang="text">[openstack-icehouse-updates]
+.....
+_proxy_=None
+</code></pre></div>
+<ul>
+<li>关闭防火墙， service iptables stop</li>
+</ul>
 
   </div>
 
