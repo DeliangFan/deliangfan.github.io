@@ -4,108 +4,192 @@ title:  "Nova 快照分析"
 categories: OpenStack
 ---
 
+------------
+
 #Snapshot Overview
-对OpenStack而言，虚拟机的快照即是镜像，快照做完后以镜像形式存于glance。虽然OpenStack的快照是基于libvirt(qemu-kvm)，但是二者在实现上有很大区别：
 
-- libvirt 主流快照实现: 采用virDomainSnapshotCreateXML()函数(CLI为virsh snapshot-create)。 新建的快照与虚拟机有关联：若为内置快照，快照信息和虚拟机存在同一个qcow2镜像中；若为外置快照，新建一个qcow2文件，原虚拟机的disk将变为一个read only的模板镜像，新qcow2镜像仅记录与2.模板镜像的差异数据。这种快照包含快照链信息，可保留disk和ram信息，可回滚至快照点。
+严格的说，nova 虚拟机的快照并不是真正意义的快照，它仅仅将虚拟机的磁盘文件完整的复制一份，然后把复制的文件上传至 glance 中作为镜像，之后二者毫无关联。所以 nova 用 image-create 而非 snapshot 来定义该 API，但为了方便表述，本文依旧用 snapshot 来表述 nova 快照。
 
-- OpenStack快照实现: OpenStack并未采用virDomainSnapshotCreateXML()来实现快照，而是单纯的对虚拟机镜像做转换和拷贝，生成一个与虚拟机无关联的镜像，最后上传至glance中。这种快照不包含快照链信息，只保留disk信息，无法回滚至快照点，只能采用该快照镜像创建一个新的虚拟机。
+- Libvirt snapshot: 采用 virDomainSnapshotCreateXML() (CLI为virsh snapshot-create) 创建快照，新建的快照与虚拟机有关联：若为内置快照，新建的快照和虚拟机磁盘文件存在同一个 qcow2 文件中；若为外置快照，快照为一个新建的 qcow2 文件，原虚拟机的磁盘文件将变为 read-only 模板，快照文件记录与模板的差异数据。它包含快照链信息，也保留了 RAM 信息，可回滚至快照点。
 
-#Cold Snapshot & Live Snapshot
+- Nova snapshot: nova 并未采用 virDomainSnapshotCreateXML() 实现快照，它仅仅将虚拟机磁盘文件完整拷贝一份并上传至 glance 中。这种快照不包含快照链和 RAM，只保留了磁盘文件信息，无法回滚至快照点。
 
-- cold snapshot: 创建snapshot时，需暂停虚拟机。
-- live snapshot: 创建snapshot时，无需暂停虚拟机。
+因 nova 的 snapshot 只是对虚拟机磁盘文件的完整拷贝，所以和真正意义的 snapshot 相比，存在以下缺点：
 
-#cold snapshot 流程:
-
-1.Save the state and stop a running guest, then detach pci devices
-
-```bash
-virsh managedsave vm
-```
-2.Create a qemu internal snapshot
-
-```bash
-qemu-img snapshot -c snap1 vm_snapshot
-```
-
-3.Extract the internal snapshot, convert it to qcow2 and export it a file, then upload to glance
-
-```bash
-qemu-img convert -f qcow2 vm -O qcow2 vm_snapshot
-```
-
-4.Start the guest again
-virsh start vm
- 
-#live snapshot 流程
-
-1.Abort any failed/finished block operations:
-
-```bash
-virsh blockjob vm vda --abort
-```
-
-2.Undefine a running domain. (Note: Undefining a running domain does not kill the domain, it just converts it from persistent to transient.)
-
-```bash
-virsh undefine vm
-```
-
-3.create a destination image with the original backing file and matching size of the instance root disk.
-
-```bash
-qemu-img create -f qcow2 vm_copy --backing_file=backing_file --size=root_disk_size
-```
-
-4.Invoke 'virsh blockcopy' (This will take time, depending on the size of disk image vm1):
-
-```bash
-virsh blockcopy --domain vm vda vm_copy --wait --verbose
-```
-
-5.Abort any failed/finished block operations:
-
-```bash
-virsh blockjob vm vda --abort
-```
-
-6.Define the guest again (to make it persistent):
-
-```bash
-virsh define vm
-```
-
-7.From the obtained new copy, convert the QCOW2 with a backing file to a qcow2 image with no backing file, then upload to glance:
-
-```bash
-qemu-img convert -f qcow2 -O raw vm_copy vm_convert
-```
-
-#virsh snapshot-create-as/snapshot-create 快照简析 
-
-- 默认为内置快照，支持快照链，支持快照回滚，支持内存信息。
-- 快照过程中，虚拟机短暂卡顿。
-
-不知 OpenStack 为什么不通过该方法实现主流快照 ？！
-
-
-# conclusion
-
-支持功能
-
-虚拟机快照（快照存放于glance）
-卷快照（LVM快照存放于本地）
-限制与缺点
-
-- 没有快照链信息，不支持revert恢复虚拟机到某一个快照点
-- 只对系统盘进行快照，不支持内存快照，不支持同时对虚拟机和磁盘做快照
+- 没有快照链信息，不支持虚拟机回滚至某个快照点
+- 只对系统盘进行快照，不支持内存快照
+- 不支持同时对虚拟机和磁盘做快照
 - 需要用户进行一致性操作
 - 不支持含元数据导出，不支持含元数据导入
 - 只支持虚拟机全量数据快照（与快照的实现方式有关，因为是通过image进行保存的），过程较长（需要先通过存储快照，然后抽取并上传至glance)，快照以Image方式保存，而非以cinder卷方式保存，无法充分利用存储本身能力加快快照的创建和使用
 
+
+------------
+
+#Cold Snapshot & Live Snapshot
+
+受磁盘文件格式以及 libvirt、qemu 版本的影响，nova 的 snapshot 分两种，cold snapshot 和 live snapshot，本文用命令行表示对应的步骤，：
+
+- Cold snapshot: 创建 snapshot 时，需先关闭虚拟机，快照完成后再启动虚拟机
+- Live snapshot: 创建 snapshot 时，无需关闭虚拟机
+
+```python
+def snapshot(self, context, instance, image_href, update_task_state):
+    ......
+    
+    # NOTE(rmk): Live snapshots require QEMU 1.3 and Libvirt 1.0.0.
+    #            These restrictions can be relaxed as other configurations
+    #            can be validated.
+    if self.has_min_version(MIN_LIBVIRT_LIVESNAPSHOT_VERSION,
+                            MIN_QEMU_LIVESNAPSHOT_VERSION,
+                            REQ_HYPERVISOR_LIVESNAPSHOT) \
+            and not source_format == "lvm" and not source_format == 'rbd':
+        live_snapshot = True
+        # Abort is an idempotent operation, so make sure any block
+        # jobs which may have failed are ended. This operation also
+        # confirms the running instance, as opposed to the system as a
+        # whole, has a new enough version of the hypervisor (bug 1193146).
+        try:
+            virt_dom.blockJobAbort(disk_path, 0)
+        except libvirt.libvirtError as ex:
+            error_code = ex.get_error_code()
+            if error_code == libvirt.VIR_ERR_CONFIG_UNSUPPORTED:
+                live_snapshot = False
+            else:
+                pass
+    else:
+        live_snapshot = False
+
+    ......
+```
+
+##Cold Snapshot 流程:
+
+1.卸载 pci 设备，保持虚拟机状态并关机。
+
+```
+Python:
+virt_dom.managedSave(0)
+
+Cli:
+$ virsh managedsave vm
+```
+
+2.复制虚拟机的磁盘文件, 然后把复制的文件上传至 glance 中。
+
+```bash
+$ qemu-img convert -f qcow2 vm.qcow2 -O qcow2 vm_snapshot.qcow2
+$ glance image-update vm_snapshot --file vm_snapshot.qcow2
+```
+
+3.启动虚拟机，挂载 pci 设备
+
+```bash
+$ virsh start vm
+```
+
+##Live Snapshot 流程
+
+1.暂停所有的 block job：
+
+```bash
+Python
+virt_dom.blockJobAbort(disk_path, 0)
+
+Cli
+$ virsh blockjob vm vda --abort
+```
+
+2.新建一个带有 backing file 的 vm_delta.qcow2 文件，大小和虚拟机磁盘大小一致：
+
+```
+$ qemu-img create -f qcow2 vm_delta.qcow2 --backing_file=base_image --size=root_disk_size
+```
+
+3.Undefine 虚拟机，以便保持数据一致性，期间虚拟机依旧运行：
+
+```bash
+Python
+domain.undefine()
+
+Cli
+$ virsh undefine vm
+```
+
+4.把虚拟机磁盘文件复制到新建的 vm_delta.qcow2 文件中：
+
+```bash
+Python
+domain.blockRebase()
+
+Cli
+$ virsh blockcopy --domain vm vda vm_delta.qcow2 --wait --verbose
+```
+
+5.Define 虚拟机
+
+```bash
+Python
+_conn.defineXML(xml)
+
+Cli
+$ virsh define vm
+```
+
+6.因 vm_delta.qcow2 只是一个增量文件，所以需把它和 backing file 文件合并成一个 snapshot.qcow2 文件，然后把这个完整的 snapshot.qcow2 文件上传至 glance 中:
+
+```bash
+$ qemu-img convert -f qcow2 -O raw vm_delta.qcow2 snapshot.qcow2
+$ glance image-update vm_snapshot --file vm_snapshot.qcow2
+```         
+                                                 
+------------
+
+#基于 Ceph RBD 的 Snapshot
+
+上述 snapshot 的流程都是基于本地存储，基于 Ceph RBD 的 [Snapshot](http://docs.ceph.com/docs/hammer/rbd/rbd-snapshot/) 相对复杂些，下面介绍基于 Ceph RBD 的虚拟机 snapshot 流程，由于 live snapshot 和 cold snapshot 的区别和基于本地存储的区别不大，所以本文着重关注 RBD 层面的流程。
+
+1.创建快照并设置快照属性为 protected：
+
+```bash
+$ rbd snap create nova-pool/vm@nova_vm_snap
+$ rbd snap protect nova-pool/vm@nova_vm_snap
+```
+
+2.Clone 该快照至 glance pool 中：
+
+```bash
+$ rbd clone nova-pool/vm@nova_vm_snao glance-pool/glance_vm_snap_clone
+```
+
+3.Flatten the clone in glance pool：
+
+```
+$ rbd flatten glance-pool/glance_vm_snap_clone
+```
+
+4.对 glance pool 的 glance_vm_snap_clone 做快照，并设置其属性为 protected：
+
+```
+$ rbd snap create glance-pool/glance_vm_snap_clone@vm_snapshot
+$ rbd snap protect glance-pool/glance_vm_snap_clone@vm_snapshot
+```
+
+5.删除 nova pool 的快照：
+
+```
+$ rbd snap unprotect nova-pool/vm@nova_vm_snap
+$ rbd snap rm nova-pool/vm@nova_vm_snap
+```
+
+![Ceph RBD flow](http://7xp2eu.com1.z0.glb.clouddn.com/cephrbdsnapshotflow.png)
+
+
+------------
+
+
 #参考资料：
-1. https://www.redhat.com/archives/libvirt-users/2012-April/msg00142.html
-2. http://blog.csdn.net/halcyonbaby/article/details/19998155
-2. http://itxx.sinaapp.com/blog/content/130
-3. http://kashyapc.com/2012/09/14/externaland-live-snapshots-with-libvirt/
+1. [https://www.redhat.com/archives/libvirt-users/2012-April/msg00142.html](https://www.redhat.com/archives/libvirt-users/2012-April/msg00142.html)
+2. [http://blog.csdn.net/halcyonbaby/article/details/19998155](http://blog.csdn.net/halcyonbaby/article/details/19998155)
+3. [http://itxx.sinaapp.com/blog/content/130](http://itxx.sinaapp.com/blog/content/130)
+4. [http://kashyapc.com/2012/09/14/externaland-live-snapshots-with-libvirt/](http://kashyapc.com/2012/09/14/externaland-live-snapshots-with-libvirt/)

@@ -110,7 +110,7 @@ Listen 35357
 安装 Shibboleth：
 
 ```bash
-apt-get install libapache2-mod-shib2
+$ apt-get install libapache2-mod-shib2
 ```
 
 更新 /etc/shibboleth/attribute-map.xml 的以下配置项：
@@ -136,13 +136,13 @@ apt-get install libapache2-mod-shib2
 启动 shibboleth 并重启 apache：
 
 ```bash
-shib-keygen  
-service apache2 restart
+$ shib-keygen  
+$ service apache2 restart
 ```
 查看 shibboleth 是否正常运行
 
 ```bash
-unbuntu@SP:~# a2enmod shib2
+$ a2enmod shib2
 Module shib2 already enabled
 ```
 
@@ -152,8 +152,8 @@ Module shib2 already enabled
 安装 xmlsec1 和 pysaml2：
 
 ```bash
-sudo apt-get install xmlsec1  
-sudo pip install pysaml2
+$ apt-get install xmlsec1  
+$ pip install pysaml2
 ```
 
 更新 keystone.conf 的如下配置：
@@ -170,7 +170,7 @@ idp_metadata_path=/etc/keystone/keystone_idp_metadata.xml
 生成 DIP 的 metadata 并重启 apache HTTPD：
 
 ```bash
-keystone-manage saml_idp_metadata > /etc/keystone/keystone_idp_metadata.xml
+$ keystone-manage saml_idp_metadata > /etc/keystone/keystone_idp_metadata.xml
 service apache2 restart
 ```
 -----------

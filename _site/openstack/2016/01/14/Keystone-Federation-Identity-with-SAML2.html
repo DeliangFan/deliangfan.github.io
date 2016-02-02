@@ -172,7 +172,7 @@ Listen 35357
 <span class="nt">&lt;/LocationMatch&gt;</span>
 </code></pre></div>
 <p>安装 Shibboleth：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">apt-get install libapache2-mod-shib2
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>apt-get install libapache2-mod-shib2
 </code></pre></div>
 <p>更新 /etc/shibboleth/attribute-map.xml 的以下配置项：</p>
 <div class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="nt">&lt;Attribute</span> <span class="na">name=</span><span class="s">&quot;openstack_user&quot;</span> <span class="na">id=</span><span class="s">&quot;openstack_user&quot;</span><span class="nt">/&gt;</span>  
@@ -189,11 +189,11 @@ Listen 35357
 <span class="nt">&lt;MetadataProvider</span> <span class="na">type=</span><span class="s">&quot;XML&quot;</span> <span class="na">uri=</span><span class="s">&quot;http://idp:5000/v3/OS-FEDERATION/saml2/metadata&quot;</span><span class="nt">/&gt;</span>  
 </code></pre></div>
 <p>启动 shibboleth 并重启 apache：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">shib-keygen  
-service apache2 restart
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>shib-keygen  
+<span class="nv">$ </span>service apache2 restart
 </code></pre></div>
 <p>查看 shibboleth 是否正常运行</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">unbuntu@SP:~# a2enmod shib2
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>a2enmod shib2
 Module shib2 already enabled
 </code></pre></div>
 <hr>
@@ -201,8 +201,8 @@ Module shib2 already enabled
 <h1 id="configure-keystone-as-an-identity-provider">Configure Keystone as an Identity Provider</h1>
 
 <p>安装 xmlsec1 和 pysaml2：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">sudo apt-get install xmlsec1  
-sudo pip install pysaml2
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>apt-get install xmlsec1  
+<span class="nv">$ </span>pip install pysaml2
 </code></pre></div>
 <p>更新 keystone.conf 的如下配置：</p>
 <div class="highlight"><pre><code class="language-text" data-lang="text">[saml]
@@ -213,7 +213,7 @@ idp_sso_endpoint=http://idp:5000/v3/OS-FEDERATION/saml2/sso
 idp_metadata_path=/etc/keystone/keystone_idp_metadata.xml  
 </code></pre></div>
 <p>生成 DIP 的 metadata 并重启 apache HTTPD：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">keystone-manage saml_idp_metadata &gt; /etc/keystone/keystone_idp_metadata.xml
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>keystone-manage saml_idp_metadata &gt; /etc/keystone/keystone_idp_metadata.xml
 service apache2 restart
 </code></pre></div>
 <hr>

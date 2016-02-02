@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 01 Feb 2016 22:22:59 +0800</pubDate>
-    <lastBuildDate>Mon, 01 Feb 2016 22:22:59 +0800</lastBuildDate>
+    <pubDate>Tue, 02 Feb 2016 16:48:56 +0800</pubDate>
+    <lastBuildDate>Tue, 02 Feb 2016 16:48:56 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -206,9 +206,9 @@ LoadModule auth_openidc_module /usr/lib/apache2/modules/mod_auth_openidc.so
 
 &lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/keystonegooglegoogleinstance.png&quot; alt=&quot;dashboard&quot;&gt;&lt;/p&gt;
 </description>
-        <pubDate>Thu, 28 Jan 2016 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/openstack/2016/01/28/Keystone-Google-Federation--With-OpenID.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/openstack/2016/01/28/Keystone-Google-Federation--With-OpenID.html</guid>
+        <pubDate>Mon, 01 Feb 2016 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/openstack/2016/02/01/Keystone-Google-Federation--With-OpenID.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/openstack/2016/02/01/Keystone-Google-Federation--With-OpenID.html</guid>
         
         
         <category>openstack</category>
@@ -706,7 +706,7 @@ Listen 35357
 &lt;span class=&quot;nt&quot;&gt;&amp;lt;/LocationMatch&amp;gt;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;安装 Shibboleth：&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;apt-get install libapache2-mod-shib2
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;apt-get install libapache2-mod-shib2
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;更新 /etc/shibboleth/attribute-map.xml 的以下配置项：&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-xml&quot; data-lang=&quot;xml&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;Attribute&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;name=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;openstack_user&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;id=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;openstack_user&amp;quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;  
@@ -723,11 +723,11 @@ Listen 35357
 &lt;span class=&quot;nt&quot;&gt;&amp;lt;MetadataProvider&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;type=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;XML&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;uri=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;http://idp:5000/v3/OS-FEDERATION/saml2/metadata&amp;quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;  
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;启动 shibboleth 并重启 apache：&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;shib-keygen  
-service apache2 restart
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;shib-keygen  
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;service apache2 restart
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;查看 shibboleth 是否正常运行&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;unbuntu@SP:~# a2enmod shib2
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;a2enmod shib2
 Module shib2 already enabled
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;hr&gt;
@@ -735,8 +735,8 @@ Module shib2 already enabled
 &lt;h1 id=&quot;configure-keystone-as-an-identity-provider&quot;&gt;Configure Keystone as an Identity Provider&lt;/h1&gt;
 
 &lt;p&gt;安装 xmlsec1 和 pysaml2：&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo apt-get install xmlsec1  
-sudo pip install pysaml2
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;apt-get install xmlsec1  
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;pip install pysaml2
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;更新 keystone.conf 的如下配置：&lt;/p&gt;
 &lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;[saml]
@@ -747,7 +747,7 @@ idp_sso_endpoint=http://idp:5000/v3/OS-FEDERATION/saml2/sso
 idp_metadata_path=/etc/keystone/keystone_idp_metadata.xml  
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;p&gt;生成 DIP 的 metadata 并重启 apache HTTPD：&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;keystone-manage saml_idp_metadata &amp;gt; /etc/keystone/keystone_idp_metadata.xml
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;keystone-manage saml_idp_metadata &amp;gt; /etc/keystone/keystone_idp_metadata.xml
 service apache2 restart
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;hr&gt;
