@@ -15,6 +15,6 @@ url: "http://wsfdl.com" # the base hostname & protocol for your site
 github_username:  deliangfan
 
 # Build settings
-markdown: redcarpet
+markdown: kramdown
 redcarpet:
     extensions: ["fenced_code_blocks", "tables", "highlight", "with_toc_data", "strikethrough", "underline"]
