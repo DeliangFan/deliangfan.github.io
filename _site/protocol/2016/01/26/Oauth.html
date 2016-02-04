@@ -83,83 +83,81 @@
 
 <hr />
 
-<h1 id="role">Role</h1>
+<p>#Role</p>
 
-<p>resource owner
-      An entity capable of granting access to a protected resource.
-      When the resource owner is a person, it is referred to as an
+<p>resource owner<br />
+      An entity capable of granting access to a protected resource.<br />
+      When the resource owner is a person, it is referred to as an<br />
       end-user.</p>
 
-<p>resource server
-      The server hosting the protected resources, capable of accepting
+<p>resource server<br />
+      The server hosting the protected resources, capable of accepting<br />
       and responding to protected resource requests using access tokens.</p>
 
-<p>client
-      An application making protected resource requests on behalf of the
-      resource owner and with its authorization.  The term “client” does
-      not imply any particular implementation characteristics (e.g.,
-      whether the application executes on a server, a desktop, or other
+<p>client<br />
+      An application making protected resource requests on behalf of the<br />
+      resource owner and with its authorization.  The term “client” does<br />
+      not imply any particular implementation characteristics (e.g.,<br />
+      whether the application executes on a server, a desktop, or other<br />
       devices).</p>
 
-<p>authorization server
-      The server issuing access tokens to the client after successfully
+<p>authorization server<br />
+      The server issuing access tokens to the client after successfully<br />
       authenticating the resource owner and obtaining authorization.</p>
 
 <hr />
 
-<h1 id="flow">Flow</h1>
+<p>#Flow</p>
 
-<p>```
-     +——–+                               +—————+
-     |        |–(A)- Authorization Request -&gt;|   Resource    |
+<pre><code>     +--------+                               +---------------+
+     |        |--(A)- Authorization Request -&gt;|   Resource    |
      |        |                               |     Owner     |
-     |        |&lt;-(B)– Authorization Grant —|               |
-     |        |                               +—————+
+     |        |&lt;-(B)-- Authorization Grant ---|               |
+     |        |                               +---------------+
      |        |
-     |        |                               +—————+
-     |        |–(C)– Authorization Grant –&gt;| Authorization |
+     |        |                               +---------------+
+     |        |--(C)-- Authorization Grant --&gt;| Authorization |
      | Client |                               |     Server    |
-     |        |&lt;-(D)—– Access Token ——-|               |
-     |        |                               +—————+
+     |        |&lt;-(D)----- Access Token -------|               |
+     |        |                               +---------------+
      |        |
-     |        |                               +—————+
-     |        |–(E)—– Access Token ——&gt;|    Resource   |
+     |        |                               +---------------+
+     |        |--(E)----- Access Token ------&gt;|    Resource   |
      |        |                               |     Server    |
-     |        |&lt;-(F)— Protected Resource —|               |
-     +——–+                               +—————+</p>
+     |        |&lt;-(F)--- Protected Resource ---|               |
+     +--------+                               +---------------+
 
-<pre><code>                 Figure: Abstract Protocol Flow
+                     Figure: Abstract Protocol Flow
+
 </code></pre>
 
-<p>```</p>
-
-<p>(A)  The client requests authorization from the resource owner.  The
-        authorization request can be made directly to the resource owner
-        (as shown), or preferably indirectly via the authorization
+<p>(A)  The client requests authorization from the resource owner.  The<br />
+        authorization request can be made directly to the resource owner<br />
+        (as shown), or preferably indirectly via the authorization<br />
         server as an intermediary.</p>
 
-<p>(B)  The client receives an authorization grant, which is a
-        credential representing the resource owner’s authorization,
-        expressed using one of four grant types defined in this
-        specification or using an extension grant type.  The
-        authorization grant type depends on the method used by the
-        client to request authorization and the types supported by the
+<p>(B)  The client receives an authorization grant, which is a<br />
+        credential representing the resource owner’s authorization,<br />
+        expressed using one of four grant types defined in this<br />
+        specification or using an extension grant type.  The<br />
+        authorization grant type depends on the method used by the<br />
+        client to request authorization and the types supported by the<br />
         authorization server.</p>
 
-<p>(C)  The client requests an access token by authenticating with the
+<p>(C)  The client requests an access token by authenticating with the<br />
         authorization server and presenting the authorization grant.</p>
 
-<p>(D)  The authorization server authenticates the client and validates
+<p>(D)  The authorization server authenticates the client and validates<br />
         the authorization grant, and if valid, issues an access token.</p>
 
-<p>(E)  The client requests the protected resource from the resource
+<p>(E)  The client requests the protected resource from the resource<br />
         server and authenticates by presenting the access token.</p>
 
-<p>(F)  The resource server validates the access token, and if valid,
+<p>(F)  The resource server validates the access token, and if valid,<br />
         serves the request.</p>
 
-<p>The preferred method for the client to obtain an authorization grant
-   from the resource owner (depicted in steps (A) and (B)) is to use the
+<p>The preferred method for the client to obtain an authorization grant<br />
+   from the resource owner (depicted in steps (A) and (B)) is to use the<br />
    authorization server as an intermediary, which is illustrated in</p>
 
 <hr />
@@ -168,22 +166,22 @@
   <li>Protocol Endpoints</li>
 </ol>
 
-<p>The authorization process utilizes two authorization server endpoints
+<p>The authorization process utilizes two authorization server endpoints<br />
    (HTTP resources):</p>
 
-<p>o  Authorization endpoint - used by the client to obtain
+<p>o  Authorization endpoint - used by the client to obtain<br />
       authorization from the resource owner via user-agent redirection.</p>
 
-<p>o  Token endpoint - used by the client to exchange an authorization
+<p>o  Token endpoint - used by the client to exchange an authorization<br />
       grant for an access token, typically with client authentication.</p>
 
 <p>As well as one client endpoint:</p>
 
-<p>o  Redirection endpoint - used by the authorization server to return
-      responses containing authorization credentials to the client via
+<p>o  Redirection endpoint - used by the authorization server to return<br />
+      responses containing authorization credentials to the client via<br />
       the resource owner user-agent.</p>
 
-<p>Not every authorization grant type utilizes both endpoints.
+<p>Not every authorization grant type utilizes both endpoints.<br />
    Extension grant types MAY define additional endpoints as needed.</p>
 
 <hr />
@@ -197,7 +195,7 @@
   <li>Client Credentials</li>
 </ul>
 
-<h2 id="authorization-code">Authorization Code</h2>
+<p>##Authorization Code</p>
 
 <p>The authorization code is obtained by using an authorization server as an intermediary between the client and resource owner.  Instead of requesting authorization directly from the resource owner, the client directs the resource owner to an authorization server (via its user-agent as defined in [RFC2616]), which in turn directs the resource owner back to the client with the authorization code.</p>
 
@@ -235,88 +233,86 @@
 
 <p>Resource Owner Password Credentials Grant</p>
 
-<p>```</p>
+<pre><code>
+The resource owner password credentials (i.e., username and password) can be used directly as an authorization grant to obtain an access token.  The credentials should only be used when there is a high degree of trust between the resource owner and the client (e.g., the client is part of the device operating system or a highly privileged application), and when other authorization grant types are not available (such as an authorization code).
 
-<p>The resource owner password credentials (i.e., username and password) can be used directly as an authorization grant to obtain an access token.  The credentials should only be used when there is a high degree of trust between the resource owner and the client (e.g., the client is part of the device operating system or a highly privileged application), and when other authorization grant types are not available (such as an authorization code).</p>
+Even though this grant type requires direct client access to the resource owner credentials, the resource owner credentials are used for a single request and are exchanged for an access token.  This grant type can eliminate the need for the client to store the resource owner credentials for future use, by exchanging the
+credentials with a long-lived access token or refresh token.
 
-<p>Even though this grant type requires direct client access to the resource owner credentials, the resource owner credentials are used for a single request and are exchanged for an access token.  This grant type can eliminate the need for the client to store the resource owner credentials for future use, by exchanging the
-credentials with a long-lived access token or refresh token.</p>
+     +----------+
+     | Resource |
+     |  Owner   |
+     |          |
+     +----------+
+          v
+          |    Resource Owner
+         (A) Password Credentials
+          |
+          v
+     +---------+                                  +---------------+
+     |         |&gt;--(B)---- Resource Owner -------&gt;|               |
+     |         |         Password Credentials     | Authorization |
+     | Client  |                                  |     Server    |
+     |         |&lt;--(C)---- Access Token ---------&lt;|               |
+     |         |    (w/ Optional Refresh Token)   |               |
+     +---------+                                  +---------------+
 
-<pre><code> +----------+
- | Resource |
- |  Owner   |
- |          |
- +----------+
-      v
-      |    Resource Owner
-     (A) Password Credentials
-      |
-      v
- +---------+                                  +---------------+
- |         |&gt;--(B)---- Resource Owner -------&gt;|               |
- |         |         Password Credentials     | Authorization |
- | Client  |                                  |     Server    |
- |         |&lt;--(C)---- Access Token ---------&lt;|               |
- |         |    (w/ Optional Refresh Token)   |               |
- +---------+                                  +---------------+
-
-        Figure 5: Resource Owner Password Credentials Flow ```
+            Figure 5: Resource Owner Password Credentials Flow
 </code></pre>
 
 <hr />
 
-<h1 id="issuing-an-access-token">Issuing an Access Token</h1>
+<p>#Issuing an Access Token</p>
 
-<p>Access tokens are credentials used to access protected resources.  An access token is a string representing an authorization issued to the
-   client.  The string is usually opaque to the client.  Tokens
-   represent specific scopes and durations of access, granted by the
-   resource owner, and enforced by the resource server and authorization
+<p>Access tokens are credentials used to access protected resources.  An access token is a string representing an authorization issued to the<br />
+   client.  The string is usually opaque to the client.  Tokens<br />
+   represent specific scopes and durations of access, granted by the<br />
+   resource owner, and enforced by the resource server and authorization<br />
    server.</p>
 
-<p>The token may denote an identifier used to retrieve the authorization
-   information or may self-contain the authorization information in a
-   verifiable manner (i.e., a token string consisting of some data and a
-   signature).  Additional authentication credentials, which are beyond
-   the scope of this specification, may be required in order for the
+<p>The token may denote an identifier used to retrieve the authorization<br />
+   information or may self-contain the authorization information in a<br />
+   verifiable manner (i.e., a token string consisting of some data and a<br />
+   signature).  Additional authentication credentials, which are beyond<br />
+   the scope of this specification, may be required in order for the<br />
    client to use a token.</p>
 
-<p>The access token provides an abstraction layer, replacing different
-   authorization constructs (e.g., username and password) with a single
-   token understood by the resource server.  This abstraction enables
-   issuing access tokens more restrictive than the authorization grant
-   used to obtain them, as well as removing the resource server’s need
+<p>The access token provides an abstraction layer, replacing different<br />
+   authorization constructs (e.g., username and password) with a single<br />
+   token understood by the resource server.  This abstraction enables<br />
+   issuing access tokens more restrictive than the authorization grant<br />
+   used to obtain them, as well as removing the resource server’s need<br />
    to understand a wide range of authentication methods.</p>
 
-<p>Access tokens can have different formats, structures, and methods of
-   utilization (e.g., cryptographic properties) based on the resource
-   server security requirements.  Access token attributes and the
-   methods used to access protected resources are beyond the scope of
-   this specification and are defined by companion specifications such
+<p>Access tokens can have different formats, structures, and methods of<br />
+   utilization (e.g., cryptographic properties) based on the resource<br />
+   server security requirements.  Access token attributes and the<br />
+   methods used to access protected resources are beyond the scope of<br />
+   this specification and are defined by companion specifications such<br />
    as</p>
 
 <hr />
 
-<h1 id="refreshing-an-access-token">Refreshing an Access Token</h1>
+<p>#Refreshing an Access Token</p>
 
-<p>Refresh tokens are credentials used to obtain access tokens.  Refresh
-   tokens are issued to the client by the authorization server and are
-   used to obtain a new access token when the current access token
-   becomes invalid or expires, or to obtain additional access tokens
-   with identical or narrower scope (access tokens may have a shorter
-   lifetime and fewer permissions than authorized by the resource
-   owner).  Issuing a refresh token is optional at the discretion of the
-   authorization server.  If the authorization server issues a refresh
-   token, it is included when issuing an access token (i.e., step (D) in
+<p>Refresh tokens are credentials used to obtain access tokens.  Refresh<br />
+   tokens are issued to the client by the authorization server and are<br />
+   used to obtain a new access token when the current access token<br />
+   becomes invalid or expires, or to obtain additional access tokens<br />
+   with identical or narrower scope (access tokens may have a shorter<br />
+   lifetime and fewer permissions than authorized by the resource<br />
+   owner).  Issuing a refresh token is optional at the discretion of the<br />
+   authorization server.  If the authorization server issues a refresh<br />
+   token, it is included when issuing an access token (i.e., step (D) in<br />
    Figure 1).</p>
 
-<p>A refresh token is a string representing the authorization granted to
-   the client by the resource owner.  The string is usually opaque to
-   the client.  The token denotes an identifier used to retrieve the   authorization information.  Unlike access tokens, refresh tokens are
-   intended for use only with authorization servers and are never sent
+<p>A refresh token is a string representing the authorization granted to<br />
+   the client by the resource owner.  The string is usually opaque to<br />
+   the client.  The token denotes an identifier used to retrieve the   authorization information.  Unlike access tokens, refresh tokens are<br />
+   intended for use only with authorization servers and are never sent<br />
    to resource servers.</p>
 
-<p><code>
-  +--------+                                           +---------------+
+<pre><code>  +--------+                                           +---------------+
   |        |--(A)------- Authorization Grant ---------&gt;|               |
   |        |                                           |               |
   |        |&lt;-(B)----------- Access Token -------------|               |
@@ -336,36 +332,36 @@ credentials with a long-lived access token or refresh token.</p>
   |        |                                           |               |
   |        |&lt;-(H)----------- Access Token -------------|               |
   +--------+           &amp; Optional Refresh Token        +---------------+
-</code>
-   The flow illustrated in Figure 2 includes the following steps:</p>
+</code></pre>
+<p>The flow illustrated in Figure 2 includes the following steps:</p>
 
-<p>(A)  The client requests an access token by authenticating with the
+<p>(A)  The client requests an access token by authenticating with the<br />
         authorization server and presenting an authorization grant.</p>
 
-<p>(B)  The authorization server authenticates the client and validates
-        the authorization grant, and if valid, issues an access token
+<p>(B)  The authorization server authenticates the client and validates<br />
+        the authorization grant, and if valid, issues an access token<br />
         and a refresh token.</p>
 
-<p>(C)  The client makes a protected resource request to the resource
+<p>(C)  The client makes a protected resource request to the resource<br />
         server by presenting the access token.</p>
 
-<p>(D)  The resource server validates the access token, and if valid,
+<p>(D)  The resource server validates the access token, and if valid,<br />
         serves the request.</p>
 
-<p>(E)  Steps (C) and (D) repeat until the access token expires.  If the
-        client knows the access token expired, it skips to step (G);
+<p>(E)  Steps (C) and (D) repeat until the access token expires.  If the<br />
+        client knows the access token expired, it skips to step (G);<br />
         otherwise, it makes another protected resource request.</p>
 
-<p>(F)  Since the access token is invalid, the resource server returns
+<p>(F)  Since the access token is invalid, the resource server returns<br />
         an invalid token error.</p>
 
-<p>(G)  The client requests a new access token by authenticating with
-        the authorization server and presenting the refresh token.  The
-        client authentication requirements are based on the client type
+<p>(G)  The client requests a new access token by authenticating with<br />
+        the authorization server and presenting the refresh token.  The<br />
+        client authentication requirements are based on the client type<br />
         and on the authorization server policies.</p>
 
-<p>(H)  The authorization server authenticates the client and validates
-        the refresh token, and if valid, issues a new access token (and,
+<p>(H)  The authorization server authenticates the client and validates<br />
+        the refresh token, and if valid, issues a new access token (and,<br />
         optionally, a new refresh token).</p>
 
   </div>

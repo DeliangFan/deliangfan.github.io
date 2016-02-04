@@ -67,16 +67,16 @@ Keystone server 的 IP 为 209.9.108.221，设置如下 DNS 解析：
 
 下面的安装和配置主要参考 [Identity, Authentication & Access Management in OpenStack](http://shop.oreilly.com/product/0636920045960.do)，首先安装 libapache2-mode-auth-openidc：
 
-```bash
+~~~ bash
 $ apt-get install libjansson4 libhiredis0.10 libcurl3
 $ wget https://github.com/pingidentity/mod_auth_openidc/releases/download/v1.8.6/libapache2-mod-auth-openidc_1.8.6-1_amd64.deb
 $ dpkg -i libapache2-mod-auth-openidc_1.8.6-1_amd64.deb
 $ cp /opt/stack/keystone/etc/sso_callback_template.html /etc/keystone
-```
+~~~
 
 更新 /etc/keystone/keystone.conf 的如下配置：
 
-```
+~~~
 [auth]
 methods = external,password,token,oauth1,oidc
 oidc = keystone.auth.plugins.mapped.Mapped
@@ -87,11 +87,11 @@ remote_id_attribute = HTTP_OIDC_ISS
 [federation]
 remote_id_attribute = HTTP_OIDC_ISS
 trusted_dashboard = http://keystonegoogle.com/auth/websso/
-```
+~~~
 
 更新 /etc/apache2/sites-available/wsgi-keystone.conf 配置如下，注意到 OIDCClientID，OIDCClientSecret 和 OIDCRedirectURI 依次对应上文 Google Client 的参数：
 
-```bash
+~~~ bash
 $ cat /etc/apache2/sites-available/wsgi-keystone.conf
 Listen 5000
 Listen 35357
@@ -128,44 +128,42 @@ LoadModule auth_openidc_module /usr/lib/apache2/modules/mod_auth_openidc.so
 
 <VirtualHost *:35357>
 ......
-
-```
+~~~
 
 ## Configure Horizon
 
 Horizon 默认不启用 websso，所以需要更新 local_settings.py 以下配置：
 
-```python
+~~~ python
 OPENSTACK_KEYSTONE_URL = "http://keystonegoogle.com:5000/v3”OPENSTACK_API_VERSIONS = {         "identity": 3}WEBSSO_ENABLED = TrueWEBSSO_CHOICES = (    ("credentials", _("Keystone Credentials")),    ("oidc", _("Google Login")))
-WEBSSO_INITIAL_CHOICE = "credentials"
-```
+WEBSSO_INITIAL_CHOICE = "credentials"~~~ 
 
 重启 Keystone 和 Horizon：
 
-```bash
+~~~ bash
 $ service apache2 restart
-```
+~~~
 
 ## Create User etc
 
 创建 Google 的 Group 和 Project：
 
-```bash
+~~~ bash
 $ openstack group create google_group
 $ openstack project create google_project
 $ openstack role add admin --group google_group --project google_project
-```
+~~~
 
 创建 Google Identity Provider：
 
-```bash
+~~~ bash
 $ curl -g -X POST http://keystonegoogle.com:35357/v3/OS-FEDERATION/identity_providers/google_idp
  -H "Content-Type: application/json" -H "Accept: application/json" -H "X-Auth-Token: $token" -d '{"identity_provider": {"enabled": true, "description": null, "remote_ids": ["https://accounts.google.com"]}}'
-```
+~~~
 
 创建 mapping 等相关信息：
 
-```bash
+~~~ shell
 $ cat google_mapping.json
 [
   {
@@ -189,7 +187,7 @@ $ cat google_mapping.json
 
 $ openstack mapping create google_mapping --rules google_mapping.json
 $ openstack federation protocol create oidc --identity-provider google_idp --mapping google_mapping
-```
+~~~
 
 ----------
 

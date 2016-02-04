@@ -75,7 +75,7 @@
 
 <hr />
 
-<h1 id="installation">Installation</h1>
+<p>#Installation</p>
 
 <p>GitLab 的<a href="https://about.gitlab.com/installation/">安装</a>非常简便，有多种方式：</p>
 
@@ -90,15 +90,13 @@
 
 <p>本文采用官网推荐的第一种安装方式，即 Omnibus package installation，首先安装依赖</p>
 
-<p><code>bash
-$ apt-get install curl openssh-server ca-certificates postfix
-</code>
-下载并安装 gitlab：</p>
+<pre><code class="language-bash">$ apt-get install curl openssh-server ca-certificates postfix
+</code></pre>
+<p>下载并安装 gitlab：</p>
 
-<p><code>bash
-$ curl -LJO https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/trusty/gitlab-ce_8.4.0-ce.0_amd64.deb/download
+<pre><code class="language-bash">$ curl -LJO https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/trusty/gitlab-ce_8.4.0-ce.0_amd64.deb/download
 $ dpkg -i gitlab-ce_8.4.0-ce.0_amd64.deb
-</code></p>
+</code></pre>
 
 <p>GitLab 安装包大约为 300 MB，里面包含多个常用的服务：</p>
 
@@ -113,19 +111,17 @@ $ dpkg -i gitlab-ce_8.4.0-ce.0_amd64.deb
 
 <hr />
 
-<h1 id="configure">Configure</h1>
+<p>#Configure</p>
 
 <p>更新 /etc/gitlab/gitlab.rb 的如下配置项：</p>
 
-<p><code>
-external_url 'http://&lt;your_gitlab_host&gt;'
-</code></p>
+<pre><code>external_url 'http://&lt;your_gitlab_host&gt;'
+</code></pre>
 
 <p>重启 GitLab：</p>
 
-<p><code>bash
-$ gitlab-ctl reconfigure
-</code></p>
+<pre><code class="language-bash">$ gitlab-ctl reconfigure
+</code></pre>
 
 <p>更多的配置和说明请见<a href="http://doc.gitlab.com/omnibus/">官网文档</a>。</p>
 

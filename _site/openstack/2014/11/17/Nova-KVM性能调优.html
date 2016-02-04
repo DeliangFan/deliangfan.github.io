@@ -71,37 +71,34 @@
 <hr />
 <p>#1. CPU Tuning</p>
 
-<h2 id="cache-share-tuning">1.1 Cache share tuning</h2>
-<p>对于物理 CPU，同一个 core 的 threads 共享 L2 Cache，同一个 socket 的 cores 共享 L3 cache，所以虚拟机的 vcpu 应当尽可能在同一个 core 和 同一个 socket 中，增加 cache 的命中率，从而提高性能。IBM 测试过，<a href="https://www-01.ibm.com/support/knowledgecenter/api/content/nl/en-us/linuxonibm/liaat/liaattuning_pdf.pdf">合理绑定 vcpu</a> 能给 JVM 来的 16% 的性能提升。</p>
+<p>##1.1 Cache share tuning<br />
+对于物理 CPU，同一个 core 的 threads 共享 L2 Cache，同一个 socket 的 cores 共享 L3 cache，所以虚拟机的 vcpu 应当尽可能在同一个 core 和 同一个 socket 中，增加 cache 的命中率，从而提高性能。IBM 测试过，<a href="https://www-01.ibm.com/support/knowledgecenter/api/content/nl/en-us/linuxonibm/liaat/liaattuning_pdf.pdf">合理绑定 vcpu</a> 能给 JVM 来的 16% 的性能提升。</p>
 
 <p>虚拟机 vcpu 尽可能限定在一个 core 或者一个 socket 中。例如：当 vcpu 为 2 时，2 个 vcpu 应限定在同一个 core 中，当 vcpu 大于 2 小于 12 时，应限定在同一个 socket 中。对 Nova 而言，需要搜集 CPU 详细的拓扑信息，并根据虚拟机 vcpu 的信息和绑定策略生成 libvirt 所需要的 xml 文件。</p>
 
-<p>```xml</p>
-<vcpu placement="static" cpuset="0-5">4</vcpu>
-<pre><code>   # cpuset 限定 vcpu ```
+<pre><code class="language-xml">&lt;vcpu placement='static' cpuset='0-5'&gt;4&lt;/vcpu&gt;       # cpuset 限定 vcpu
 </code></pre>
 
-<h2 id="numa-tuning">1.2 NUMA tuning</h2>
+<p>##1.2 NUMA tuning</p>
 
 <p><a href="https://www.ibm.com/developerworks/cn/cloud/library/1408_zhangxl_openstack/">网易运维团队测试</a>得出：2 个 vcpu 分别绑定到不同 numa 节点的非超线程核上和分配到一对相邻的超线程核上的性能相差有 30%~40%(通过 SPEC CPU2006 工具测试)。可见，同一个虚拟机的 vcpu 需限定在同一个 NUMA 节点，并且分配该 NUMA 节点下的内存给虚拟机，保证虚拟机尽可能访问 local memory 而非 remote memory。对 Nova 而言，可增加配置项，并在 nova/virt/libvirt/config.py 代码中增加该字段。</p>
 
 <p>关于 memory allocation mode: If memory is overcommitted in strict mode and the guest does not have sufficient swap space, the kernel will kill some guest processes to retrieve additonal memory. Red Hat recommends using preferred allocation and specifying a single nodeset (for example, nodeset=’0’) to prevent this situation[1].</p>
 
-<p>```xml</p>
-<numatune>
-  <memory mode="preferred" nodeset="0" /> 
-</numatune>
-<p>```</p>
+<pre><code class="language-xml">&lt;numatune&gt;
+  &lt;memory mode="preferred" nodeset="0"/&gt; 
+&lt;/numatune&gt;
+</code></pre>
 
-<h2 id="irq-tuning">1.3 IRQ tuning</h2>
+<p>##1.3 IRQ tuning</p>
 
 <p><a href="https://www.ibm.com/developerworks/cn/cloud/library/1408_zhangxl_openstack/">CPU0 常用于处理中断请求</a>，本身负荷较重。事实上，线上环境 CPU0 完全处理 eth0 的 IRQ，eth1 的 IRQ 完全由另一个 CPU 处理，同时 CPU0 处理着大量的 CAL 类型中断。预留 2 个或者 4 个物理 CPU，这些 CPU 和对应网卡中断做绑定，使得其它 CPU 更好更完整的为云主机所用。对 Nova 而言，在生成 libvirt 所需要的 xml 文件时，需避免写入 cpu0等信息。</p>
 
 <hr />
 
-<h1 id="disk-io-tuning">2. Disk IO Tuning</h1>
+<p>#2. Disk IO Tuning</p>
 
-<h2 id="disk-io-cache-tuning">2.1 Disk IO cache Tuning</h2>
+<p>##2.1 Disk IO cache Tuning</p>
 
 <p>kvm 支持多种虚拟机多种 IO Cache 方式：writeback, none, writethrough 等。</p>
 
@@ -114,14 +111,13 @@
 
 <p>权衡安全性和性能，Kvm 推荐使用 none，Nova 也是默认选用 none cache mode。</p>
 
-<p>```xml</p>
-<disk type="file" device="disk">
-  <driver name="qemu" type="qcow2" cache="none" />  # cache 可为 writeback, none, writethrough，directsync，unsafe 等
+<pre><code class="language-xml">&lt;disk type='file' device='disk'&gt;
+  &lt;driver name='qemu' type='qcow2' cache='none'/&gt;  # cache 可为 writeback, none, writethrough，directsync，unsafe 等
   ...
-</disk>
-<p>```</p>
+&lt;/disk&gt;
+</code></pre>
 
-<h2 id="disk-io-scheduler">2.2 Disk IO scheduler</h2>
+<p>##2.2 Disk IO scheduler</p>
 
 <p>Linux kernel 提供了三种 Disk IO 的调度策略，分别为 noop，deadline，cfq。</p>
 
@@ -133,7 +129,7 @@
 
 <p>由于一个宿主机上会运行大量虚拟机，为了防止某个因某个虚拟机频繁的 IO 操作影响其它虚拟机，所以应该选择 cfq 这种公平的调度策略。</p>
 
-<h2 id="disk-format">2.3 Disk format</h2>
+<p>##2.3 Disk format</p>
 
 <p>KVM 常用 Raw 和 Qcow2 格式作为虚拟机的镜像文件。对虚拟机而言，通俗的说，Raw 格式相当于裸盘，Qcow2 是 copy on write，二者对比如下：</p>
 
@@ -147,84 +143,77 @@
 
 <hr />
 
-<h1 id="memory-tuning">3. Memory Tuning</h1>
+<p>#3. Memory Tuning</p>
 
-<h2 id="disable-ksm">3.1. Disable KSM</h2>
+<p>##3.1. Disable KSM</p>
 
-<p>When KSM merges across nodes on a NUMA host with multiple guest virtual machines, guests and CPUs from more distant nodes can suffer a significant increase of access latency to the merged <a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html">KSM page</a>.
+<p>When KSM merges across nodes on a NUMA host with multiple guest virtual machines, guests and CPUs from more distant nodes can suffer a significant increase of access latency to the merged <a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html">KSM page</a>.<br />
 Disable KSM 方式有两种：</p>
 
 <p>1) 禁止某个 Guest 与其它 Guest 共享内存，XML 文件可配置为:</p>
 
-<p>```xml</p>
-<memorybacking>
-    <nosharepages />
-</memorybacking>
-<p>```</p>
+<pre><code class="language-xml">&lt;memoryBacking&gt;
+    &lt;nosharepages/&gt;
+&lt;/memoryBacking&gt;
+</code></pre>
 
 <p>2) 禁止所有 Guest 直接共享内存，Host 配置为:</p>
 
-<p><code>bash
-echo 0 &gt; /sys/kernel/mm/ksm/pages_shared
+<pre><code class="language-bash">echo 0 &gt; /sys/kernel/mm/ksm/pages_shared
 echo 0 &gt; /sys/kernel/mm/ksm/pages_sharing
-</code></p>
+</code></pre>
 
-<h2 id="open-huge-page">3.2 Open huge page</h2>
+<p>##3.2 Open huge page</p>
 
 <p>KVM guests can be deployed with huge page memory support in order to <a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html">improve performance by increasing CPU cache hits against the Transaction Lookaside Buffer (TLB)</a>。打开透明大页方式有两种：</p>
 
 <p>1) 允许某个 Guest 开启透明大页</p>
 
-<p>```xml</p>
-<memorybacking>
-   <hugepages />
-</memorybacking>
-<p>```</p>
+<pre><code class="language-xml">&lt;memoryBacking&gt;
+   &lt;hugepages/&gt;
+&lt;/memoryBacking&gt;
+</code></pre>
 
-<p><code>bash
-echo 25000 &gt; /pro c/sys/vm/nr_hugepages
+<pre><code class="language-bash">echo 25000 &gt; /pro c/sys/vm/nr_hugepages
 mount -t hugetlbfs hugetlbfs /dev/hugepages
 service libvirtd restart
-</code></p>
+</code></pre>
 
 <p>2) 允许 Host 中所有 Guest 开启透明大页</p>
 
-<p><code>bash
-echo always &gt; /sys/kernel/mm/transparent_hugepage/enabled
+<pre><code class="language-bash">echo always &gt; /sys/kernel/mm/transparent_hugepage/enabled
 echo never &gt; /sys/kernel/mm/transparent_hugepage/defrag
 echo 0 &gt; /sys/kernel/mm/transparent_hugepage/khugepaged/defrag
-</code></p>
+</code></pre>
 
 <hr />
 
-<h1 id="network-io-tuning">4. Network IO Tuning</h1>
-<p>##4.1 Enable vhost_net
+<p>#4. Network IO Tuning<br />
+##4.1 Enable vhost_net<br />
 <a href="http://www.linux-kvm.org/page/UsingVhost">VhostNet</a> provides better latency (10% less than e1000 on my system) and greater throughput (8x the normal virtio, around 7~8 Gigabits/sec here) for network.</p>
 
-<p><code>bash
-modprobe vhost-net
-</code></p>
+<pre><code class="language-bash">modprobe vhost-net
+</code></pre>
 
-<h2 id="mutil-queue">4.2 Mutil-queue</h2>
+<p>##4.2 Mutil-queue</p>
 
 <p>对虚拟机而言，virtio-net 不能并行的处理网络包，当网络流量很大时，单个 vCPU 有限的处理能力将直接影响虚拟机的网络流量，所以可以通过<a href="http://www.linux-kvm.org/page/Multiqueue">多队列的 virtio-net</a> 提高虚拟机网络吞吐量，<a href="https://blueprints.launchpad.net/nova/+spec/libvirt-virtio-net-multiqueue">该特性</a>已合入 L 版本。</p>
 
 <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/virt-net%20mutil-queue.jpg" alt="Multi-queue" /></p>
 
-<p>```xml</p>
-<devices>
-    <interface type="network">
+<pre><code class="language-xml">  &lt;devices&gt;
+    &lt;interface type='network'&gt;
       ...
-      <driver name="vhost" txmode="iothread" ioeventfd="on" event_idx="off" queues="N" />  #queues=N
-    </interface>
-  </devices>
-<p>```</p>
+      &lt;driver name='vhost' txmode='iothread' ioeventfd='on' event_idx='off' queues='N'/&gt;  #queues=N
+    &lt;/interface&gt;
+  &lt;/devices&gt;
+</code></pre>
 
-<h1 id="section">5. 一次调优的悲剧</h1>
+<p>#5. 一次调优的悲剧</p>
 
 <p>Libvirt <a href="https://libvirt.org/formatdomain.html#elementsCPU">CPU host passthrough</a>支持把宿主机的 CPU 指令集透传给虚拟机，如此虚拟机尽可能的利用宿主机的指令集，从而提升效率。事实上，更改后的短短的三天时间里，有多台宿主机莫名其妙的 kernel panic，虽然未能查明具体原因，但是禁止该配置后，宿主机和虚拟机稳定如初。</p>
 
-<h1 id="reference">Reference</h1>
+<p>#Reference</p>
 
 <ol>
   <li><a href="https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html">Red Hat Enterprise Linux 6 Virtualization Tuning Optimization Guide</a></li>

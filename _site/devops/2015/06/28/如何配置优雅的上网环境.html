@@ -64,7 +64,7 @@
   <div class="post-content" itemprop="articleBody">
     <hr />
 
-<h1 id="section">1. 三种代理简介</h1>
+<p>#1. 三种代理简介</p>
 
 <p>VPN、SOCKS 和 PAC 是三种常见的代理方式，本文以 QQ 和访问网站为例，深入浅出图解三者区别，并推荐最优雅的代理方式——PAC。</p>
 
@@ -92,7 +92,7 @@
 
 <hr />
 
-<h1 id="pac">2. 如何配置 PAC</h1>
+<p>#2. 如何配置 PAC</p>
 
 <p>配置 PAC 主要有两个步骤</p>
 
@@ -101,52 +101,51 @@
   <li>编写 PAC 脚本</li>
 </ul>
 
-<h2 id="socks-">2.1 搭建 SOCKS 服务器</h2>
+<p>##2.1 搭建 SOCKS 服务器</p>
 
 <p>在云计算百花齐放的时代，假设你已有服务器，只需安装 ss5 即可搭建 SOCKS 服务器，步骤非常简单，可参考<a href="http://cstriker1407.info/blog/centos-build-socks5-proxy-using-ss5/">此文</a>：</p>
 
-<p>```bash
-#安装依赖
-yum install make automake gcc gcc-c++ pam-devel openssl-devel openldap-devel cyrus-sasl-devel</p>
+<pre><code class="language-bash">#安装依赖
+yum install make automake gcc gcc-c++ pam-devel openssl-devel openldap-devel cyrus-sasl-devel
 
-<h1 id="section-1">下载与安装</h1>
-<p>wget http://sourceforge.net/projects/ss5/files/ss5/3.8.9-5/ss5-3.8.9-5.tar.gz/download
+#下载与安装
+wget http://sourceforge.net/projects/ss5/files/ss5/3.8.9-5/ss5-3.8.9-5.tar.gz/download
 tar -zxvf ss5-3.8.9-5.tar.gz
 cd ss5-3.8.9
 ./configure
 make
-make install</p>
+make install
 
-<h1 id="section-2">设置开机启动</h1>
-<p>chmod +x /etc/init.d/ss5
-chkconfig –add ss5
-chkconfig –level 345 ss5 on</p>
+#设置开机启动
+chmod +x /etc/init.d/ss5
+chkconfig --add ss5
+chkconfig --level 345 ss5 on
 
-<h1 id="ip--etcoptss5ss5conf-">设置无密码不限制 IP 访问，更新 /etc/opt/ss5/ss5.conf 如下配置：</h1>
-<p>#           SHost           SPort   Authentication
+
+#设置无密码不限制 IP 访问，更新 /etc/opt/ss5/ss5.conf 如下配置：
+#           SHost           SPort   Authentication
 auth        0.0.0.0/0       –       –
-permit –    0.0.0.0/0       –       0.0.0.0/0</p>
+permit –    0.0.0.0/0       –       0.0.0.0/0
 
-<h1 id="section-3">启动服务</h1>
-<p>service ss5 start</p>
+#启动服务
+service ss5 start
 
-<p>```</p>
+</code></pre>
 
-<h2 id="pac-">2.2 编写 PAC 文件</h2>
+<p>##2.2 编写 PAC 文件</p>
 
 <p>PAC 的编写更为简单，请参考<a href="http://www.truevue.org/javascript/pac-format">此文</a>，假设 SOCKS 服务器 IP 和端口为 1.2.3.4:1080，下例代码表示如果网站的域名包含 a.com，则使用 SOCKS 代理，更多样例请参考 github.com。</p>
 
-<p>```js
-SOCKS5 1.2.3.4:1080</p>
+<pre><code class="language-js">SOCKS5 1.2.3.4:1080
 
-<p>function FindProxyForURL(url, host) {
-   if (shExpMatch(url,”<em>.a.com</em>”)) {
-     return “PROXY 192.168.1.1:3128”;
-   }</p>
+function FindProxyForURL(url, host) {
+   if (shExpMatch(url,"*.a.com*")) {
+     return "PROXY 192.168.1.1:3128";
+   }
 
-<p>return “DIRECT”; 
+   return "DIRECT"; 
 }
-```</p>
+</code></pre>
 
   </div>
 

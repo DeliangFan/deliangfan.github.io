@@ -109,12 +109,12 @@
 <p>Federation identity 为 hybrid cloud 在用户管理层面提供了良好的解决方案。Keystone 从 Icehouse 开始逐步增加 federation identity 的功能，Icehouse 支持 Keystone 作为 Service Provider，Juno 版本新增了 Identity Provider，支持 SAML 和 OpenID 两种认证协议。OpenStack 作为云服务的解决方案，对外提供计算、存储和网络等服务，多数场景下 Keystone 常常作为服务端，对接其它的 Identity Provider，所以本节着重阐述 Service Provider 的原理和流程。首先先介绍 3 类重要的 <a href="https://specs.openstack.org/openstack/keystone-specs/api/v3/identity-api-v3-os-federation-ext.html">API</a>。</p>
 
 <ul>
-  <li>Identity Provider API: /OS-FEDERATION/identity_providers       <br />
+  <li>Identity Provider API: /OS-FEDERATION/identity_providers         <br />
 管理 Keystone 信任的 Identity Providers。</li>
-  <li>Protocol API: /OS-FEDERATION/identity_providers/{idp_id}/protocols <br />
+  <li>Protocol API: /OS-FEDERATION/identity_providers/{idp_id}/protocols   <br />
 管理 Keystone 和某个 Identity Provider 之间认证的协议，通常为 oidc(OpenID) 或 saml2(SAML)。</li>
   <li>
-    <p>Mapping API: /OS-FEDERATION/mappings  <br />
+    <p>Mapping API: /OS-FEDERATION/mappings    <br />
 管理 Identity Provider 里的用户和 Keystone 里的用户之间的映射规则，通过该 API，管理员可以管理 IDP 中用户访问 Service 的权限。比如 IDP 有用户 A，B，通过配置 mapping rule，可以允许 A 有权限而 B 无权限访问。</p>
 
     <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/federation%20service%20provider.png?imageView2/1/w/500/h/400/q/100" alt="Keystone Federation" /></p>
@@ -131,7 +131,7 @@
 
 <hr />
 
-<h1 id="configure-keystone-as-a-service-provider">Configure Keystone as a Service Provider</h1>
+<p>#Configure Keystone as a Service Provider</p>
 
 <p>本节开始介绍如何安装配置 Keystone to Keystone Federation，重点参考了 <a href="http://blog.rodrigods.com/it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo/">it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo</a>(原文存在 2 处配置错误，本文已给予纠正)。 我们有两个服务器，分别作为 SP 和 IDP，二者均需按照<a href="http://docs.openstack.org/kilo/install-guide/install/apt/content/ch_keystone.html">官网的手册</a>安装 Keystone。</p>
 
@@ -142,139 +142,122 @@
 
 <p>更新 keystone.conf 如下配置：</p>
 
-<p><code>
-[auth]
+<pre><code>[auth]
 methods = external,password,token,oauth1,saml2
 saml2 = keystone.auth.plugins.mapped.Mapped 
-</code></p>
+</code></pre>
 
 <p>Apache 新增如下配置：</p>
 
-<p>```xml
-Listen 5000
-Listen 35357</p>
+<pre><code class="language-xml">Listen 5000
+Listen 35357
 
-<p>&lt;VirtualHost <em>:5000&gt;
-    WSGIScriptAliasMatch ^(/v3/OS-FEDERATION/identity_providers/.</em>?/protocols/.*?/auth)$ /var/www/cgi-bin/keystone/main/$1
-     ……
-&lt;/VirtualHost&gt;</p>
+&lt;VirtualHost *:5000&gt;
+    WSGIScriptAliasMatch ^(/v3/OS-FEDERATION/identity_providers/.*?/protocols/.*?/auth)$ /var/www/cgi-bin/keystone/main/$1
+     ......
+&lt;/VirtualHost&gt;
 
-<p>&lt;VirtualHost <em>:35357&gt;
-    WSGIScriptAliasMatch ^(/v3/OS-FEDERATION/identity_providers/.</em>?/protocols/.*?/auth)$ /var/www/cgi-bin/keystone/admin/$1
-      ……
-&lt;/VirtualHost&gt;</p>
+&lt;VirtualHost *:35357&gt;
+    WSGIScriptAliasMatch ^(/v3/OS-FEDERATION/identity_providers/.*?/protocols/.*?/auth)$ /var/www/cgi-bin/keystone/admin/$1
+      ......
+&lt;/VirtualHost&gt;
 
-<p>&lt;Location /Shibboleth.sso&gt;
+&lt;Location /Shibboleth.sso&gt;
     SetHandler shib
-&lt;/Location&gt;</p>
+&lt;/Location&gt;
 
-<p>&lt;LocationMatch /v3/OS-FEDERATION/identity_providers/.*?/protocols/saml2/auth&gt;
+&lt;LocationMatch /v3/OS-FEDERATION/identity_providers/.*?/protocols/saml2/auth&gt;
     ShibRequestSetting requireSession 1
     AuthType shibboleth
     ShibExportAssertion Off
     Require valid-user
 &lt;/LocationMatch&gt;
-```</p>
+</code></pre>
 
 <p>安装 Shibboleth：</p>
 
-<p><code>bash
-$ apt-get install libapache2-mod-shib2
-</code></p>
+<pre><code class="language-bash">$ apt-get install libapache2-mod-shib2
+</code></pre>
 
 <p>更新 /etc/shibboleth/attribute-map.xml 的以下配置项：</p>
 
-<p>```xml</p>
-<attribute name="openstack_user" id="openstack_user" />
-
-<attribute name="openstack_roles" id="openstack_roles" />
-
-<attribute name="openstack_project" id="openstack_project" />
-
-<attribute name="openstack_user_domain" id="openstack_user_domain" />
-
-<attribute name="openstack_project_domain" id="openstack_project_domain" />
-
-<p>```</p>
+<pre><code class="language-xml">&lt;Attribute name="openstack_user" id="openstack_user"/&gt;  
+&lt;Attribute name="openstack_roles" id="openstack_roles"/&gt;  
+&lt;Attribute name="openstack_project" id="openstack_project"/&gt; 
+&lt;Attribute name="openstack_user_domain" id="openstack_user_domain"/&gt;  
+&lt;Attribute name="openstack_project_domain" id="openstack_project_domain"/&gt;  
+</code></pre>
 
 <p>更新 /etc/shibboleth/shibboleth2.xml 的以下配置项：</p>
 
-<p>```xml</p>
-<sso entityid="http://idp:5000/v3/OS-FEDERATION/saml2/idp">  
+<pre><code class="language-xml">&lt;SSO entityID="http://idp:5000/v3/OS-FEDERATION/saml2/idp"&gt;  
     SAML2 SAML1
-</sso>
+&lt;/SSO&gt;
 
-<metadataprovider type="XML" uri="http://idp:5000/v3/OS-FEDERATION/saml2/metadata" />
-
-<p>```</p>
+&lt;MetadataProvider type="XML" uri="http://idp:5000/v3/OS-FEDERATION/saml2/metadata"/&gt;  
+</code></pre>
 
 <p>启动 shibboleth 并重启 apache：</p>
 
-<p><code>bash
-$ shib-keygen  
+<pre><code class="language-bash">$ shib-keygen  
 $ service apache2 restart
-</code>
-查看 shibboleth 是否正常运行</p>
+</code></pre>
+<p>查看 shibboleth 是否正常运行</p>
 
-<p><code>bash
-$ a2enmod shib2
+<pre><code class="language-bash">$ a2enmod shib2
 Module shib2 already enabled
-</code></p>
+</code></pre>
 
 <hr />
 
-<h1 id="configure-keystone-as-an-identity-provider">Configure Keystone as an Identity Provider</h1>
-<p>安装 xmlsec1 和 pysaml2：</p>
+<p>#Configure Keystone as an Identity Provider<br />
+安装 xmlsec1 和 pysaml2：</p>
 
-<p><code>bash
-$ apt-get install xmlsec1  
+<pre><code class="language-bash">$ apt-get install xmlsec1  
 $ pip install pysaml2
-</code></p>
+</code></pre>
 
 <p>更新 keystone.conf 的如下配置：</p>
 
-<p><code>
-[saml]
+<pre><code>[saml]
 certfile=/etc/keystone/ssl/certs/ca.pem  
 keyfile=/etc/keystone/ssl/private/cakey.pem  
 idp_entity_id=http://idp:5000/v3/OS-FEDERATION/saml2/idp  
 idp_sso_endpoint=http://idp:5000/v3/OS-FEDERATION/saml2/sso  
 idp_metadata_path=/etc/keystone/keystone_idp_metadata.xml  
-</code></p>
+</code></pre>
 
 <p>生成 DIP 的 metadata 并重启 apache HTTPD：</p>
 
-<p><code>bash
-$ keystone-manage saml_idp_metadata &gt; /etc/keystone/keystone_idp_metadata.xml
+<pre><code class="language-bash">$ keystone-manage saml_idp_metadata &gt; /etc/keystone/keystone_idp_metadata.xml
 service apache2 restart
-</code>
-———–
-#Test Keystone to Keystone federation</p>
+</code></pre>
+<hr />
+<p>#Test Keystone to Keystone federation</p>
 
 <ul>
   <li>在 Service Provider 端执行以下脚本，创建 domain, group, mapping, idp, protocol 等。其中 idp 指向另外一个作为 Identity Provider 的 Keystone，protocol 采用了 saml2 协议，mapping 的规则为只要 IDP 中名为 bob 或者 acme 的用户都可通过认证，并且映射到 Service 端的 federated_user 用户上。</li>
 </ul>
 
-<p>```python
-import os</p>
+<pre><code class="language-python">import os
 
-<p>from keystoneclient import session as ksc_session
+from keystoneclient import session as ksc_session
 from keystoneclient.auth.identity import v3
-from keystoneclient.v3 import client as keystone_v3</p>
+from keystoneclient.v3 import client as keystone_v3
 
-<p>try:
+try:
     # Used for creating the ADMIN user
-    OS_PASSWORD = ‘123456’
-    OS_USERNAME = ‘admin’
+    OS_PASSWORD = '123456'
+    OS_USERNAME = 'admin'
     # This will vary according to the entity:
     # the IdP or the SP
-    OS_AUTH_URL = ‘http://sp:35357/v3’
-    OS_PROJECT_NAME = ‘admin’
-    OS_DOMAIN_NAME = ‘default’
+    OS_AUTH_URL = 'http://sp:35357/v3'
+    OS_PROJECT_NAME = 'admin'
+    OS_DOMAIN_NAME = 'default'
 except KeyError as e:
-    raise SystemExit(‘%s environment variable not set.’ % e)</p>
+    raise SystemExit('%s environment variable not set.' % e)
 
-<p>def client_for_admin_user():
+def client_for_admin_user():
     auth = v3.Password(auth_url=OS_AUTH_URL,
                        username=OS_USERNAME,
                        password=OS_PASSWORD,
@@ -282,262 +265,267 @@ except KeyError as e:
                        project_name=OS_PROJECT_NAME,
                        project_domain_name=OS_DOMAIN_NAME)
     session = ksc_session.Session(auth=auth)
-    return keystone_v3.Client(session=session)</p>
+    return keystone_v3.Client(session=session)
 
-<h1 id="used-to-execute-all-admin-actions">Used to execute all admin actions</h1>
-<p>client = client_for_admin_user()</p>
+# Used to execute all admin actions
+client = client_for_admin_user()
 
-<p>def create_domain(client, name):
+def create_domain(client, name):
     try:
          d = client.domains.create(name=name)
     except:
          d = client.domains.find(name=name)
-    return d</p>
+    return d
 
-<p>def create_group(client, name, domain):
+
+def create_group(client, name, domain):
     try:
          g = client.groups.create(name=name, domain=domain)
     except:
          g = client.groups.find(name=name)
-    return g</p>
+    return g
 
-<p>def create_role(client, name):
+
+def create_role(client, name):
     try:
         r = client.roles.create(name=name)
     except:
         r = client.roles.find(name=name)
-    return r</p>
+    return r
 
-<p>print(‘\nCreating domain1’)
-domain1 = create_domain(client, ‘domain1’)</p>
 
-<p>print(‘\nCreating group1’)
-group1 = create_group(client, ‘group1’, domain1)</p>
+print('\nCreating domain1')
+domain1 = create_domain(client, 'domain1')
 
-<p>print(‘\nCreating role Member’)
-role1 = create_role(client, ‘Member’)</p>
+print('\nCreating group1')
+group1 = create_group(client, 'group1', domain1)
 
-<p>print(‘\nGrant role Member to group1 in domain1’)
-client.roles.grant(role1, group=group1, domain=domain1)</p>
+print('\nCreating role Member')
+role1 = create_role(client, 'Member')
 
-<p>print(‘\nList group1 role assignments’)
-client.role_assignments.list(group=group1)</p>
+print('\nGrant role Member to group1 in domain1')
+client.roles.grant(role1, group=group1, domain=domain1)
 
-<p>def create_mapping(client, mapping_id, rules):
+print('\nList group1 role assignments')
+client.role_assignments.list(group=group1)
+
+def create_mapping(client, mapping_id, rules):
     try:
         m = client.federation.mappings.create(
             mapping_id=mapping_id, rules=rules)
     except:
         m = client.federation.mappings.find(
             mapping_id=mapping_id)
-    return m</p>
+    return m
 
-<p>print(‘\nCreating mapping’)
+print('\nCreating mapping')
 rules = [
 {
-    “local”: [
+    "local": [
         {
-            “user”: {
-                “name”: “federated_user”
+            "user": {
+                "name": "federated_user"
             },
-            “group”: {
-                “id”: group1.id
+            "group": {
+                "id": group1.id
             }
         }
     ],
-    “remote”: [
+    "remote": [
         {
-            “type”: “openstack_user”,
-            “any_one_of”: [
-                “bob”,
-                “acme”
+            "type": "openstack_user",
+            "any_one_of": [
+                "bob",
+                "acme"
             ]
         }
     ]
 }
-]</p>
+]
 
-<p>mapping1 = create_mapping(client, mapping_id=’keystone-idp-mapping’, rules=rules)</p>
+mapping1 = create_mapping(client, mapping_id='keystone-idp-mapping', rules=rules)
 
-<p>def create_idp(client, id, remote_id):
-    idp_ref = {‘id’: id,
-               ‘remote_ids’: [remote_id],
-               ‘enabled’: True}
+
+def create_idp(client, id, remote_id):
+    idp_ref = {'id': id,
+               'remote_ids': [remote_id],
+               'enabled': True}
     try:
         i = client.federation.identity_providers.create(**idp_ref)
     except:
         i = client.federation.identity_providers.find(id=id)
-    return i</p>
+    return i
 
-<p>def create_protocol(client, protocol_id, idp, mapping):
+def create_protocol(client, protocol_id, idp, mapping):
     try:
         p = client.federation.protocols.create(protocol_id=protocol_id,
                                                identity_provider=idp,
                                                mapping=mapping)
     except:
         p = client.federation.protocols.find(protocol_id=protocol_id)
-    return p</p>
+    return p
 
-<p>print(‘\nRegister keystone-idp’)
-idp1 = create_idp(client, id=’keystone-idp’,
-                  remote_id=’http://idp:5000/v3/OS-FEDERATION/saml2/idp’)</p>
 
-<p>print(‘\nRegister protocol’)
-protocol1 = create_protocol(client, protocol_id=’saml2’, idp=idp1,
+print('\nRegister keystone-idp')
+idp1 = create_idp(client, id='keystone-idp',
+                  remote_id='http://idp:5000/v3/OS-FEDERATION/saml2/idp')
+
+print('\nRegister protocol')
+protocol1 = create_protocol(client, protocol_id='saml2', idp=idp1,
                             mapping=mapping1)
-```</p>
+</code></pre>
 
 <p>在 IDP 端执行以下脚本，用户 bob 获得一个 unscoped token，可拿该 token 向 SP 获取 scope token 后访问 Service 端的资源。</p>
 
-<p>```python
-import json
-import os</p>
+<pre><code class="language-python">import json
+import os
 
-<p>import requests</p>
+import requests
 
-<p>from keystoneclient import session as ksc_session
+from keystoneclient import session as ksc_session
 from keystoneclient.auth.identity import v3
-from keystoneclient.v3 import client as keystone_v3</p>
+from keystoneclient.v3 import client as keystone_v3
 
-<p>class K2KClient(object):
-    def <strong>init</strong>(self):
-        self.sp_id = ‘keystone-sp’
-        self.auth_url = ‘http://idp:35357/v3’
-        self.project_id = ‘582df27a0db14149a6da375b31fce3df’
-        self.username = ‘bob’
-        self.password = ‘123456’
-        self.domain_id = ‘default’</p>
 
-<pre><code>def v3_authenticate(self):
-    auth = v3.Password(auth_url=self.auth_url,
-                       username=self.username,
-                       password=self.password,
-                       user_domain_id=self.domain_id,
-                       project_id=self.project_id)
-    self.session = ksc_session.Session(auth=auth, verify=False)
-    self.session.auth.get_auth_ref(self.session)
-    self.token = self.session.auth.get_token(self.session)
-def _generate_token_json(self):
-    return {
-        "auth": {
-            "identity": {
-                "methods": [
-                    "token"
-                ],
-                "token": {
-                    "id": self.token
-                }
-            },
-            "scope": {
-                "service_provider": {
-                    "id": self.sp_id
-                }
-            }
-        }
-    }
+class K2KClient(object):
+    def __init__(self):
+        self.sp_id = 'keystone-sp'
+        self.auth_url = 'http://idp:35357/v3'
+        self.project_id = '582df27a0db14149a6da375b31fce3df'
+        self.username = 'bob'
+        self.password = '123456'
+        self.domain_id = 'default'
 
-def _check_response(self, response):
-    if not response.ok:
-        raise Exception("Something went wrong, %s" % response.__dict__)
-
-def get_saml2_ecp_assertion(self):
-    token = json.dumps(self._generate_token_json())
-    url = self.auth_url + '/auth/OS-FEDERATION/saml2/ecp'
-    r = self.session.post(url=url, data=token, verify=False)
-    self._check_response(r)
-    self.assertion = str(r.text)
-
-def _get_sp(self):
-    url = self.auth_url + '/OS-FEDERATION/service_providers/' + self.sp_id
-    r = self.session.get(url=url, verify=False)
-    self._check_response(r)
-    sp = json.loads(r.text)[u'service_provider']
-    return sp
-
-def _handle_http_302_ecp_redirect(self, response, location, **kwargs):
-    return self.session.get(location, authenticated=False, **kwargs)
-
-def exchange_assertion(self):
-    """Send assertion to a Keystone SP and get token."""
-    sp = self._get_sp()
-
-    r = self.session.post(
-        sp[u'sp_url'],
-        headers={'Content-Type': 'application/vnd.paos+xml'},
-        data=self.assertion,
-        authenticated=False,
-        redirect=False)
-
-    self._check_response(r)
-
-    r = self._handle_http_302_ecp_redirect(r, sp[u'auth_url'],
-                                           headers={'Content-Type':
-                                           'application/vnd.paos+xml'})
-    self.fed_token_id = r.headers['X-Subject-Token']
-    self.fed_token = r.text
-
-def list_federated_projects(self):
-    url = 'http://sp:5000/v3/OS-FEDERATION/projects'
-    headers = {'X-Auth-Token': self.fed_token_id}
-    r = requests.get(url=url, headers=headers)
-    self._check_response(r)
-    return json.loads(str(r.text))
-
-def _get_scoped_token_json(self, project_id):
-    return {
-        "auth": {
-            "identity": {
-                "methods": [
-                    "token"
-                ],
-                "token": {
-                    "id": self.fed_token_id
-                }
-            },
-            "scope": {
-                "project": {
-                    "id": project_id
+    def v3_authenticate(self):
+        auth = v3.Password(auth_url=self.auth_url,
+                           username=self.username,
+                           password=self.password,
+                           user_domain_id=self.domain_id,
+                           project_id=self.project_id)
+        self.session = ksc_session.Session(auth=auth, verify=False)
+        self.session.auth.get_auth_ref(self.session)
+        self.token = self.session.auth.get_token(self.session)
+    def _generate_token_json(self):
+        return {
+            "auth": {
+                "identity": {
+                    "methods": [
+                        "token"
+                    ],
+                    "token": {
+                        "id": self.token
+                    }
+                },
+                "scope": {
+                    "service_provider": {
+                        "id": self.sp_id
+                    }
                 }
             }
         }
-    }
 
-def scope_token(self, project_id):
-    # project_id can be select from the list in the previous step
-    token = json.dumps(self._get_scoped_token_json(project_id))
-    url = 'http://sp:5000/v3/auth/tokens'
-    headers = {'X-Auth-Token': self.fed_token_id,
-               'Content-Type': 'application/json'}
-    r = requests.post(url=url, headers=headers, data=token,
-                      verify=False)
-    self._check_response(r)
-    self.scoped_token_id = r.headers['X-Subject-Token']
-    self.scoped_token = str(r.text)
-</code></pre>
+    def _check_response(self, response):
+        if not response.ok:
+            raise Exception("Something went wrong, %s" % response.__dict__)
 
-<p>def main():
+    def get_saml2_ecp_assertion(self):
+        token = json.dumps(self._generate_token_json())
+        url = self.auth_url + '/auth/OS-FEDERATION/saml2/ecp'
+        r = self.session.post(url=url, data=token, verify=False)
+        self._check_response(r)
+        self.assertion = str(r.text)
+
+    def _get_sp(self):
+        url = self.auth_url + '/OS-FEDERATION/service_providers/' + self.sp_id
+        r = self.session.get(url=url, verify=False)
+        self._check_response(r)
+        sp = json.loads(r.text)[u'service_provider']
+        return sp
+
+    def _handle_http_302_ecp_redirect(self, response, location, **kwargs):
+        return self.session.get(location, authenticated=False, **kwargs)
+
+    def exchange_assertion(self):
+        """Send assertion to a Keystone SP and get token."""
+        sp = self._get_sp()
+
+        r = self.session.post(
+            sp[u'sp_url'],
+            headers={'Content-Type': 'application/vnd.paos+xml'},
+            data=self.assertion,
+            authenticated=False,
+            redirect=False)
+
+        self._check_response(r)
+
+        r = self._handle_http_302_ecp_redirect(r, sp[u'auth_url'],
+                                               headers={'Content-Type':
+                                               'application/vnd.paos+xml'})
+        self.fed_token_id = r.headers['X-Subject-Token']
+        self.fed_token = r.text
+
+    def list_federated_projects(self):
+        url = 'http://sp:5000/v3/OS-FEDERATION/projects'
+        headers = {'X-Auth-Token': self.fed_token_id}
+        r = requests.get(url=url, headers=headers)
+        self._check_response(r)
+        return json.loads(str(r.text))
+
+    def _get_scoped_token_json(self, project_id):
+        return {
+            "auth": {
+                "identity": {
+                    "methods": [
+                        "token"
+                    ],
+                    "token": {
+                        "id": self.fed_token_id
+                    }
+                },
+                "scope": {
+                    "project": {
+                        "id": project_id
+                    }
+                }
+            }
+        }
+
+    def scope_token(self, project_id):
+        # project_id can be select from the list in the previous step
+        token = json.dumps(self._get_scoped_token_json(project_id))
+        url = 'http://sp:5000/v3/auth/tokens'
+        headers = {'X-Auth-Token': self.fed_token_id,
+                   'Content-Type': 'application/json'}
+        r = requests.post(url=url, headers=headers, data=token,
+                          verify=False)
+        self._check_response(r)
+        self.scoped_token_id = r.headers['X-Subject-Token']
+        self.scoped_token = str(r.text)
+
+
+def main():
     client = K2KClient()
     client.v3_authenticate()
     client.get_saml2_ecp_assertion()
-    print(‘ECP wrapped SAML assertion: %s’ % client.assertion)
+    print('ECP wrapped SAML assertion: %s' % client.assertion)
     client.exchange_assertion()
-    print(‘Unscoped token id: %s’ % client.fed_token_id)</p>
+    print('Unscoped token id: %s' % client.fed_token_id)
+    
+    # If you want to get a scope token, please ensure federated_user has a project
+    # and uncommen below codes.
+    '''
+    projects = client.list_federated_projects()
+    print('Federated projects: %s' % projects['projects'])
+    project_id = projects['projects'][0]['id']
+    project_name = projects['projects'][0]['name']
+    client.scope_token(project_id)
+    print('Scoped token of ' + project_name + ' : ' + client.scoped_token_id)
+    '''
 
-<pre><code># If you want to get a scope token, please ensure federated_user has a project
-# and uncommen below codes.
-'''
-projects = client.list_federated_projects()
-print('Federated projects: %s' % projects['projects'])
-project_id = projects['projects'][0]['id']
-project_name = projects['projects'][0]['name']
-client.scope_token(project_id)
-print('Scoped token of ' + project_name + ' : ' + client.scoped_token_id)
-'''
-</code></pre>
 
-<p>if <strong>name</strong> == “<strong>main</strong>”:
+if __name__ == "__main__":
     main()
-```</p>
+</code></pre>
 
 <hr />
 

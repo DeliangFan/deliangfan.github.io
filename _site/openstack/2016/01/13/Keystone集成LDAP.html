@@ -84,72 +84,58 @@
 
 <p>LDAP 的 DN(Distinguished Names) 默认由主机域名生成，本地的 DNS 设置如下：</p>
 
-<p><code>
-root@ubuntu:~# cat /etc/hosts
+<pre><code>root@ubuntu:~# cat /etc/hosts
 10.10.1.100    keystone.com
 127.0.0.1   localhost
-</code>
-—————-</p>
+</code></pre>
+<hr />
 
-<h1 id="install-ldap">Install LDAP</h1>
+<p>#Install LDAP</p>
 
-<p><code>bash
-sudo apt-get install slapd ldap-utils
-</code></p>
+<pre><code class="language-bash">sudo apt-get install slapd ldap-utils
+</code></pre>
 
 <p>安装完成后可通过以下命令和步骤完成 LDAP 的基本配置：</p>
 
-<p>```
-sudo dpkg-reconfigure slapd</p>
+<pre><code>sudo dpkg-reconfigure slapd
 
-<ul>
-  <li>
-    <p>Omit OpenLDAP server configuration? No</p>
-  </li>
-  <li>
-    <p>DNS domain name?  keystone.com</p>
-  </li>
-  <li>
-    <p>Organization name?  admin</p>
-  </li>
-  <li>
-    <p>Administrator password? YourPassword</p>
-  </li>
-  <li>
-    <p>Use the password you configured during installation, or choose another one
-Database backend to use? HDB</p>
-  </li>
-  <li>
-    <p>Remove the database when slapd is purged? No</p>
-  </li>
-  <li>
-    <p>Move old database? Yes</p>
-  </li>
-  <li>
-    <p>Allow LDAPv2 protocol? No
-```</p>
-  </li>
-</ul>
+
+* Omit OpenLDAP server configuration? No
+
+* DNS domain name?  keystone.com
+
+* Organization name?  admin
+
+* Administrator password? YourPassword
+
+* Use the password you configured during installation, or choose another one
+  Database backend to use? HDB
+
+* Remove the database when slapd is purged? No
+
+* Move old database? Yes
+
+* Allow LDAPv2 protocol? No
+</code></pre>
 
 <hr />
 
-<h1 id="configure-ldap">Configure LDAP</h1>
+<p>#Configure LDAP</p>
 
 <p>由于 LDAP 的用户属性和 Keystone 默认的用户属性有所差异，所以 LDAP 需生成与 Keystone 中的 User 和 Group 相匹配的对象，可通过以下脚本(add_user_group.ldif)添加该对象，并生成 demo 和 admin 两个用户。</p>
 
-<p>```
-# Users
+<pre><code># Users
 dn: ou=users,dc=keystone,dc=com
 ou: users
-objectClass: organizationalUnit</p>
-
-<h1 id="group">Group</h1>
-<p>dn: ou=groups,dc=keystone,dc=com
 objectClass: organizationalUnit
-ou: groups</p>
 
-<h1 id="demo-user">demo user</h1>
-<p>dn: cn=demo,ou=users,dc=keystone,dc=com
+# Group
+dn: ou=groups,dc=keystone,dc=com
+objectClass: organizationalUnit
+ou: groups
+
+# demo user
+dn: cn=demo,ou=users,dc=keystone,dc=com
 cn: demo
 displayName: demo
 givenName: demo
@@ -158,10 +144,10 @@ objectClass: inetOrgPerson
 objectClass: top
 sn: demo
 uid: demo
-userPassword: 123456</p>
+userPassword: 123456
 
-<h1 id="admin-user">admin user</h1>
-<p>dn: cn=admin,ou=users,dc=keystone,dc=com
+# admin user
+dn: cn=admin,ou=users,dc=keystone,dc=com
 cn: admin
 displayName: admin
 givenName: admin
@@ -171,102 +157,99 @@ objectClass: top
 sn: admin
 uid: admin
 userPassword: 123456
-```</p>
+</code></pre>
 
 <p>由以下命令把上述配置文件内容更新至 LDAP：</p>
 
-<p><code>bash
-ldapadd -x -W -D "cn=admin,dc=example,dc=com" -f add_user_group.ldif
-</code></p>
+<pre><code class="language-bash">ldapadd -x -W -D "cn=admin,dc=example,dc=com" -f add_user_group.ldif
+</code></pre>
 
 <p>Keystone 的配置文件如下：</p>
 
-<p>```
-[identity]
-driver = keystone.identity.backends.ldap.Identity</p>
+<pre><code>[identity]
+driver = keystone.identity.backends.ldap.Identity
 
-<p>[assignment]
-driver = keystone.assignment.backends.sql.Assignment</p>
+[assignment]
+driver = keystone.assignment.backends.sql.Assignment
 
-<p>[ldap]
+[ldap]
 # LDAP 服务器地址，tree_dn 目录下管理员的账号和密码等
-url = ldap://keystone.com            <br />
+url = ldap://keystone.com              
 query_scope = sub
-user = “cn=admin,dc=keystone,dc=com” 
+user = "cn=admin,dc=keystone,dc=com" 
 password = 123456
-tree_dn = “dc=keystone,dc=com”</p>
+tree_dn = "dc=keystone,dc=com"
 
-<h1 id="keystone--ldap--mapping-">以下配置定义 Keystone 和 LDAP 二者的属性的 mapping 关系。</h1>
-<p>user_tree_dn = “ou=users,dc=keystone,dc=com”<br />
+# 以下配置定义 Keystone 和 LDAP 二者的属性的 mapping 关系。
+user_tree_dn = "ou=users,dc=keystone,dc=com"  
 user_objectclass = inetOrgPerson
 user_id_attribute = cn
 user_name_attribute = cn
 user_mail_attribute = mail
 user_pass_attribute = userPassword
-user_enabled_attribute = enabled</p>
+user_enabled_attribute = enabled
 
-<p>group_tree_dn = “ou=groups,dc=keystone,dc=com”
+group_tree_dn = "ou=groups,dc=keystone,dc=com"
 group_objectclass = groupOfUniqueNames
 group_id_attribute = cn
 group_name_attribute = cn
 group_member_attribute = uniquemember
-group_desc_attribute = description</p>
+group_desc_attribute = description
 
-<p>user_allow_create = true
+user_allow_create = true
 user_allow_update = true
-user_allow_delete = true</p>
+user_allow_delete = true
 
-<p>group_allow_create = true
+group_allow_create = true
 group_allow_update = true
 group_allow_delete = true
-```</p>
+</code></pre>
 
 <hr />
 
-<h1 id="test">Test</h1>
+<p>#Test</p>
 
 <p>用 admin_token 创建 project 和 role，并赋予 demo 和 admin 用户在 project 中的 role 后，即可使用该用户获得 scope token 访问 Keystone 的 API。</p>
 
-<p>```
-root@ubuntu:~# openstack user list
-+——————–+——————–+
+<pre><code>root@ubuntu:~# openstack user list
++--------------------+--------------------+
 | ID                 | Name               |
-+——————–+——————–+
++--------------------+--------------------+
 | demo               | demo               |
 | admin              | admin              |
-+——————–+——————–+</p>
++--------------------+--------------------+
 
-<p>root@ubuntu:~# openstack user show demo
-+———–+——————+
+root@ubuntu:~# openstack user show demo
++-----------+------------------+
 | Field     | Value            |
-+———–+——————+
++-----------+------------------+
 | domain_id | default          |
 | email     | demo@example.com |
 | id        | demo             |
 | name      | demo             |
-+———–+——————+</p>
++-----------+------------------+
 
-<p>root@ubuntu:~# openstack user create hello –password 123456
-+———–+———————————-+
+root@ubuntu:~# openstack user create hello --password 123456
++-----------+----------------------------------+
 | Field     | Value                            |
-+———–+———————————-+
++-----------+----------------------------------+
 | domain_id | default                          |
 | enabled   | True                             |
 | id        | hello                            |
 | name      | hello                            |
-+———–+———————————-+</p>
++-----------+----------------------------------+
 
-<p>root@ubuntu:~# openstack project create test_project
-+————-+———————————-+
+root@ubuntu:~# openstack project create test_project
++-------------+----------------------------------+
 | Field       | Value                            |
-+————-+———————————-+
++-------------+----------------------------------+
 | description |                                  |
 | domain_id   | default                          |
 | enabled     | True                             |
 | id          | cbdf05b17cf54587b3b58a11f49252e7 |
 | name        | test_project                     |
-+————-+———————————-+
-```</p>
++-------------+----------------------------------+
+</code></pre>
 
   </div>
 

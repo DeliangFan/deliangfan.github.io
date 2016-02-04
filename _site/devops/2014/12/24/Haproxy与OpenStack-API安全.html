@@ -88,7 +88,7 @@
 
 <hr />
 
-<h1 id="https">HTTPS</h1>
+<p>#HTTPS</p>
 
 <p>1.5.0 版本的 Release Notes 有下面这么一行话，意味着从该版本开始， haproxy 支持由 HTTPS 加密客户端和服务端的通信消息，避免明文传输。</p>
 
@@ -99,43 +99,41 @@
 
 <p><a href="https://www.digitalocean.com/community/tutorials/how-to-implement-ssl-termination-with-haproxy-on-ubuntu-14-04">how-to-implement-ssl-termination-with-haproxy</a> 详细的说明如何配置 HTTPS，主要包括证书 和 SSL 相关配置项。证书可以到 CA 机构购买，也可用 openssl 自制证书，甚至可用 <a href="http://docs.openstack.org/developer/keystone/configuration.html#ssl">keystone 生成证书</a>。</p>
 
-<p>```
-[eventlet_server_ssl]
+<pre><code>[eventlet_server_ssl]
 enable = True
-certfile = <path to="" keystone.pem="">
-keyfile = <path to="" keystonekey.pem="">
-ca_certs = <path to="" ca.pem="">
-cert_required = False</path></path></path></p>
+certfile = &lt;path to keystone.pem&gt;
+keyfile = &lt;path to keystonekey.pem&gt;
+ca_certs = &lt;path to ca.pem&gt;
+cert_required = False
 
-<p>[ssl]
-ca_key = <path to="" cakey.pem="">
+[ssl]
+ca_key = &lt;path to cakey.pem&gt;
 key_size = 1024
 valid_days=3650
-cert_subject=/C=US/ST=Unset/L=Unset/O=Unset/CN=localhost</path></p>
+cert_subject=/C=US/ST=Unset/L=Unset/O=Unset/CN=localhost
 
-<p>keystone-manage ssl_setup
-```</p>
+keystone-manage ssl_setup
+</code></pre>
 
 <p>配置样例如下：</p>
 
-<p>```
-global
-    …</p>
+<pre><code>global
+    ...
+ 
+defaults
+	...
 
-<p>defaults
-	…</p>
-
-<p>frontend ft_web
-    bind <virtual ip="">:443 ssl crt /etc/haproxy/https.pem #证书
+frontend ft_web
+    bind &lt;Virtual IP&gt;:443 ssl crt /etc/haproxy/https.pem #证书
     reqadd X-Forwarded-Proto:\ https #相关配置
-    default_backend bk_web</virtual></p>
-
-<p>backend bk_web
+    default_backend bk_web
+ 
+backend bk_web
     balance roundrobin
     redirect scheme https if !{ ssl_fc } #相关配置
     server http-server-01 private_IP1:8080 check inter 10s
     server http-server-02 private_IP2:8080 check inter 10s
-```</p>
+</code></pre>
 
 <hr />
 <p>#DDOS</p>
@@ -149,44 +147,41 @@ global
   <li>Limiting the connection rate per user</li>
 </ul>
 
-<h2 id="tcp-syn-flood-attacks">TCP syn flood attacks</h2>
+<p>##TCP syn flood attacks</p>
 
 <p>通过向服务器发送大量的 TCP syn 分组，恶意用户实现了了 TCP syn flood 攻击，幸运的是，简单的配置内核网络参数即可防止这种攻击。</p>
 
-<p>```bash
-/etc/sysctl.conf
+<pre><code class="language-bash">/etc/sysctl.conf
 net.ipv4.tcp_syncookies = 1
 net.ipv4.conf.all.rp_filter = 1
-net.ipv4.tcp_max_syn_backlog = 1024</p>
+net.ipv4.tcp_max_syn_backlog = 1024 
 
-<p>sysctl -p
-```</p>
+sysctl -p
+</code></pre>
 
 <hr />
 <p>##Slowloris like attacks</p>
 
 <p>一个 HTTP 请求通常包括头部、url、methods 等，服务器需要接收整个请求后才能做出响应。如果恶意用户发送缓慢的请求，比如一个字节一个字节的发送头部，服务器将一直处于 waiting 状态，耗费服务器的资源。通过配置 timeout http-request 参数，当一个用户的请求时间超过设定值时，haproxy 自动断开该连接。</p>
 
-<p>```
-defaults
+<pre><code>defaults
   option http-server-close
   mode http
   timeout connect 10s  #限制链接时间，该参数不宜过大
   timeout server  15s  #限制链接时间，该参数不宜过大
-  timeout client  15s  #限制链接时间，该参数不宜过大</p>
+  timeout client  15s  #限制链接时间，该参数不宜过大
 
-<p>frontend ft_web
-	…</p>
+frontend ft_web
+	...
 
-<p>backend bk_web
-	…</p>
+backend bk_web
+	...
 
-<p>```</p>
+</code></pre>
 
 <p>通过 telnet 登录验证结果：</p>
 
-<p><code>bash
-telnet 127.0.0.1 8080
+<pre><code class="language-bash">telnet 127.0.0.1 8080
 Trying 127.0.0.1...
 Connected to 127.0.0.1.
 Escape character is '^]'.
@@ -197,71 +192,68 @@ Content-Type: text/html
 408 Request Time-out
 Your browser didn't send a complete request in time.
 Connection closed by foreign host.
-</code></p>
+</code></pre>
 
 <hr />
 
-<h2 id="limiting-the-number-of-connections-per-users">Limiting the number of connections per users</h2>
+<p>##Limiting the number of connections per users</p>
 
 <p>普通用户访问某个 OpenStack 服务时，如果恶意打开了大量 TCP 链接，会耗费服务器内存资源，影响其它用户的体验，因此我们需要根据实际情况，限制同一个用户的链接并发数。</p>
 
-<p>```
-defaults
-	…</p>
+<pre><code>defaults
+	...
 
-<p>frontend ft_web
-  bind <virtual ip="">:8080
+frontend ft_web
+  bind &lt;Virtual IP&gt;:8080
   # Allow clean known IPs to bypass the filter
   tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst } #白名单
   # Shut the new connection as long as the client has already 10 opened  #限制单个用户的连接数
   tcp-request connection reject if { src_conn_cur ge 10 }                #限制单个用户的连接数
-  tcp-request connection track-sc1 src&lt;/span&gt;</virtual></p>
+  tcp-request connection track-sc1 src&lt;/span&gt;
 
-<p>default_backend bk_web</p>
+  default_backend bk_web
 
-<p>backend bk_web
-	…</p>
+backend bk_web
+	...
 
-<p>```</p>
+</code></pre>
 
 <p><strong>注</strong>：若某些用户在同一个私有网段通过 NAT 访问网站，这样的配置存在不合理之处，最好把 NAT 处的公网地址添加到 whitelist.lst 文件中。</p>
 
 <p>利用 apache 测试工具做验证，和服务器一直保持建立 10 个链接。</p>
 
-<p><code>bash
-ab -n 50000000 -c 10 http://127.0.0.1:8080/
+<pre><code class="language-bash">ab -n 50000000 -c 10 http://127.0.0.1:8080/
 用 telnet 打开第 11 个链接，服务器拒绝该链接。
 telnet 127.0.0.1 8080
 Trying 127.0.0.1...
 Connected to 127.0.0.1.
 Escape character is '^]'.
 Connection closed by foreign host.
-</code>
-———-</p>
+</code></pre>
+<hr />
 
-<h2 id="limiting-the-connection-rate-per-user">Limiting the connection rate per user</h2>
+<p>##Limiting the connection rate per user</p>
 
 <p>仅仅限制单个用户的并发链接数并意味着万事大吉，如果用户在短时间内向服务器不断的发送建立和关闭链接请求，也会耗费服务器资源，影响服务器端的性能，因此需要控制单个用户的访问速率。通常情况下，我们认为普通用户在 3 秒内不应该向某个 openstack api 发送的请求不应该超过 20 次。</p>
 
-<p>```
-defaults
-	…</p>
+<pre><code>defaults
+	...
 
-<p>frontend ft_web
-  bind <virtual ip="">:8080
-  stick-table type ip size 100k expire 30s store conn_cur, conn_rate(3s) # Table definition</virtual></p>
+frontend ft_web
+  bind &lt;Virtual IP&gt;:8080
+  stick-table type ip size 100k expire 30s store conn_cur, conn_rate(3s) # Table definition 
 
-<p># Allow clean known IPs to bypass the filter
+  # Allow clean known IPs to bypass the filter
   tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst } #白名单
   # Shut the new connection as long as the client has already 10 opened or rate more than 20
   tcp-request connection reject if { src_conn_cur ge 10 }|| { src_conn_rate ge 20} #限制单个用户链接数和访问速率
-  tcp-request connection track-sc1 src</p>
+  tcp-request connection track-sc1 src
 
-<p>default_backend bk_web</p>
+  default_backend bk_web
 
-<p>backend bk_web
-	…
-```</p>
+backend bk_web
+	...
+</code></pre>
 
 <p>测试步骤如下：</p>
 
@@ -271,30 +263,28 @@ defaults
   <li>再用 telnet 打开第 21 个链接，服务器拒绝该请求。</li>
 </ol>
 
-<p><code>bash
-telnet 127.0.0.1 8080
+<pre><code class="language-bash">telnet 127.0.0.1 8080
 Trying 127.0.0.1...
 Connected to 127.0.0.1.
 Escape character is '^]'.
 Connection closed by foreign host.
-</code></p>
+</code></pre>
 
 <hr />
 
-<h1 id="nova-api">样例 nova-api</h1>
+<p>#样例 nova-api</p>
 
 <p>根据上述内容，以 nova-api 为例，其配置如下：</p>
 
-<p>```
-global
+<pre><code>global
   chroot  /var/lib/haproxy
   daemon
   group  haproxy
   maxconn  4000
   pidfile  /var/run/haproxy.pid
-  user  haproxy</p>
+  user  haproxy
 
-<p>defaults
+defaults
   log  global
   maxconn  4000
   option  redispatch
@@ -304,28 +294,28 @@ global
   timeout  connect 10s
   timeout  client 15s
   timeout  server 15s
-  timeout  check 10s</p>
+  timeout  check 10s
 
-<p>frontend nova_api_VIP
-  bind <virtual ip="">:443 ssl crt /etc/haproxy/https.pem
-  reqadd X-Forwarded-Proto:\ https</virtual></p>
+frontend nova_api_VIP
+  bind &lt;Virtual IP&gt;:443 ssl crt /etc/haproxy/https.pem
+  reqadd X-Forwarded-Proto:\ https
 
-<p>stick-table type ip size 100k expire 30s store conn_cur, conn_rate(3s)
+  stick-table type ip size 100k expire 30s store conn_cur, conn_rate(3s)
   tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst }
   tcp-request connection reject if { src_conn_cur ge 10 }|| { src_conn_rate ge 20}
-  tcp-request connection track-sc1 src</p>
+  tcp-request connection track-sc1 src
+  
+  default_backend nova-api-cluster
 
-<p>default_backend nova-api-cluster</p>
-
-<p>frontend nova-api-cluster
+frontend nova-api-cluster
   balance  source
   option  httpchk
   redirect scheme https if !{ ssl_fc }
   server controller1 10.0.0.1:8774 check inter 2000 rise 2 fall 5
   server controller2 10.0.0.2:8774 check inter 2000 rise 2 fall 5
-  server controller3 10.0.0.3:8774 check inter 2000 rise 2 fall 5</p>
+  server controller3 10.0.0.3:8774 check inter 2000 rise 2 fall 5
 
-<p>```</p>
+</code></pre>
 
   </div>
 
