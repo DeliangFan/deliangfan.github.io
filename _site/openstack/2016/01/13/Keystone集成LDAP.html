@@ -90,7 +90,7 @@
 </code></pre>
 <hr />
 
-<p>#Install LDAP</p>
+<h1 id="install-ldap">Install LDAP</h1>
 
 <pre><code class="language-bash">sudo apt-get install slapd ldap-utils
 </code></pre>
@@ -120,7 +120,7 @@
 
 <hr />
 
-<p>#Configure LDAP</p>
+<h1 id="configure-ldap">Configure LDAP</h1>
 
 <p>由于 LDAP 的用户属性和 Keystone 默认的用户属性有所差异，所以 LDAP 需生成与 Keystone 中的 User 和 Group 相匹配的对象，可通过以下脚本(add_user_group.ldif)添加该对象，并生成 demo 和 admin 两个用户。</p>
 
@@ -207,11 +207,11 @@ group_allow_delete = true
 
 <hr />
 
-<p>#Test</p>
+<h1 id="test">Test</h1>
 
 <p>用 admin_token 创建 project 和 role，并赋予 demo 和 admin 用户在 project 中的 role 后，即可使用该用户获得 scope token 访问 Keystone 的 API。</p>
 
-<pre><code>root@ubuntu:~# openstack user list
+<pre><code class="language-bash">root@ubuntu:~# openstack user list
 +--------------------+--------------------+
 | ID                 | Name               |
 +--------------------+--------------------+

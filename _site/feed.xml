@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 04 Feb 2016 17:30:03 +0800</pubDate>
-    <lastBuildDate>Thu, 04 Feb 2016 17:30:03 +0800</lastBuildDate>
+    <pubDate>Thu, 04 Feb 2016 17:36:54 +0800</pubDate>
+    <lastBuildDate>Thu, 04 Feb 2016 17:36:54 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -1256,7 +1256,7 @@ if __name__ == &quot;__main__&quot;:
 &lt;/code&gt;&lt;/pre&gt;
 &lt;hr /&gt;
 
-&lt;p&gt;#Install LDAP&lt;/p&gt;
+&lt;h1 id=&quot;install-ldap&quot;&gt;Install LDAP&lt;/h1&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sudo apt-get install slapd ldap-utils
 &lt;/code&gt;&lt;/pre&gt;
@@ -1286,7 +1286,7 @@ if __name__ == &quot;__main__&quot;:
 
 &lt;hr /&gt;
 
-&lt;p&gt;#Configure LDAP&lt;/p&gt;
+&lt;h1 id=&quot;configure-ldap&quot;&gt;Configure LDAP&lt;/h1&gt;
 
 &lt;p&gt;由于 LDAP 的用户属性和 Keystone 默认的用户属性有所差异，所以 LDAP 需生成与 Keystone 中的 User 和 Group 相匹配的对象，可通过以下脚本(add_user_group.ldif)添加该对象，并生成 demo 和 admin 两个用户。&lt;/p&gt;
 
@@ -1373,11 +1373,11 @@ group_allow_delete = true
 
 &lt;hr /&gt;
 
-&lt;p&gt;#Test&lt;/p&gt;
+&lt;h1 id=&quot;test&quot;&gt;Test&lt;/h1&gt;
 
 &lt;p&gt;用 admin_token 创建 project 和 role，并赋予 demo 和 admin 用户在 project 中的 role 后，即可使用该用户获得 scope token 访问 Keystone 的 API。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;root@ubuntu:~# openstack user list
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;root@ubuntu:~# openstack user list
 +--------------------+--------------------+
 | ID                 | Name               |
 +--------------------+--------------------+

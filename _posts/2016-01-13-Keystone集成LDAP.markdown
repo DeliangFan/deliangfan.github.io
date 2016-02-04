@@ -22,22 +22,22 @@ categories: OpenStack
 
 LDAP 的 DN(Distinguished Names) 默认由主机域名生成，本地的 DNS 设置如下：
 
-```
+~~~
 root@ubuntu:~# cat /etc/hosts
 10.10.1.100    keystone.com
 127.0.0.1   localhost
-```
+~~~
 ----------------
 
-#Install LDAP
+# Install LDAP
 
-```bash
+~~~bash
 sudo apt-get install slapd ldap-utils
-```
+~~~
 
 安装完成后可通过以下命令和步骤完成 LDAP 的基本配置：
 
-```
+~~~
 sudo dpkg-reconfigure slapd
 
 
@@ -57,16 +57,16 @@ sudo dpkg-reconfigure slapd
 * Move old database? Yes
 
 * Allow LDAPv2 protocol? No
-```
+~~~
 
 
 ---------------
 
-#Configure LDAP
+# Configure LDAP
 
 由于 LDAP 的用户属性和 Keystone 默认的用户属性有所差异，所以 LDAP 需生成与 Keystone 中的 User 和 Group 相匹配的对象，可通过以下脚本(add\_user\_group.ldif)添加该对象，并生成 demo 和 admin 两个用户。
 
-```
+~~~
 # Users
 dn: ou=users,dc=keystone,dc=com
 ou: users
@@ -100,17 +100,17 @@ objectClass: top
 sn: admin
 uid: admin
 userPassword: 123456
-```
+~~~
 
 由以下命令把上述配置文件内容更新至 LDAP：
 
-```bash
+~~~bash
 ldapadd -x -W -D "cn=admin,dc=example,dc=com" -f add_user_group.ldif
-```
+~~~
 
 Keystone 的配置文件如下：
 
-```
+~~~
 [identity]
 driver = keystone.identity.backends.ldap.Identity
 
@@ -148,15 +148,15 @@ user_allow_delete = true
 group_allow_create = true
 group_allow_update = true
 group_allow_delete = true
-```
+~~~
 
 --------------------
 
-#Test
+# Test
 
 用 admin_token 创建 project 和 role，并赋予 demo 和 admin 用户在 project 中的 role 后，即可使用该用户获得 scope token 访问 Keystone 的 API。
 
-```
+~~~ bash
 root@ubuntu:~# openstack user list
 +--------------------+--------------------+
 | ID                 | Name               |
@@ -195,4 +195,4 @@ root@ubuntu:~# openstack project create test_project
 | id          | cbdf05b17cf54587b3b58a11f49252e7 |
 | name        | test_project                     |
 +-------------+----------------------------------+
-```
+~~~
