@@ -90,8 +90,8 @@ categories: Algorithm
 下面证明，A 和 B 计算出来的密钥 K 相同。
 
 	K = Yb^Xa mod q
-  	  = (a^Xb mod q)^Xa mod q      
-  	  = a^(Xa * Xb) mod q          根据上述求模公式
+      = (a^Xb mod q)^Xa mod q
+      = a^(Xa * Xb) mod q          根据上述求模公式
       = (a^Xa mod q)^Xb mod q
       = Ya^Xb mod q
 
