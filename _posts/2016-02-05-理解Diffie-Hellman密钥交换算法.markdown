@@ -24,9 +24,7 @@ categories: Algorithm
 
 假定 a, p 均是素数，下面两个集合相等，证明过程请参考 [Cryptography and Network Security](http://www.amazon.com/Cryptography-Network-Security-Principles-Practice/dp/0133354695) 第八章：
 
-```
-{ a^1 mod p, a^2 mod p, ..., a^(p-1) mod p } = {1, 2, ... , p-1 }   {} 表示集合
-```
+    { a^1 mod p, a^2 mod p, ..., a^(p-1) mod p } = {1, 2, ... , p-1 }   {} 表示集合
 
 上述式子可概括成以下三点，对于 1 <= x,y <= p - 1，有：
 
@@ -40,20 +38,18 @@ categories: Algorithm
 
 假设 q 为素数，对于正整数 a,x,y，有：
 
-```
-(a^x mod p)^y mod p = a^(xy) mod p
-```
+    (a^x mod p)^y mod p = a^(xy) mod p
 
 证明如下：
 
-```
-令 a^x = mp + n， 其中 m, n 为自然数， 0 <= n < p，则有
-C = (a^x mod p)^y mod p
-  = ((mp + n) mod p)^y mod p
-  = n^y mod p
-  = (mp +n)^y mod p
-  = a^(xy) mod p
-```
+
+    令 a^x = mp + n， 其中 m, n 为自然数， 0 <= n < p，则有
+	C = (a^x mod p)^y mod p
+	  = ((mp + n) mod p)^y mod p
+      = n^y mod p
+      = (mp +n)^y mod p
+      = a^(xy) mod p
+
 -------------
 
 #Deffie-Hellman 算法原理
@@ -62,46 +58,42 @@ C = (a^x mod p)^y mod p
 
 假设 A, B 两方进行通信前需要交换密钥，首先 A, B 共同选取 q 和 a 两个素数，其中 q 和 a 均公开。之后 A 选择一个自然数 Xa，计算出 Ya，Xa 保密，Ya 公开；同理，B 选择 Xb 并计算出 Yb，其中 Xb 保密，Yb 公开。之后 A 用 Yb 和 Xa 计算出密钥 K，而 B 用 Ya 和 Xb 计算密钥 K，流程如下：
 
-```
-+-------------------------------------------------------------------+
-|                    Global Pulic Elements                          |
-|                                                                   |
-|       q                               prime number                |
-|       a                               prime number, a < q         |
-+-------------------------------------------------------------------+
-+-------------------------------------------------------------------+
-|                    User A Key Generation                          |
-|                                                                   |
-|       Select private Xa               Xa < q                      |
-|       Calculate public Ya             Ya = a^Xa mod q             |
-+-------------------------------------------------------------------+
-+-------------------------------------------------------------------+
-|                    User B Key Generation                          |
-|                                                                   |
-|       Select private Xb               Xb < q                      |
-|       Calculate public Yb             Yb = a^Xb mod q             |
-+-------------------------------------------------------------------+
-+-------------------------------------------------------------------+
-|               Calculation of Secret Key by User A                 |
-|                                                                   |
-|       Secret Key K                    K = Yb^Xa mod q             |
-+-------------------------------------------------------------------+
-+-------------------------------------------------------------------+
-|               Calculation of Secret Key by User B                 |
-|                                                                   |
-|       Secret Key K                    K = Ya^Xb mod q             |
-+-------------------------------------------------------------------+
-```
+    +-------------------------------------------------------------------+
+	|                    Global Pulic Elements                          |
+	|                                                                   |
+	|       q                               prime number                |
+	|       a                               prime number, a < q         |
+	+-------------------------------------------------------------------+
+	+-------------------------------------------------------------------+
+	|                    User A Key Generation                          |
+	|                                                                   |
+	|       Select private Xa               Xa < q                      |
+	|       Calculate public Ya             Ya = a^Xa mod q             |
+	+-------------------------------------------------------------------+
+	+-------------------------------------------------------------------+
+	|                    User B Key Generation                          |
+	|                                                                   |
+	|       Select private Xb               Xb < q                      |
+	|       Calculate public Yb             Yb = a^Xb mod q             |
+	+-------------------------------------------------------------------+
+	+-------------------------------------------------------------------+
+	|               Calculation of Secret Key by User A                 |
+	|                                                                   |
+	|       Secret Key K                    K = Yb^Xa mod q             |
+	+-------------------------------------------------------------------+
+	+-------------------------------------------------------------------+
+	|               Calculation of Secret Key by User B                 |
+	|                                                                   |
+	|       Secret Key K                    K = Ya^Xb mod q             |
+	+-------------------------------------------------------------------+
 
 下面证明，A 和 B 计算出来的密钥 K 相同。
 
-```
-K = Yb^Xa mod q
-  = (a^Xb mod q)^Xa mod q      
-  = a^(Xa * Xb) mod q          根据上述求模公式
-  = (a^Xa mod q)^Xb mod q
-  = Ya^Xb mod q
-```
+	K = Yb^Xa mod q
+  	  = (a^Xb mod q)^Xa mod q      
+  	  = a^(Xa * Xb) mod q          根据上述求模公式
+      = (a^Xa mod q)^Xb mod q
+      = Ya^Xb mod q
 
 上面一共出现了 q, a, Xa, Ya, Xb, Yb, K 共 7 个数，其中：
 
