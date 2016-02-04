@@ -40,7 +40,6 @@ $ apt-get install slapd ldap-utils
 ~~~ bash
 $ dpkg-reconfigure slapd
 
-
 * Omit OpenLDAP server configuration? No
 
 * DNS domain name?  keystone.com
@@ -105,7 +104,7 @@ userPassword: 123456
 由以下命令把上述配置文件内容更新至 LDAP：
 
 ~~~ bash
-ldapadd -x -W -D "cn=admin,dc=example,dc=com" -f add_user_group.ldif
+$ ldapadd -x -W -D "cn=admin,dc=example,dc=com" -f add_user_group.ldif
 ~~~
 
 Keystone 的配置文件如下：

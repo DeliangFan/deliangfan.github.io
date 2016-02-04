@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 04 Feb 2016 17:38:46 +0800</pubDate>
-    <lastBuildDate>Thu, 04 Feb 2016 17:38:46 +0800</lastBuildDate>
+    <pubDate>Thu, 04 Feb 2016 17:40:28 +0800</pubDate>
+    <lastBuildDate>Thu, 04 Feb 2016 17:40:28 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -1265,7 +1265,6 @@ if __name__ == &quot;__main__&quot;:
 
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ dpkg-reconfigure slapd
 
-
 * Omit OpenLDAP server configuration? No
 
 * DNS domain name?  keystone.com
@@ -1327,7 +1326,7 @@ userPassword: 123456
 
 &lt;p&gt;由以下命令把上述配置文件内容更新至 LDAP：&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;ldapadd -x -W -D &quot;cn=admin,dc=example,dc=com&quot; -f add_user_group.ldif
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ ldapadd -x -W -D &quot;cn=admin,dc=example,dc=com&quot; -f add_user_group.ldif
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;Keystone 的配置文件如下：&lt;/p&gt;

@@ -99,7 +99,6 @@
 
 <pre><code class="language-bash">$ dpkg-reconfigure slapd
 
-
 * Omit OpenLDAP server configuration? No
 
 * DNS domain name?  keystone.com
@@ -161,7 +160,7 @@ userPassword: 123456
 
 <p>由以下命令把上述配置文件内容更新至 LDAP：</p>
 
-<pre><code class="language-bash">ldapadd -x -W -D "cn=admin,dc=example,dc=com" -f add_user_group.ldif
+<pre><code class="language-bash">$ ldapadd -x -W -D "cn=admin,dc=example,dc=com" -f add_user_group.ldif
 </code></pre>
 
 <p>Keystone 的配置文件如下：</p>
