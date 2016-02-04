@@ -6,9 +6,241 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 04 Feb 2016 16:19:24 +0800</pubDate>
-    <lastBuildDate>Thu, 04 Feb 2016 16:19:24 +0800</lastBuildDate>
+    <pubDate>Thu, 04 Feb 2016 16:23:52 +0800</pubDate>
+    <lastBuildDate>Thu, 04 Feb 2016 16:23:52 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
+    
+      <item>
+        <title>Keystone Google Federation With OpenID</title>
+        <description>&lt;hr /&gt;
+
+&lt;p&gt;本文是 Keystone federation identity 系列的第二篇，主要介基于 OpenID Connect 协议搭建 Keystone 和 Google 单点登录的 demo。Federation Identity 的概念、原理以及基于 SAML2 协议的文章请见&lt;a href=&quot;http://wsfdl.com/openstack/2016/01/14/Keystone-Federation-Identity-with-SAML2.html&quot;&gt;第一篇&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;环境：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Linux: Ubuntu 14.04 LTS&lt;/li&gt;
+  &lt;li&gt;OpenStack: Kilo&lt;/li&gt;
+  &lt;li&gt;Identity Provider: Google&lt;/li&gt;
+  &lt;li&gt;Federation Protocol： OpenID Connect&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;openid-connect-protocol&quot;&gt;OpenID Connect Protocol&lt;/h1&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://openid.net/connect/&quot;&gt;OpenID&lt;/a&gt; 的官网是这样定义 OpenID Connect：&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;OpenID Connect 1.0 is a simple identity layer on top of the OAuth 2.0 protocol. It allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server, as well as to obtain basic profile information about the End-User in an interoperable and REST-like manner.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;以上话语可简单的概括成如下几点：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;用于认证 (Authtication) 用户，认证成功后返回用户的基本信息&lt;/li&gt;
+  &lt;li&gt;基于 OAuth 2.0 协议，其中 OAuth 是授权(Authorization)相关协议&lt;/li&gt;
+  &lt;li&gt;提供了友好的 API，支持 Rest-like 风格&lt;/li&gt;
+  &lt;li&gt;支持 web 和 app 等&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;即：&lt;/p&gt;
+
+&lt;p&gt;OpenID Connect = OAuth + Identity + Authentication&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;setup-google&quot;&gt;Setup Google&lt;/h1&gt;
+
+&lt;p&gt;首先申请一个域名，并将域名指向 Keystone server，本文在阿里云申请如下域名：&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;keystonegoogle.com&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Keystone server 的 IP 为 209.9.108.221，设置如下 DNS 解析：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/keystonegoogledns.png?imageView2/1/w/360/h/80/q/100&quot; alt=&quot;dns&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;参考&lt;a href=&quot;https://www.youtube.com/watch?v=Rfxy0FKOfgw&quot;&gt;此文&lt;/a&gt;在 &lt;a href=&quot;https://console.developers.google.com/&quot;&gt;console.developers.google.com&lt;/a&gt; 注册一个 application，获取 application 的 Client ID 和 Client Secret 信息，并在 Authorized redirect URIs 中填入重定向 URI，以本文为例：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Client ID：388517667150-adc2etk5ohfif5bluber4ho2150pqb3k.apps.googleusercontent.com&lt;/li&gt;
+  &lt;li&gt;Client secret：2CnpJ5mm8mfqfoN_6aqd-72A&lt;/li&gt;
+  &lt;li&gt;Authorized redirect URIs：www.keystonegoogle.com:5000/v3/auth/OS-FEDERATION/websso/oidc/redirect&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/googleclientsetup.png&quot; alt=&quot;google-openid-client&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;      
+      &lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;setup-keystone&quot;&gt;Setup Keystone&lt;/h1&gt;
+
+&lt;p&gt;在某公有云厂商创建一台境外服务器，以便能访问 Google。参考官网文档 &lt;a href=&quot;http://docs.openstack.org/kilo/install-guide/install/apt/content/&quot;&gt;OpenStack Kilo Installation Guide&lt;/a&gt; 安装至第六章 network 即可，因 ubuntu 对 horizon 做了较大改动，所以参考&lt;a href=&quot;http://docs.openstack.org/developer/horizon/topics/install.html&quot;&gt;文档&lt;/a&gt;采用源码安装 horizon。&lt;/p&gt;
+
+&lt;h2 id=&quot;configure-keystone&quot;&gt;Configure Keystone&lt;/h2&gt;
+
+&lt;p&gt;下面的安装和配置主要参考 &lt;a href=&quot;http://shop.oreilly.com/product/0636920045960.do&quot;&gt;Identity, Authentication &amp;amp; Access Management in OpenStack&lt;/a&gt;，首先安装 libapache2-mode-auth-openidc：&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;bash
+$ apt-get install libjansson4 libhiredis0.10 libcurl3
+$ wget https://github.com/pingidentity/mod_auth_openidc/releases/download/v1.8.6/libapache2-mod-auth-openidc_1.8.6-1_amd64.deb
+$ dpkg -i libapache2-mod-auth-openidc_1.8.6-1_amd64.deb
+$ cp /opt/stack/keystone/etc/sso_callback_template.html /etc/keystone
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;更新 /etc/keystone/keystone.conf 的如下配置：&lt;/p&gt;
+
+&lt;p&gt;```
+[auth]
+methods = external,password,token,oauth1,oidc
+oidc = keystone.auth.plugins.mapped.Mapped&lt;/p&gt;
+
+&lt;p&gt;[oidc]
+remote_id_attribute = HTTP_OIDC_ISS&lt;/p&gt;
+
+&lt;p&gt;[federation]
+remote_id_attribute = HTTP_OIDC_ISS
+trusted_dashboard = http://keystonegoogle.com/auth/websso/
+```&lt;/p&gt;
+
+&lt;p&gt;更新 /etc/apache2/sites-available/wsgi-keystone.conf 配置如下，注意到 OIDCClientID，OIDCClientSecret 和 OIDCRedirectURI 依次对应上文 Google Client 的参数：&lt;/p&gt;
+
+&lt;p&gt;```bash
+$ cat /etc/apache2/sites-available/wsgi-keystone.conf
+Listen 5000
+Listen 35357&lt;/p&gt;
+
+&lt;p&gt;LoadModule auth_openidc_module /usr/lib/apache2/modules/mod_auth_openidc.so&lt;/p&gt;
+
+&lt;p&gt;&amp;lt;VirtualHost *:5000&amp;gt;
+    WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone display-name=%{GROUP}
+    WSGIProcessGroup keystone-public
+    WSGIScriptAlias / /var/www/cgi-bin/keystone/main
+    WSGIApplicationGroup %{GLOBAL}
+    WSGIPassAuthorization On
+    &lt;ifversion&gt;= 2.4&amp;gt;
+      ErrorLogFormat &quot;%{cu}t %M&quot;
+    &lt;/ifversion&gt;
+    LogLevel debug
+    ErrorLog /var/log/apache2/keystone-error.log
+    CustomLog /var/log/apache2/keystone-access.log combined&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;OIDCClaimPrefix &quot;OIDC-&quot;
+OIDCResponseType &quot;id_token&quot;
+OIDCScope &quot;openid email profile&quot;
+OIDCProviderMetadataURL &quot;https://accounts.google.com/.well-known/openid-configuration&quot;
+OIDCClientID &quot;388517667150-adc2etk5ohfif5bluber4ho2150pqb3k.apps.googleusercontent.com&quot;
+OIDCClientSecret 2CnpJ5mm8mfqfoN_6aqd-72A
+OIDCCryptoPassphrase openstack
+OIDCRedirectURI &quot;http://keystonegoogle.com:5000/v3/auth/OS-FEDERATION/websso/oidc/redirect&quot;
+&amp;lt;Location ~ &quot;/v3/auth/OS-FEDERATION/websso/oidc&quot;&amp;gt;
+  AuthType openid-connect
+  Require valid-user
+  LogLevel debug
+&amp;lt;/Location&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&amp;lt;/VirtualHost&amp;gt;&lt;/p&gt;
+
+&lt;p&gt;&amp;lt;VirtualHost *:35357&amp;gt;
+……&lt;/p&gt;
+
+&lt;p&gt;```&lt;/p&gt;
+
+&lt;h2 id=&quot;configure-horizon&quot;&gt;Configure Horizon&lt;/h2&gt;
+
+&lt;p&gt;Horizon 默认不启用 websso，所以需要更新 local_settings.py 以下配置：&lt;/p&gt;
+
+&lt;p&gt;```python
+OPENSTACK_KEYSTONE_URL = “http://keystonegoogle.com:5000/v3”&lt;/p&gt;
+
+&lt;p&gt;OPENSTACK_API_VERSIONS = {
+         “identity”: 3
+}&lt;/p&gt;
+
+&lt;p&gt;WEBSSO_ENABLED = True
+WEBSSO_CHOICES = (
+    (“credentials”, _(“Keystone Credentials”)),
+    (“oidc”, _(“Google Login”)))&lt;/p&gt;
+
+&lt;p&gt;WEBSSO_INITIAL_CHOICE = “credentials”
+```&lt;/p&gt;
+
+&lt;p&gt;重启 Keystone 和 Horizon：&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;bash
+$ service apache2 restart
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;create-user-etc&quot;&gt;Create User etc&lt;/h2&gt;
+
+&lt;p&gt;创建 Google 的 Group 和 Project：&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;bash
+$ openstack group create google_group
+$ openstack project create google_project
+$ openstack role add admin --group google_group --project google_project
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;创建 Google Identity Provider：&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;bash
+$ curl -g -X POST http://keystonegoogle.com:35357/v3/OS-FEDERATION/identity_providers/google_idp
+ -H &quot;Content-Type: application/json&quot; -H &quot;Accept: application/json&quot; -H &quot;X-Auth-Token: $token&quot; -d &#39;{&quot;identity_provider&quot;: {&quot;enabled&quot;: true, &quot;description&quot;: null, &quot;remote_ids&quot;: [&quot;https://accounts.google.com&quot;]}}&#39;
+&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;创建 mapping 等相关信息：&lt;/p&gt;
+
+&lt;p&gt;```bash
+$ cat google_mapping.json
+[
+  {
+    “local”: [
+      {
+        “group”: {
+          “id”: “a52d06a163f049e29416e20d0e8a12ea”
+          }
+        }
+      ],
+    “remote”: [
+        {
+          “type”: “HTTP_OIDC_ISS”,
+          “any_one_of”: [
+            “https://accounts.google.com”
+            ]
+          }
+        ]
+  }
+]&lt;/p&gt;
+
+&lt;p&gt;$ openstack mapping create google_mapping –rules google_mapping.json
+$ openstack federation protocol create oidc –identity-provider google_idp –mapping google_mapping
+```&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;h1 id=&quot;test&quot;&gt;Test&lt;/h1&gt;
+
+&lt;p&gt;登录 keystonegoogle.com，进入 Login 页面。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/Login.png&quot; alt=&quot;login&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;选择 Google Login，输入 Google 账户密码即可登录。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/keystonegooglegoogleinstance.png&quot; alt=&quot;dashboard&quot; /&gt;&lt;/p&gt;
+
+</description>
+        <pubDate>Wed, 10 Feb 2016 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/openstack/2016/02/10/Keddystone-Google-Federation--With-OpenID.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/openstack/2016/02/10/Keddystone-Google-Federation--With-OpenID.html</guid>
+        
+        
+        <category>openstack</category>
+        
+      </item>
     
       <item>
         <title>理解 Deffie-Hellman 密钥交换算法</title>
@@ -1939,61 +2171,6 @@ rpc_workers = $workers&lt;/p&gt;
         
         
         <category>openstack</category>
-        
-      </item>
-    
-      <item>
-        <title>[行摄] 青岛</title>
-        <description>&lt;hr /&gt;
-
-&lt;p&gt;是不是滨海的名城都如此的小资，它们毗邻的大海是不是如此的多情，青岛和厦门宛如一对孪生姐妹，有山有海有洋气，名声之大，远远的超过省会济南和福州。&lt;/p&gt;
-
-&lt;p&gt;据说青岛专名指海湾内一座终年郁郁葱葱的小岛，在万历年间建港口，于 1897 年被德国租借，并设立总督府(见P5)，此后近 30 多年，各国陆续设立领事馆，这些领事馆多分布在八大关，红瓦黄墙，格调优雅，非常宜居。&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;    
-    &lt;/p&gt;
-
-&lt;p&gt;P1. 海&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P1.JPG?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p1&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;    
-    &lt;/p&gt;
-
-&lt;p&gt;P2. 海&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P5.JPG?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p2&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;    
-    &lt;/p&gt;
-
-&lt;p&gt;P3. 领事馆&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P2.JPG?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p3&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;    
-    &lt;/p&gt;
-
-&lt;p&gt;P4. 信号山&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P3.JPG?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p4&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;    
-    &lt;/p&gt;
-
-&lt;p&gt;P5. 德总督府&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P4.JPG?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p5&quot; /&gt;&lt;/p&gt;
-
-</description>
-        <pubDate>Mon, 05 Oct 2015 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/photos/2015/10/05/%E9%9D%92%E5%B2%9B.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/photos/2015/10/05/%E9%9D%92%E5%B2%9B.html</guid>
-        
-        
-        <category>photos</category>
         
       </item>
     
