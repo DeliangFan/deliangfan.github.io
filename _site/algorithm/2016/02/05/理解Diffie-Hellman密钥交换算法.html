@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解 Deffie-Hellman 密钥交换算法</title>
+  <meta name="description" content="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/algorithm/2016/02/05/%E7%90%86%E8%A7%A3Diffie-Hellman%E5%AF%86%E9%92%A5%E4%BA%A4%E6%8D%A2%E7%AE%97%E6%B3%95.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解 Deffie-Hellman 密钥交换算法</h1>
+    <p class="post-meta"><time datetime="2016-02-05T00:00:00+08:00" itemprop="datePublished">Feb 5, 2016</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <hr>
+
+<p>&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;</p>
+
+<blockquote>
+<p>再拾此书时，怀念 4 年前阳光明媚的午后，我在浙大紫金港图书馆的三楼，梦回了中学奥数的小伙伴，和那时曾想证明哥德巴尔猜想的情怀！</p>
+</blockquote>
+
+<h1 id="deffie-hellman-算法简介">Deffie-Hellman 算法简介</h1>
+
+<p><a href="https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange">Deffie-Hellman</a>(简称 DH) 密钥交换是最早的密钥交换算法之一，它使得通信的双方能在非安全的信道中安全的交换密钥，用于加密后续的通信消息。 Whitfield Diffie 和 Martin Hellman 于 1976 提出该算法，之后被应用于安全领域，比如 Https 协议的 TSL(<a href="https://en.wikipedia.org/wiki/Transport_Layer_Security">Transport Layer Security</a>) 和 IPsec 协议的 IKE(<a href="https://en.wikipedia.org/wiki/Internet_Key_Exchange">Internet Key Exchange</a>) 均以 DH 算法作为密钥交换算法。</p>
+
+<hr>
+
+<h1 id="数论知识">数论知识</h1>
+
+<p>理解 DH 算法前，先介绍一些必要的数论领域知识，分别是离散对数问题和一个求模公式。</p>
+
+<h2 id="离散对数问题">离散对数问题</h2>
+
+<p>假定 a, p 均是素数，下面两个集合相等，证明过程请参考 <a href="http://www.amazon.com/Cryptography-Network-Security-Principles-Practice/dp/0133354695">Cryptography and Network Security</a> 第八章：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">{ a^1 mod p, a^2 mod p, ..., a^(p-1) mod p } = {1, 2, ... , p-1 }   {} 表示集合
+</code></pre></div>
+<p>上述式子可概括成以下三点，对于 1 &lt;= x,y &lt;= p - 1，有：</p>
+
+<ul>
+<li>a^x mod p 一定属于 {1, 2, ..., p -1 }</li>
+<li>如果 x != y，则 a^x mod p != a^y mod p</li>
+<li>对于 1 &lt;= b &lt;= p - 1，一定存在唯一的 1 &lt;= x &lt;= p-1，使得 b = a^x mod p</li>
+</ul>
+
+<p>第三点在求解上有这么一个特点：已知 x 求 b 非常容易，已知 b 求 x 非常困难，特别当 p 很大时，求解的复杂度非常高，所以它又被称为离散对数问题  (<a href="https://en.wikipedia.org/wiki/Discrete_logarithm">Discrete logarithm</a>)，它是 DH 算法能够安全交换密钥的基础！</p>
+
+<h2 id="求模公式">求模公式</h2>
+
+<p>假设 q 为素数，对于正整数 a,x,y，有：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">(a^x mod p)^y mod p = a^(xy) mod p
+</code></pre></div>
+<p>证明如下：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">令 a^x = mp + n， 其中 m, n 为自然数， 0 &lt;= n &lt; p，则有
+C = (a^x mod p)^y mod p
+  = ((mp + n) mod p)^y mod p
+  = n^y mod p
+  = (mp +n)^y mod p
+  = a^(xy) mod p
+</code></pre></div>
+<hr>
+
+<h1 id="deffie-hellman-算法原理">Deffie-Hellman 算法原理</h1>
+
+<p>本文参考 <a href="http://www.amazon.com/Cryptography-Network-Security-Principles-Practice/dp/0133354695">Cryptography and Network Security</a> 一书，介绍 DH 算法原理，在掌握上节数论知识的基础上，理解 DH 算法原理非常容易。</p>
+
+<p>假设 A, B 两方进行通信前需要交换密钥，首先 A, B 共同选取 q 和 a 两个素数，其中 q 和 a 均公开。之后 A 选择一个自然数 Xa，计算出 Ya，Xa 保密，Ya 公开；同理，B 选择 Xb 并计算出 Yb，其中 Xb 保密，Yb 公开。之后 A 用 Yb 和 Xa 计算出密钥 K，而 B 用 Ya 和 Xb 计算密钥 K，流程如下：</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">+-------------------------------------------------------------------+
+|                    Global Pulic Elements                          |
+|                                                                   |
+|       q                               prime number                |
+|       a                               prime number, a &lt; q         |
++-------------------------------------------------------------------+
++-------------------------------------------------------------------+
+|                    User A Key Generation                          |
+|                                                                   |
+|       Select private Xa               Xa &lt; q                      |
+|       Calculate public Ya             Ya = a^Xa mod q             |
++-------------------------------------------------------------------+
++-------------------------------------------------------------------+
+|                    User B Key Generation                          |
+|                                                                   |
+|       Select private Xb               Xb &lt; q                      |
+|       Calculate public Yb             Yb = a^Xb mod q             |
++-------------------------------------------------------------------+
++-------------------------------------------------------------------+
+|               Calculation of Secret Key by User A                 |
+|                                                                   |
+|       Secret Key K                    K = Yb^Xa mod q             |
++-------------------------------------------------------------------+
++-------------------------------------------------------------------+
+|               Calculation of Secret Key by User B                 |
+|                                                                   |
+|       Secret Key K                    K = Ya^Xb mod q             |
++-------------------------------------------------------------------+
+</code></pre></div>
+<p>下面证明，A 和 B 计算出来的密钥 K 相同。</p>
+<div class="highlight"><pre><code class="language-text" data-lang="text">K = Yb^Xa mod q
+  = (a^Xb mod q)^Xa mod q      
+  = a^(Xa * Xb) mod q          根据上述求模公式
+  = (a^Xa mod q)^Xb mod q
+  = Ya^Xb mod q
+</code></pre></div>
+<p>上面一共出现了 q, a, Xa, Ya, Xb, Yb, K 共 7 个数，其中：</p>
+
+<ul>
+<li>公开的数：q, a, Ya, Yb</li>
+<li>非公开数：Xa, Xb, K</li>
+</ul>
+
+<p>对于攻击者来说，已知 Ya，Xa 的求解非常困难，同理 Xb 的求解也很困难，所以攻击者难以求出 K，所以 DH 能够保证通信双方在透明的信道中安全的交换密钥。<a href="https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange#/media/File:Diffie-Hellman_Key_Exchange.svg">下图</a>非常形象的描述密钥交换流程：</p>
+
+<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="http://7xp2eu.com1.z0.glb.clouddn.com/DH%20exchange%20Key.png?imageView2/1/w/310/h/450/q/100" alt="DH key exchange"></p>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

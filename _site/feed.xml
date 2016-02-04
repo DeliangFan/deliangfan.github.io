@@ -6,9 +6,121 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 02 Feb 2016 16:48:56 +0800</pubDate>
-    <lastBuildDate>Tue, 02 Feb 2016 16:48:56 +0800</lastBuildDate>
+    <pubDate>Thu, 04 Feb 2016 16:00:31 +0800</pubDate>
+    <lastBuildDate>Thu, 04 Feb 2016 16:00:31 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
+    
+      <item>
+        <title>理解 Deffie-Hellman 密钥交换算法</title>
+        <description>&lt;hr&gt;
+
+&lt;p&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;
+&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;再拾此书时，怀念 4 年前阳光明媚的午后，我在浙大紫金港图书馆的三楼，梦回了中学奥数的小伙伴，和那时曾想证明哥德巴尔猜想的情怀！&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&quot;deffie-hellman-算法简介&quot;&gt;Deffie-Hellman 算法简介&lt;/h1&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange&quot;&gt;Deffie-Hellman&lt;/a&gt;(简称 DH) 密钥交换是最早的密钥交换算法之一，它使得通信的双方能在非安全的信道中安全的交换密钥，用于加密后续的通信消息。 Whitfield Diffie 和 Martin Hellman 于 1976 提出该算法，之后被应用于安全领域，比如 Https 协议的 TSL(&lt;a href=&quot;https://en.wikipedia.org/wiki/Transport_Layer_Security&quot;&gt;Transport Layer Security&lt;/a&gt;) 和 IPsec 协议的 IKE(&lt;a href=&quot;https://en.wikipedia.org/wiki/Internet_Key_Exchange&quot;&gt;Internet Key Exchange&lt;/a&gt;) 均以 DH 算法作为密钥交换算法。&lt;/p&gt;
+
+&lt;hr&gt;
+
+&lt;h1 id=&quot;数论知识&quot;&gt;数论知识&lt;/h1&gt;
+
+&lt;p&gt;理解 DH 算法前，先介绍一些必要的数论领域知识，分别是离散对数问题和一个求模公式。&lt;/p&gt;
+
+&lt;h2 id=&quot;离散对数问题&quot;&gt;离散对数问题&lt;/h2&gt;
+
+&lt;p&gt;假定 a, p 均是素数，下面两个集合相等，证明过程请参考 &lt;a href=&quot;http://www.amazon.com/Cryptography-Network-Security-Principles-Practice/dp/0133354695&quot;&gt;Cryptography and Network Security&lt;/a&gt; 第八章：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;{ a^1 mod p, a^2 mod p, ..., a^(p-1) mod p } = {1, 2, ... , p-1 }   {} 表示集合
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;上述式子可概括成以下三点，对于 1 &amp;lt;= x,y &amp;lt;= p - 1，有：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;a^x mod p 一定属于 {1, 2, ..., p -1 }&lt;/li&gt;
+&lt;li&gt;如果 x != y，则 a^x mod p != a^y mod p&lt;/li&gt;
+&lt;li&gt;对于 1 &amp;lt;= b &amp;lt;= p - 1，一定存在唯一的 1 &amp;lt;= x &amp;lt;= p-1，使得 b = a^x mod p&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;第三点在求解上有这么一个特点：已知 x 求 b 非常容易，已知 b 求 x 非常困难，特别当 p 很大时，求解的复杂度非常高，所以它又被称为离散对数问题  (&lt;a href=&quot;https://en.wikipedia.org/wiki/Discrete_logarithm&quot;&gt;Discrete logarithm&lt;/a&gt;)，它是 DH 算法能够安全交换密钥的基础！&lt;/p&gt;
+
+&lt;h2 id=&quot;求模公式&quot;&gt;求模公式&lt;/h2&gt;
+
+&lt;p&gt;假设 q 为素数，对于正整数 a,x,y，有：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;(a^x mod p)^y mod p = a^(xy) mod p
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;证明如下：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;令 a^x = mp + n， 其中 m, n 为自然数， 0 &amp;lt;= n &amp;lt; p，则有
+C = (a^x mod p)^y mod p
+  = ((mp + n) mod p)^y mod p
+  = n^y mod p
+  = (mp +n)^y mod p
+  = a^(xy) mod p
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;hr&gt;
+
+&lt;h1 id=&quot;deffie-hellman-算法原理&quot;&gt;Deffie-Hellman 算法原理&lt;/h1&gt;
+
+&lt;p&gt;本文参考 &lt;a href=&quot;http://www.amazon.com/Cryptography-Network-Security-Principles-Practice/dp/0133354695&quot;&gt;Cryptography and Network Security&lt;/a&gt; 一书，介绍 DH 算法原理，在掌握上节数论知识的基础上，理解 DH 算法原理非常容易。&lt;/p&gt;
+
+&lt;p&gt;假设 A, B 两方进行通信前需要交换密钥，首先 A, B 共同选取 q 和 a 两个素数，其中 q 和 a 均公开。之后 A 选择一个自然数 Xa，计算出 Ya，Xa 保密，Ya 公开；同理，B 选择 Xb 并计算出 Yb，其中 Xb 保密，Yb 公开。之后 A 用 Yb 和 Xa 计算出密钥 K，而 B 用 Ya 和 Xb 计算密钥 K，流程如下：&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;+-------------------------------------------------------------------+
+|                    Global Pulic Elements                          |
+|                                                                   |
+|       q                               prime number                |
+|       a                               prime number, a &amp;lt; q         |
++-------------------------------------------------------------------+
++-------------------------------------------------------------------+
+|                    User A Key Generation                          |
+|                                                                   |
+|       Select private Xa               Xa &amp;lt; q                      |
+|       Calculate public Ya             Ya = a^Xa mod q             |
++-------------------------------------------------------------------+
++-------------------------------------------------------------------+
+|                    User B Key Generation                          |
+|                                                                   |
+|       Select private Xb               Xb &amp;lt; q                      |
+|       Calculate public Yb             Yb = a^Xb mod q             |
++-------------------------------------------------------------------+
++-------------------------------------------------------------------+
+|               Calculation of Secret Key by User A                 |
+|                                                                   |
+|       Secret Key K                    K = Yb^Xa mod q             |
++-------------------------------------------------------------------+
++-------------------------------------------------------------------+
+|               Calculation of Secret Key by User B                 |
+|                                                                   |
+|       Secret Key K                    K = Ya^Xb mod q             |
++-------------------------------------------------------------------+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;下面证明，A 和 B 计算出来的密钥 K 相同。&lt;/p&gt;
+&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;K = Yb^Xa mod q
+  = (a^Xb mod q)^Xa mod q      
+  = a^(Xa * Xb) mod q          根据上述求模公式
+  = (a^Xa mod q)^Xb mod q
+  = Ya^Xb mod q
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;上面一共出现了 q, a, Xa, Ya, Xb, Yb, K 共 7 个数，其中：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;公开的数：q, a, Ya, Yb&lt;/li&gt;
+&lt;li&gt;非公开数：Xa, Xb, K&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;对于攻击者来说，已知 Ya，Xa 的求解非常困难，同理 Xb 的求解也很困难，所以攻击者难以求出 K，所以 DH 能够保证通信双方在透明的信道中安全的交换密钥。&lt;a href=&quot;https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange#/media/File:Diffie-Hellman_Key_Exchange.svg&quot;&gt;下图&lt;/a&gt;非常形象的描述密钥交换流程：&lt;/p&gt;
+
+&lt;p&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/DH%20exchange%20Key.png?imageView2/1/w/310/h/450/q/100&quot; alt=&quot;DH key exchange&quot;&gt;&lt;/p&gt;
+</description>
+        <pubDate>Fri, 05 Feb 2016 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/algorithm/2016/02/05/%E7%90%86%E8%A7%A3Diffie-Hellman%E5%AF%86%E9%92%A5%E4%BA%A4%E6%8D%A2%E7%AE%97%E6%B3%95.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/algorithm/2016/02/05/%E7%90%86%E8%A7%A3Diffie-Hellman%E5%AF%86%E9%92%A5%E4%BA%A4%E6%8D%A2%E7%AE%97%E6%B3%95.html</guid>
+        
+        
+        <category>algorithm</category>
+        
+      </item>
     
       <item>
         <title>Keystone Google Federation With OpenID</title>
@@ -1747,264 +1859,6 @@ rpc_workers = $workers   &lt;/p&gt;
         
         
         <category>photos</category>
-        
-      </item>
-    
-      <item>
-        <title>OpenStack 日志搜集分析之 ELK</title>
-        <description>&lt;hr&gt;
-
-&lt;p&gt;ELK 安装配置简单，用于管理 OpenStack 日志时需注意两点：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Logstash 配置文件的编写&lt;/li&gt;
-&lt;li&gt;Elasticsearch 日志存储空间的容量规划&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;另外推荐 &lt;a href=&quot;http://kibana.logstash.es/content/&quot;&gt;ELKstack 中文指南&lt;/a&gt;。&lt;/p&gt;
-
-&lt;hr&gt;
-
-&lt;h1 id=&quot;elk-简介&quot;&gt;ELK 简介&lt;/h1&gt;
-
-&lt;p&gt;ELK 是一套优秀的日志搜集、存储和查询的开源软件，广泛用于日志系统。当 OpenStack 集群达到一定规模时，日志管理和分析显得日益重要，良好统一的日志管理和分析平台有助于快速定位问题。Mirantis 的 fuel 和 HPE 的 helion 均集成了 ELK。&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&quot;http://logstash.net/&quot;&gt;Logstash&lt;/a&gt;：日志的收集和传送&lt;/li&gt;
-&lt;li&gt;&lt;a href=&quot;https://www.elastic.co/products/elasticsearch&quot;&gt;Elasticsearch&lt;/a&gt;：日志的存储和检索&lt;/li&gt;
-&lt;li&gt;&lt;a href=&quot;https://www.elastic.co/products/kibana&quot;&gt;Kibana&lt;/a&gt;：日志的可视化，一个很炫的 portal&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;采用 ELK 管理 OpenStack 的日志具有以下优点：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;迅速查询全局 ERROR 级别日志&lt;/li&gt;
-&lt;li&gt;某个 API 的请求频率&lt;/li&gt;
-&lt;li&gt;通过 request ID, 可过滤出某个 API 整个流程的日志&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;hr&gt;
-
-&lt;h1 id=&quot;规划与设计&quot;&gt;规划与设计&lt;/h1&gt;
-
-&lt;h2 id=&quot;部署架构&quot;&gt;部署架构&lt;/h2&gt;
-
-&lt;p&gt;控制节点作为日志服务器，存储所有 OpenStack 及其相关日志。Logstash 部署于所有节点，收集本节点下所需收集的日志，然后以网络(node/http)方式输送给控制节点的 Elasticsearch，Kibana 作为 web portal 提供展示日志信息：&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/ELK.png?imageView2/1/w/600/h/300/q/100&quot; alt=&quot;ELK&quot;&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;日志格式&quot;&gt;日志格式&lt;/h2&gt;
-
-&lt;p&gt;为了提供快速直观的检索功能，对于每一条 OpenStack 日志，我们希望它能包含以下属性，用于检索和过滤：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Host: 如 controller01，compute01 等&lt;/li&gt;
-&lt;li&gt;Service Name: 如 nova-api, neutron-server 等&lt;/li&gt;
-&lt;li&gt;Module: 如 nova.filters &lt;/li&gt;
-&lt;li&gt;Log Level: 如 DEBUG, INFO, ERROR 等&lt;/li&gt;
-&lt;li&gt;Log date&lt;/li&gt;
-&lt;li&gt;Request ID: 某次请求的 Request ID&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;以上属性可以通过 Logstash 实现，通过提取日志的关键字段，从而获上述几种属性，并在 Elasticsearch 建立索引。&lt;/p&gt;
-
-&lt;hr&gt;
-
-&lt;h1 id=&quot;安装与配置&quot;&gt;安装与配置&lt;/h1&gt;
-
-&lt;h2 id=&quot;安装&quot;&gt;安装&lt;/h2&gt;
-
-&lt;p&gt;ELK 的安装步骤非常简单，可参考 &lt;a href=&quot;http://www.icyfire.me/2014/11/13/logstash-es-kibana.html&quot;&gt;logstash-es-Kibana&lt;/a&gt; 安装，如遇异常，请 Google。&lt;/p&gt;
-
-&lt;h2 id=&quot;配置&quot;&gt;配置&lt;/h2&gt;
-
-&lt;p&gt;Logstash 的配置文件有专门的一套语法，学习的成本比较高，可参考 &lt;a href=&quot;https://github.com/osops/tools-logging/blob/master/logstash/basic/logstash.conf&quot;&gt;openstack logstash config&lt;/a&gt; 后，再根据自身需求改写：&lt;/p&gt;
-&lt;div class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;input {
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/nova/nova-api.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;nova&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;nova-api&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/nova/nova-conductor.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;nova-conductor&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;nova&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/nova/nova-manage.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;nova-manage&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;nova&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/nova/nova-scheduler.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;nova-scheduler&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;nova&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/nova/nova-spicehtml5proxy.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;nova-spice&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;nova&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/keystone/keystone-all.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;keystone&amp;#39;, &amp;#39;keystonefmt&amp;#39;]
-    type =&amp;gt; &amp;quot;keystone&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/keystone/keystone-manage.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;keystone&amp;#39;, &amp;#39;keystonefmt&amp;#39;]
-    type =&amp;gt; &amp;quot;keystone&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/glance/api.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;glance&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;glance-api&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/glance/registry.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;glance&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;glance-registry&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/glance/scrubber.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;glance&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;glance-scrubber&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/ceilometer/ceilometer-agent-central.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;ceilometer&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;ceilometer-agent-central&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/ceilometer/ceilometer-alarm-notifier.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;ceilometer&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;ceilometer-alarm-notifier&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/ceilometer/ceilometer-api.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;ceilometer&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;ceilometer-api&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/ceilometer/ceilometer-alarm-evaluator.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;ceilometer&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;ceilometer-alarm-evaluator&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/ceilometer/ceilometer-collector.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;ceilometer&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;ceilometer-collector&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/heat/heat.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;heat&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;heat&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/neutron/neutron-server.log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;neutron&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-    type =&amp;gt; &amp;quot;neutron-server&amp;quot;
-  }
-# Not collecting RabbitMQ logs for the moment
-#  file {
-#   path =&amp;gt; [&amp;#39;/var/log/rabbitmq/rabbit@&amp;lt;%= @hostname %&amp;gt;.log&amp;#39;]
-#   tags =&amp;gt; [&amp;#39;rabbitmq&amp;#39;, &amp;#39;oslofmt&amp;#39;]
-#   type =&amp;gt; &amp;quot;rabbitmq&amp;quot;
-#  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/httpd/access_log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;horizon&amp;#39;]
-    type =&amp;gt; &amp;quot;horizon&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/httpd/error_log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;horizon&amp;#39;]
-    type =&amp;gt; &amp;quot;horizon&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/httpd/horizon_access_log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;horizon&amp;#39;]
-    type =&amp;gt; &amp;quot;horizon&amp;quot;
-  }
-  file {
-    path =&amp;gt; [&amp;#39;/var/log/httpd/horizon_error_log&amp;#39;]
-    tags =&amp;gt; [&amp;#39;horizon&amp;#39;]
-    type =&amp;gt; &amp;quot;horizon&amp;quot;
-  }
-}
-filter {
-  if &amp;quot;oslofmt&amp;quot; in [tags] {
-    multiline {
-      negate =&amp;gt; true
-      pattern =&amp;gt; &amp;quot;^%{TIMESTAMP_ISO8601} &amp;quot;
-      what =&amp;gt; &amp;quot;previous&amp;quot;
-    }
-    multiline {
-      negate =&amp;gt; false
-      pattern =&amp;gt; &amp;quot;^%{TIMESTAMP_ISO8601}%{SPACE}%{NUMBER}?%{SPACE}?TRACE&amp;quot;
-      what =&amp;gt; &amp;quot;previous&amp;quot;
-    }
-    grok {
-      # Do multiline matching as the above mutliline filter may add newlines
-      # to the log messages.
-      # TODO move the LOGLEVELs into a proper grok pattern.
-      match =&amp;gt; { &amp;quot;message&amp;quot; =&amp;gt; &amp;quot;(?m)^%{TIMESTAMP_ISO8601:logdate}%{SPACE}%{NUMBER:pid}?%{SPACE}?(?&amp;lt;loglevel&amp;gt;AUDIT|CRITICAL|DEBUG|INFO|TRACE|WARNING|ERROR) \[?\b%{NOTSPACE:module}\b\]?%{SPACE}?%{GREEDYDATA:logmessage}?&amp;quot; }
-      add_field =&amp;gt; { &amp;quot;received_at&amp;quot; =&amp;gt; &amp;quot;%{@timestamp}&amp;quot; }
-    }
-  } else if &amp;quot;keystonefmt&amp;quot; in [tags] {
-    grok {
-      # Do multiline matching as the above mutliline filter may add newlines
-      # to the log messages.
-      # TODO move the LOGLEVELs into a proper grok pattern.
-      match =&amp;gt; { &amp;quot;message&amp;quot; =&amp;gt; &amp;quot;(?m)^%{TIMESTAMP_ISO8601:logdate}%{SPACE}%{NUMBER:pid}?%{SPACE}?(?&amp;lt;loglevel&amp;gt;AUDIT|CRITICAL|DEBUG|INFO|TRACE|WARNING|ERROR) \[?\b%{NOTSPACE:module}\b\]?%{SPACE}?%{GREEDYDATA:logmessage}?&amp;quot; }
-      add_field =&amp;gt; { &amp;quot;received_at&amp;quot; =&amp;gt; &amp;quot;%{@timestamp}&amp;quot; }
-    }
-    if [module] == &amp;quot;iso8601.iso8601&amp;quot; {
-  #log message for each part of the date?  Really?
-  drop {}
-    }
-  } else if &amp;quot;libvirt&amp;quot; in [tags] {
-    grok {
-       match =&amp;gt; { &amp;quot;message&amp;quot; =&amp;gt; &amp;quot;(?m)^%{TIMESTAMP_ISO8601:logdate}:%{SPACE}%{NUMBER:code}:?%{SPACE}\[?\b%{NOTSPACE:loglevel}\b\]?%{SPACE}?:?%{SPACE}\[?\b%{NOTSPACE:module}\b\]?%{SPACE}?%{GREEDYDATA:logmessage}?&amp;quot; }
-       add_field =&amp;gt; { &amp;quot;received_at&amp;quot; =&amp;gt; &amp;quot;%{@timestamp}&amp;quot;}
-    }
-    mutate {
-       uppercase =&amp;gt; [ &amp;quot;loglevel&amp;quot; ]
-    }
-  } else if [type] == &amp;quot;syslog&amp;quot; {
-     grok {
-        match =&amp;gt; { &amp;quot;message&amp;quot; =&amp;gt; &amp;quot;%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:logmessage}&amp;quot; }
-        add_field =&amp;gt; [ &amp;quot;received_at&amp;quot;, &amp;quot;%{@timestamp}&amp;quot; ]
-     }
-     syslog_pri {
-        severity_labels =&amp;gt; [&amp;quot;ERROR&amp;quot;, &amp;quot;ERROR&amp;quot;, &amp;quot;ERROR&amp;quot;, &amp;quot;ERROR&amp;quot;, &amp;quot;WARNING&amp;quot;, &amp;quot;INFO&amp;quot;, &amp;quot;INFO&amp;quot;, &amp;quot;DEBUG&amp;quot; ]
-     }
-     date {
-        match =&amp;gt; [ &amp;quot;syslog_timestamp&amp;quot;, &amp;quot;MMM  d HH:mm:ss&amp;quot;, &amp;quot;MMM dd HH:mm:ss&amp;quot; ]
-     }
-     if !(&amp;quot;_grokparsefailure&amp;quot; in [tags]) {
-        mutate {
-           replace =&amp;gt; [ &amp;quot;@source_host&amp;quot;, &amp;quot;%{syslog_hostname}&amp;quot; ]
-        }
-     }
-     mutate {
-        remove_field =&amp;gt; [ &amp;quot;syslog_hostname&amp;quot;, &amp;quot;syslog_timestamp&amp;quot; ]
-        add_field =&amp;gt; [ &amp;quot;loglevel&amp;quot;, &amp;quot;%{syslog_severity}&amp;quot; ]
-        add_field =&amp;gt; [ &amp;quot;module&amp;quot;, &amp;quot;%{syslog_program}&amp;quot; ]
-     }
-  }
-}
-
-output {
-    elasticsearch { host =&amp;gt; controller }
-}
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
-        <pubDate>Fri, 14 Aug 2015 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/devops/2015/08/14/OpenStack%E6%97%A5%E5%BF%97%E6%90%9C%E9%9B%86%E5%88%86%E6%9E%90%E4%B9%8BELK.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/devops/2015/08/14/OpenStack%E6%97%A5%E5%BF%97%E6%90%9C%E9%9B%86%E5%88%86%E6%9E%90%E4%B9%8BELK.html</guid>
-        
-        
-        <category>devops</category>
         
       </item>
     
