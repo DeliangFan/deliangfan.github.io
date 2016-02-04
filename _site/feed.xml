@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 04 Feb 2016 16:38:38 +0800</pubDate>
-    <lastBuildDate>Thu, 04 Feb 2016 16:38:38 +0800</lastBuildDate>
+    <pubDate>Thu, 04 Feb 2016 16:41:09 +0800</pubDate>
+    <lastBuildDate>Thu, 04 Feb 2016 16:41:09 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -70,55 +70,55 @@ C = (a^x mod p)^y mod p
 
 &lt;p&gt;本文参考 &lt;a href=&quot;http://www.amazon.com/Cryptography-Network-Security-Principles-Practice/dp/0133354695&quot;&gt;Cryptography and Network Security&lt;/a&gt; 一书，介绍 DH 算法原理，在掌握上节数论知识的基础上，理解 DH 算法原理非常容易。&lt;/p&gt;
 
-&lt;p&gt;假设 A, B 两方进行通信前需要交换密钥，首先 A, B 共同选取 q 和 a 两个素数，其中 q 和 a 均公开。之后 A 选择一个自然数 Xa，计算出 Ya，Xa 保密，Ya 公开；同理，B 选择 Xb 并计算出 Yb，其中 Xb 保密，Yb 公开。之后 A 用 Yb 和 Xa 计算出密钥 K，而 B 用 Ya 和 Xb 计算密钥 K，流程如下：&lt;/p&gt;
+&lt;p&gt;假设 A, B 两方进行通信前需要交换密钥，首先 A, B 共同选取 p 和 a 两个素数，其中 p 和 a 均公开。之后 A 选择一个自然数 Xa，计算出 Ya，Xa 保密，Ya 公开；同理，B 选择 Xb 并计算出 Yb，其中 Xb 保密，Yb 公开。之后 A 用 Yb 和 Xa 计算出密钥 K，而 B 用 Ya 和 Xb 计算密钥 K，流程如下：&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;+-------------------------------------------------------------------+
 |                    Global Pulic Elements                          |
 |                                                                   |
-|       q                               prime number                |
-|       a                               prime number, a &amp;lt; q         |
+|       p                               prime number                |
+|       a                               prime number, a &amp;lt; p         |
 +-------------------------------------------------------------------+
 +-------------------------------------------------------------------+
 |                    User A Key Generation                          |
 |                                                                   |
-|       Select private Xa               Xa &amp;lt; q                      |
-|       Calculate public Ya             Ya = a^Xa mod q             |
+|       Select private Xa               Xa &amp;lt; p                      |
+|       Calculate public Ya             Ya = a^Xa mod p             |
 +-------------------------------------------------------------------+
 +-------------------------------------------------------------------+
 |                    User B Key Generation                          |
 |                                                                   |
-|       Select private Xb               Xb &amp;lt; q                      |
-|       Calculate public Yb             Yb = a^Xb mod q             |
+|       Select private Xb               Xb &amp;lt; p                      |
+|       Calculate public Yb             Yb = a^Xb mod p             |
 +-------------------------------------------------------------------+
 +-------------------------------------------------------------------+
 |               Calculation of Secret Key by User A                 |
 |                                                                   |
-|       Secret Key K                    K = Yb^Xa mod q             |
+|       Secret Key K                    K = Yb^Xa mod p             |
 +-------------------------------------------------------------------+
 +-------------------------------------------------------------------+
 |               Calculation of Secret Key by User B                 |
 |                                                                   |
-|       Secret Key K                    K = Ya^Xb mod q             |
+|       Secret Key K                    K = Ya^Xb mod p             |
 +-------------------------------------------------------------------+
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;下面证明，A 和 B 计算出来的密钥 K 相同。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;K = Yb^Xa mod q
-  = (a^Xb mod q)^Xa mod q
-  = a^(Xa * Xb) mod q          根据上述求模公式
-  = (a^Xa mod q)^Xb mod q
-  = Ya^Xb mod q
+&lt;pre&gt;&lt;code&gt;K = Yb^Xa mod p
+  = (a^Xb mod p)^Xa mod p
+  = a^(Xa * Xb) mod p          根据上述求模公式
+  = (a^Xa mod p)^Xb mod p
+  = Ya^Xb mod p
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;上面一共出现了 q, a, Xa, Ya, Xb, Yb, K 共 7 个数，其中：&lt;/p&gt;
+&lt;p&gt;上面一共出现了 a, p, Xa, Ya, Xb, Yb, K 共 7 个数，其中：&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;公开的数：q, a, Ya, Yb&lt;/li&gt;
+  &lt;li&gt;公开的数：a, p, Ya, Yb&lt;/li&gt;
   &lt;li&gt;非公开数：Xa, Xb, K&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;通常情况下，a 一般为 2 或 5，而 q 的取值非常大，至少几百位，Xa 和 Xb 的取值也非常大。对于攻击者来说，已知 Ya，Xa 的求解非常困难，同理 Xb 的求解也很困难，所以攻击者难以求出 K，所以 DH 能够保证通信双方在透明的信道中安全的交换密钥。&lt;a href=&quot;https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange#/media/File:Diffie-Hellman_Key_Exchange.svg&quot;&gt;下图&lt;/a&gt;非常形象的描述密钥交换流程：&lt;/p&gt;
+&lt;p&gt;通常情况下，a 一般为 2 或 5，而 p 的取值非常大，至少几百位，Xa 和 Xb 的取值也非常大。对于攻击者来说，已知 Ya，Xa 的求解非常困难，同理 Xb 的求解也很困难，所以攻击者难以求出 K，所以 DH 能够保证通信双方在透明的信道中安全的交换密钥。&lt;a href=&quot;https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange#/media/File:Diffie-Hellman_Key_Exchange.svg&quot;&gt;下图&lt;/a&gt;非常形象的描述密钥交换流程：&lt;/p&gt;
 
 &lt;p&gt;                                                &lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/DH%20exchange%20Key.png?imageView2/1/w/310/h/450/q/100&quot; alt=&quot;DH key exchange&quot; /&gt;&lt;/p&gt;
 </description>
