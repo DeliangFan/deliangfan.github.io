@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 04 Feb 2016 17:36:54 +0800</pubDate>
-    <lastBuildDate>Thu, 04 Feb 2016 17:36:54 +0800</lastBuildDate>
+    <pubDate>Thu, 04 Feb 2016 17:38:46 +0800</pubDate>
+    <lastBuildDate>Thu, 04 Feb 2016 17:38:46 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -1250,7 +1250,7 @@ if __name__ == &quot;__main__&quot;:
 
 &lt;p&gt;LDAP 的 DN(Distinguished Names) 默认由主机域名生成，本地的 DNS 设置如下：&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;root@ubuntu:~# cat /etc/hosts
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ cat /etc/hosts
 10.10.1.100    keystone.com
 127.0.0.1   localhost
 &lt;/code&gt;&lt;/pre&gt;
@@ -1258,12 +1258,12 @@ if __name__ == &quot;__main__&quot;:
 
 &lt;h1 id=&quot;install-ldap&quot;&gt;Install LDAP&lt;/h1&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;sudo apt-get install slapd ldap-utils
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ apt-get install slapd ldap-utils
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;安装完成后可通过以下命令和步骤完成 LDAP 的基本配置：&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;sudo dpkg-reconfigure slapd
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ dpkg-reconfigure slapd
 
 
 * Omit OpenLDAP server configuration? No
@@ -1377,7 +1377,7 @@ group_allow_delete = true
 
 &lt;p&gt;用 admin_token 创建 project 和 role，并赋予 demo 和 admin 用户在 project 中的 role 后，即可使用该用户获得 scope token 访问 Keystone 的 API。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;root@ubuntu:~# openstack user list
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ openstack user list
 +--------------------+--------------------+
 | ID                 | Name               |
 +--------------------+--------------------+
@@ -1385,7 +1385,7 @@ group_allow_delete = true
 | admin              | admin              |
 +--------------------+--------------------+
 
-root@ubuntu:~# openstack user show demo
+$ openstack user show demo
 +-----------+------------------+
 | Field     | Value            |
 +-----------+------------------+
@@ -1395,7 +1395,7 @@ root@ubuntu:~# openstack user show demo
 | name      | demo             |
 +-----------+------------------+
 
-root@ubuntu:~# openstack user create hello --password 123456
+$ openstack user create hello --password 123456
 +-----------+----------------------------------+
 | Field     | Value                            |
 +-----------+----------------------------------+
@@ -1405,7 +1405,7 @@ root@ubuntu:~# openstack user create hello --password 123456
 | name      | hello                            |
 +-----------+----------------------------------+
 
-root@ubuntu:~# openstack project create test_project
+$ openstack project create test_project
 +-------------+----------------------------------+
 | Field       | Value                            |
 +-------------+----------------------------------+

@@ -22,8 +22,8 @@ categories: OpenStack
 
 LDAP 的 DN(Distinguished Names) 默认由主机域名生成，本地的 DNS 设置如下：
 
-~~~
-root@ubuntu:~# cat /etc/hosts
+~~~ bash
+$ cat /etc/hosts
 10.10.1.100    keystone.com
 127.0.0.1   localhost
 ~~~
@@ -31,14 +31,14 @@ root@ubuntu:~# cat /etc/hosts
 
 # Install LDAP
 
-~~~bash
-sudo apt-get install slapd ldap-utils
+~~~ bash
+$ apt-get install slapd ldap-utils
 ~~~
 
 安装完成后可通过以下命令和步骤完成 LDAP 的基本配置：
 
-~~~
-sudo dpkg-reconfigure slapd
+~~~ bash
+$ dpkg-reconfigure slapd
 
 
 * Omit OpenLDAP server configuration? No
@@ -104,7 +104,7 @@ userPassword: 123456
 
 由以下命令把上述配置文件内容更新至 LDAP：
 
-~~~bash
+~~~ bash
 ldapadd -x -W -D "cn=admin,dc=example,dc=com" -f add_user_group.ldif
 ~~~
 
@@ -157,7 +157,7 @@ group_allow_delete = true
 用 admin_token 创建 project 和 role，并赋予 demo 和 admin 用户在 project 中的 role 后，即可使用该用户获得 scope token 访问 Keystone 的 API。
 
 ~~~ bash
-root@ubuntu:~# openstack user list
+$ openstack user list
 +--------------------+--------------------+
 | ID                 | Name               |
 +--------------------+--------------------+
@@ -165,7 +165,7 @@ root@ubuntu:~# openstack user list
 | admin              | admin              |
 +--------------------+--------------------+
 
-root@ubuntu:~# openstack user show demo
+$ openstack user show demo
 +-----------+------------------+
 | Field     | Value            |
 +-----------+------------------+
@@ -175,7 +175,7 @@ root@ubuntu:~# openstack user show demo
 | name      | demo             |
 +-----------+------------------+
 
-root@ubuntu:~# openstack user create hello --password 123456
+$ openstack user create hello --password 123456
 +-----------+----------------------------------+
 | Field     | Value                            |
 +-----------+----------------------------------+
@@ -185,7 +185,7 @@ root@ubuntu:~# openstack user create hello --password 123456
 | name      | hello                            |
 +-----------+----------------------------------+
 
-root@ubuntu:~# openstack project create test_project
+$ openstack project create test_project
 +-------------+----------------------------------+
 | Field       | Value                            |
 +-------------+----------------------------------+
