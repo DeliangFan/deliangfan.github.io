@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>搭建 Gerrit</title>
-  <meta name="description" content="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;">
+  <meta name="description" content="     ">
 
   <link rel="stylesheet" href="/css/main.css">
   <link rel="canonical" href="http://wsfdl.com/devops/2014/08/20/%E6%90%AD%E5%BB%BAgerrit.html">
@@ -62,64 +62,77 @@
   </header>
 
   <div class="post-content" itemprop="articleBody">
-    <hr>
+    <hr />
+<p>     </p>
 
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>                                                                <img src="http://7xp2eu.com1.z0.glb.clouddn.com/gerrit_logo.png?imageView2/1/w/150/h/150/q/100" alt="gerrit" /></p>
 
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <img src="http://7xp2eu.com1.z0.glb.clouddn.com/gerrit_logo.png?imageView2/1/w/150/h/150/q/100" alt="gerrit"></p>
-
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>     </p>
 
 <p><a href="https://code.google.com/p/gerrit/">Gerrit</a> 一款非常优秀的搭建 code review 的软件，是 CI-CD 的重要组成部分，团队在项目开发的时候，常常需要进行代码 review，只有通过才能被 merge，并同步到 <a href="http://wsfdl.com/devops/2014/08/18/%E6%90%AD%E5%BB%BAgitlab.html">GitLab</a> 中，本文介绍 gerrit 的安装流程。</p>
 
 <ul>
-<li>Linux: Ubuntu 14.04 LTS</li>
-<li>Gerrit: gerrit-2.11.5.war</li>
+  <li>Linux: Ubuntu 14.04 LTS</li>
+  <li>Gerrit: gerrit-2.11.5.war</li>
 </ul>
 
-<hr>
+<hr />
 
 <h1 id="installation">Installation</h1>
 
 <p>Gerrit 的<a href="https://gerrit-review.googlesource.com/Documentation/install-quick.html">安装</a>非常简便，首先安装 java 后，下载安装包：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ apt-get install default-jre
+
+<p><code>
+$ apt-get install default-jre
 $ wget https://www.gerritcodereview.com/download/gerrit-2.11.5.war
-</code></pre></div>
+</code></p>
+
 <p>创建 gerrit2 用户，并切换至该用户：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ adduser gerrit2
+
+<p><code>
+$ adduser gerrit2
 $ su gerrit
-</code></pre></div>
+</code></p>
+
 <p>启动 gerrit：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ java -jar gerrit-2.11.5.war  init --batch -d ~/gerrit_site
-</code></pre></div>
-<hr>
+
+<p><code>
+$ java -jar gerrit-2.11.5.war  init --batch -d ~/gerrit_site
+</code></p>
+
+<hr />
 
 <h1 id="configuration">Configuration</h1>
 
 <p>根据需求，重点更新 &lt;gerrit_site&gt;/etc/gerrit.config 以下配置项，</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">[gerrit]
-        canonicalWebUrl = http://&lt;your_host&gt;:9090/
 
-[sshd]
-        listenAddress = *:29418
+<p>```
+[gerrit]
+        canonicalWebUrl = http://<your_host>:9090/</your_host></p>
 
-[httpd]
+<p>[sshd]
+        listenAddress = *:29418</p>
+
+<p>[httpd]
         listenUrl = http://*:9090/
-</code></pre></div>
-<p>重新启动 gerrit</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ &lt;gerrit_site&gt;/bin/gerrit.sh restart
-</code></pre></div>
-<hr>
+```</p>
 
-<h1 id="test">Test</h1>
+<p>重新启动 gerrit</p>
+
+<p><code>
+$ &lt;gerrit_site&gt;/bin/gerrit.sh restart
+</code></p>
+
+<hr />
+<p>#Test</p>
 
 <p>浏览器登录 &lt;your_host&gt;:9090，即可见如下页面：</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/gerrit_demo.png" alt="gerrit-demo"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/gerrit_demo.png" alt="gerrit-demo" /></p>
 
 <p>附一张 OpenStack Gerrit 样图：</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/openstack_gerrit.png" alt="openstack gerrit"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/openstack_gerrit.png" alt="openstack gerrit" /></p>
 
   </div>
 

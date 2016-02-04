@@ -62,86 +62,92 @@
   </header>
 
   <div class="post-content" itemprop="articleBody">
-    <hr>
+    <hr />
 
-<h1 id="1-三种代理简介">1. 三种代理简介</h1>
+<h1 id="section">1. 三种代理简介</h1>
 
 <p>VPN、SOCKS 和 PAC 是三种常见的代理方式，本文以 QQ 和访问网站为例，深入浅出图解三者区别，并推荐最优雅的代理方式——PAC。</p>
 
 <ul>
-<li>QQ：假设朋友也在国内</li>
-<li>优酷视频：假设优酷服务器(和 CDN) 都在国内</li>
-<li>网站 G：假设网站 G 在国外</li>
+  <li>QQ：假设朋友也在国内</li>
+  <li>优酷视频：假设优酷服务器(和 CDN) 都在国内</li>
+  <li>网站 G：假设网站 G 在国外</li>
 </ul>
 
 <p><a href="https://en.wikipedia.org/wiki/Virtual_private_network">VPN</a>：可理解为全局代理，如果使用位于韩国的 VPN，所有应用的网络都必需先经韩国再到目的地。如此 QQ 聊天延时高，看优酷视频容易卡顿。</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/new_vpn.png?imageView2/1/w/750/h/350/q/100" alt="VNP"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/new_vpn.png?imageView2/1/w/750/h/350/q/100" alt="VNP" /></p>
 
 <p><a href="https://zh.wikipedia.org/wiki/SOCKS">SOCKS</a>：给某个应用做代理，如果为浏览器陪置位于韩国的 SOCKS，那么所有网页的访问都必需先途径韩国再到目的地。如此 QQ 聊天顺畅，看优酷视频容易卡顿。</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/new_sock.png?imageView2/1/w/750/h/350/q/100" alt="SOCKS"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/new_sock.png?imageView2/1/w/750/h/350/q/100" alt="SOCKS" /></p>
 
 <p><a href="https://en.wikipedia.org/wiki/Proxy_auto-config">Proxy Auto Config</a>：在 SOCKS 基础之上，配置浏览器使之访问某些特定网页时使用代理。如此 QQ 聊天顺畅，可流畅的观看优酷视频。</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/new_pac.png?imageView2/1/w/750/h/350/q/100" alt="PACK"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/new_pac.png?imageView2/1/w/750/h/350/q/100" alt="PACK" /></p>
 
 <p>从网络协议的角度出发，VPN 协议的报文是 overlay 格式，它为计算机新增一块虚拟网卡并分配 IP，通常情况下路由表默认报文从该虚拟网卡发出，所以 VPN 几乎会代理所有协议；SOCKS 协议工作在会话层，需用户指定哪些应用需要代理；PAC 并不是网络协议，它只是一个 javascript 文件，通过正则匹配域名来告知浏览器哪些 HTTP 请求需要采用 SOCKS 代理，因为 HTTP 是应用层协议，所以 PAC 只影响应用层。由于 QQ 消息一般为 UDP 报文，视频一般基于 HTTP 协议，所以不难理解上述现象。</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/proxy%20comparing.png?imageView2/1/w/550/h/400/q/100" alt="Proxy Comparing"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/proxy%20comparing.png?imageView2/1/w/550/h/400/q/100" alt="Proxy Comparing" /></p>
 
-<hr>
+<hr />
 
-<h1 id="2-如何配置-pac">2. 如何配置 PAC</h1>
+<h1 id="pac">2. 如何配置 PAC</h1>
 
 <p>配置 PAC 主要有两个步骤</p>
 
 <ul>
-<li>搭建 SOCKS 服务器</li>
-<li>编写 PAC 脚本</li>
+  <li>搭建 SOCKS 服务器</li>
+  <li>编写 PAC 脚本</li>
 </ul>
 
-<h2 id="2-1-搭建-socks-服务器">2.1 搭建 SOCKS 服务器</h2>
+<h2 id="socks-">2.1 搭建 SOCKS 服务器</h2>
 
 <p>在云计算百花齐放的时代，假设你已有服务器，只需安装 ss5 即可搭建 SOCKS 服务器，步骤非常简单，可参考<a href="http://cstriker1407.info/blog/centos-build-socks5-proxy-using-ss5/">此文</a>：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c">#安装依赖</span>
-yum install make automake gcc gcc-c++ pam-devel openssl-devel openldap-devel cyrus-sasl-devel
 
-<span class="c">#下载与安装</span>
-wget http://sourceforge.net/projects/ss5/files/ss5/3.8.9-5/ss5-3.8.9-5.tar.gz/download
+<p>```bash
+#安装依赖
+yum install make automake gcc gcc-c++ pam-devel openssl-devel openldap-devel cyrus-sasl-devel</p>
+
+<h1 id="section-1">下载与安装</h1>
+<p>wget http://sourceforge.net/projects/ss5/files/ss5/3.8.9-5/ss5-3.8.9-5.tar.gz/download
 tar -zxvf ss5-3.8.9-5.tar.gz
-<span class="nb">cd </span>ss5-3.8.9
+cd ss5-3.8.9
 ./configure
 make
-make install
+make install</p>
 
-<span class="c">#设置开机启动</span>
-chmod +x /etc/init.d/ss5
-chkconfig --add ss5
-chkconfig --level <span class="m">345</span> ss5 on
+<h1 id="section-2">设置开机启动</h1>
+<p>chmod +x /etc/init.d/ss5
+chkconfig –add ss5
+chkconfig –level 345 ss5 on</p>
 
-
-<span class="c">#设置无密码不限制 IP 访问，更新 /etc/opt/ss5/ss5.conf 如下配置：</span>
-<span class="c">#           SHost           SPort   Authentication</span>
+<h1 id="ip--etcoptss5ss5conf-">设置无密码不限制 IP 访问，更新 /etc/opt/ss5/ss5.conf 如下配置：</h1>
+<p>#           SHost           SPort   Authentication
 auth        0.0.0.0/0       –       –
-permit –    0.0.0.0/0       –       0.0.0.0/0
+permit –    0.0.0.0/0       –       0.0.0.0/0</p>
 
-<span class="c">#启动服务</span>
-service ss5 start
-</code></pre></div>
-<h2 id="2-2-编写-pac-文件">2.2 编写 PAC 文件</h2>
+<h1 id="section-3">启动服务</h1>
+<p>service ss5 start</p>
+
+<p>```</p>
+
+<h2 id="pac-">2.2 编写 PAC 文件</h2>
 
 <p>PAC 的编写更为简单，请参考<a href="http://www.truevue.org/javascript/pac-format">此文</a>，假设 SOCKS 服务器 IP 和端口为 1.2.3.4:1080，下例代码表示如果网站的域名包含 a.com，则使用 SOCKS 代理，更多样例请参考 github.com。</p>
-<div class="highlight"><pre><code class="language-js" data-lang="js"><span class="nx">SOCKS5</span> <span class="mf">1.2</span><span class="p">.</span><span class="mf">3.4</span><span class="o">:</span><span class="mi">1080</span>
 
-<span class="kd">function</span> <span class="nx">FindProxyForURL</span><span class="p">(</span><span class="nx">url</span><span class="p">,</span> <span class="nx">host</span><span class="p">)</span> <span class="p">{</span>
-   <span class="k">if</span> <span class="p">(</span><span class="nx">shExpMatch</span><span class="p">(</span><span class="nx">url</span><span class="p">,</span><span class="s2">&quot;*.a.com*&quot;</span><span class="p">))</span> <span class="p">{</span>
-     <span class="k">return</span> <span class="s2">&quot;PROXY 192.168.1.1:3128&quot;</span><span class="p">;</span>
-   <span class="p">}</span>
+<p>```js
+SOCKS5 1.2.3.4:1080</p>
 
-   <span class="k">return</span> <span class="s2">&quot;DIRECT&quot;</span><span class="p">;</span> 
-<span class="p">}</span>
-</code></pre></div>
+<p>function FindProxyForURL(url, host) {
+   if (shExpMatch(url,”<em>.a.com</em>”)) {
+     return “PROXY 192.168.1.1:3128”;
+   }</p>
+
+<p>return “DIRECT”; 
+}
+```</p>
+
   </div>
 
 </article>

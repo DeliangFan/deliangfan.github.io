@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>理解 Oauth 协议</title>
-  <meta name="description" content="Overview">
+  <meta name="description" content="#Overview">
 
   <link rel="stylesheet" href="/css/main.css">
   <link rel="canonical" href="http://wsfdl.com/protocol/2016/01/26/Oauth.html">
@@ -62,27 +62,26 @@
   </header>
 
   <div class="post-content" itemprop="articleBody">
-    <hr>
-
-<h1 id="overview">Overview</h1>
+    <hr />
+<p>#Overview</p>
 
 <ul>
-<li>Authenticate</li>
-<li>Authorize</li>
+  <li>Authenticate</li>
+  <li>Authorize</li>
 </ul>
 
-<p>OAuth is an open standard for authorization, commonly used as a way for Internet users to log into third party websites using their Microsoft, Google, Facebook or Twitter accounts without exposing their password.Generally, OAuth provides to clients a &#39;secure delegated access&#39; to server resources on behalf of a resource owner. It specifies a process for resource owners to authorize third-party access to their server resources without sharing their credentials. Designed specifically to work with Hypertext Transfer Protocol (HTTP), OAuth essentially allows access tokens to be issued to third-party clients by an authorization server, with the approval of the resource owner. The third party then uses the access token to access the protected resources hosted by the resource server.[2]</p>
+<p>OAuth is an open standard for authorization, commonly used as a way for Internet users to log into third party websites using their Microsoft, Google, Facebook or Twitter accounts without exposing their password.Generally, OAuth provides to clients a ‘secure delegated access’ to server resources on behalf of a resource owner. It specifies a process for resource owners to authorize third-party access to their server resources without sharing their credentials. Designed specifically to work with Hypertext Transfer Protocol (HTTP), OAuth essentially allows access tokens to be issued to third-party clients by an authorization server, with the approval of the resource owner. The third party then uses the access token to access the protected resources hosted by the resource server.[2]</p>
 
 <ul>
-<li>standart for authorization</li>
-<li>secure non-password</li>
-<li>web, mobile</li>
-<li>面向 HTTP</li>
+  <li>standart for authorization</li>
+  <li>secure non-password</li>
+  <li>web, mobile</li>
+  <li>面向 HTTP</li>
 </ul>
 
 <p>The OAuth 2.0 authorization framework enables a third-party application to obtain limited access to an HTTP service, either on behalf of a resource owner by orchestrating an approval interaction between the resource owner and the HTTP service, or by allowing the third-party application to obtain access on its own behalf.</p>
 
-<hr>
+<hr />
 
 <h1 id="role">Role</h1>
 
@@ -97,7 +96,7 @@
 
 <p>client
       An application making protected resource requests on behalf of the
-      resource owner and with its authorization.  The term &quot;client&quot; does
+      resource owner and with its authorization.  The term “client” does
       not imply any particular implementation characteristics (e.g.,
       whether the application executes on a server, a desktop, or other
       devices).</p>
@@ -106,36 +105,41 @@
       The server issuing access tokens to the client after successfully
       authenticating the resource owner and obtaining authorization.</p>
 
-<hr>
+<hr />
 
 <h1 id="flow">Flow</h1>
-<div class="highlight"><pre><code class="language-text" data-lang="text">     +--------+                               +---------------+
-     |        |--(A)- Authorization Request -&gt;|   Resource    |
-     |        |                               |     Owner     |
-     |        |&lt;-(B)-- Authorization Grant ---|               |
-     |        |                               +---------------+
-     |        |
-     |        |                               +---------------+
-     |        |--(C)-- Authorization Grant --&gt;| Authorization |
-     | Client |                               |     Server    |
-     |        |&lt;-(D)----- Access Token -------|               |
-     |        |                               +---------------+
-     |        |
-     |        |                               +---------------+
-     |        |--(E)----- Access Token ------&gt;|    Resource   |
-     |        |                               |     Server    |
-     |        |&lt;-(F)--- Protected Resource ---|               |
-     +--------+                               +---------------+
 
-                     Figure: Abstract Protocol Flow
-</code></pre></div>
+<p>```
+     +——–+                               +—————+
+     |        |–(A)- Authorization Request -&gt;|   Resource    |
+     |        |                               |     Owner     |
+     |        |&lt;-(B)– Authorization Grant —|               |
+     |        |                               +—————+
+     |        |
+     |        |                               +—————+
+     |        |–(C)– Authorization Grant –&gt;| Authorization |
+     | Client |                               |     Server    |
+     |        |&lt;-(D)—– Access Token ——-|               |
+     |        |                               +—————+
+     |        |
+     |        |                               +—————+
+     |        |–(E)—– Access Token ——&gt;|    Resource   |
+     |        |                               |     Server    |
+     |        |&lt;-(F)— Protected Resource —|               |
+     +——–+                               +—————+</p>
+
+<pre><code>                 Figure: Abstract Protocol Flow
+</code></pre>
+
+<p>```</p>
+
 <p>(A)  The client requests authorization from the resource owner.  The
         authorization request can be made directly to the resource owner
         (as shown), or preferably indirectly via the authorization
         server as an intermediary.</p>
 
 <p>(B)  The client receives an authorization grant, which is a
-        credential representing the resource owner&#39;s authorization,
+        credential representing the resource owner’s authorization,
         expressed using one of four grant types defined in this
         specification or using an extension grant type.  The
         authorization grant type depends on the method used by the
@@ -158,10 +162,10 @@
    from the resource owner (depicted in steps (A) and (B)) is to use the
    authorization server as an intermediary, which is illustrated in</p>
 
-<hr>
+<hr />
 
 <ol>
-<li> Protocol Endpoints</li>
+  <li>Protocol Endpoints</li>
 </ol>
 
 <p>The authorization process utilizes two authorization server endpoints
@@ -182,25 +186,27 @@
 <p>Not every authorization grant type utilizes both endpoints.
    Extension grant types MAY define additional endpoints as needed.</p>
 
-<hr>
+<hr />
 
 <h1 id="authoriztion-grant">Authoriztion Grant</h1>
 
 <ul>
-<li>Authorization Code</li>
-<li>Implicit</li>
-<li>Resource Owner Password Credentials</li>
-<li>Client Credentials</li>
+  <li>Authorization Code</li>
+  <li>Implicit</li>
+  <li>Resource Owner Password Credentials</li>
+  <li>Client Credentials</li>
 </ul>
 
 <h2 id="authorization-code">Authorization Code</h2>
 
 <p>The authorization code is obtained by using an authorization server as an intermediary between the client and resource owner.  Instead of requesting authorization directly from the resource owner, the client directs the resource owner to an authorization server (via its user-agent as defined in [RFC2616]), which in turn directs the resource owner back to the client with the authorization code.</p>
 
-<p>Before directing the resource owner back to the client with the authorization code, the authorization server authenticates the resource owner and obtains authorization.  Because the resource owner only authenticates with the authorization server, the resource owner&#39;s credentials are never shared with the client.</p>
+<p>Before directing the resource owner back to the client with the authorization code, the authorization server authenticates the resource owner and obtains authorization.  Because the resource owner only authenticates with the authorization server, the resource owner’s credentials are never shared with the client.</p>
 
-<p>The authorization code provides a few important security benefits, such as the ability to authenticate the client, as well as the transmission of the access token directly to the client without passing it through the resource owner&#39;s user-agent and potentially exposing it to others, including the resource owner.</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">     +----------+
+<p>The authorization code provides a few important security benefits, such as the ability to authenticate the client, as well as the transmission of the access token directly to the client without passing it through the resource owner’s user-agent and potentially exposing it to others, including the resource owner.</p>
+
+<p><code>
+     +----------+
      | Resource |
      |   Owner  |
      |          |
@@ -220,39 +226,44 @@
        |    |                                         |      |
        ^    v                                         |      |
      +---------+                                      |      |
-     |         |&gt;---(D)-- Authorization Code ---------&#39;      |
+     |         |&gt;---(D)-- Authorization Code ---------'      |
      |  Client |          &amp; Redirection URI                  |
      |         |                                             |
-     |         |&lt;---(E)----- Access Token -------------------&#39;
+     |         |&lt;---(E)----- Access Token -------------------'
      +---------+       (w/ Optional Refresh Token)
-</code></pre></div>
+</code></p>
+
 <p>Resource Owner Password Credentials Grant</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">The resource owner password credentials (i.e., username and password) can be used directly as an authorization grant to obtain an access token.  The credentials should only be used when there is a high degree of trust between the resource owner and the client (e.g., the client is part of the device operating system or a highly privileged application), and when other authorization grant types are not available (such as an authorization code).
 
-Even though this grant type requires direct client access to the resource owner credentials, the resource owner credentials are used for a single request and are exchanged for an access token.  This grant type can eliminate the need for the client to store the resource owner credentials for future use, by exchanging the
-credentials with a long-lived access token or refresh token.
+<p>```</p>
 
-     +----------+
-     | Resource |
-     |  Owner   |
-     |          |
-     +----------+
-          v
-          |    Resource Owner
-         (A) Password Credentials
-          |
-          v
-     +---------+                                  +---------------+
-     |         |&gt;--(B)---- Resource Owner -------&gt;|               |
-     |         |         Password Credentials     | Authorization |
-     | Client  |                                  |     Server    |
-     |         |&lt;--(C)---- Access Token ---------&lt;|               |
-     |         |    (w/ Optional Refresh Token)   |               |
-     +---------+                                  +---------------+
+<p>The resource owner password credentials (i.e., username and password) can be used directly as an authorization grant to obtain an access token.  The credentials should only be used when there is a high degree of trust between the resource owner and the client (e.g., the client is part of the device operating system or a highly privileged application), and when other authorization grant types are not available (such as an authorization code).</p>
 
-            Figure 5: Resource Owner Password Credentials Flow
-</code></pre></div>
-<hr>
+<p>Even though this grant type requires direct client access to the resource owner credentials, the resource owner credentials are used for a single request and are exchanged for an access token.  This grant type can eliminate the need for the client to store the resource owner credentials for future use, by exchanging the
+credentials with a long-lived access token or refresh token.</p>
+
+<pre><code> +----------+
+ | Resource |
+ |  Owner   |
+ |          |
+ +----------+
+      v
+      |    Resource Owner
+     (A) Password Credentials
+      |
+      v
+ +---------+                                  +---------------+
+ |         |&gt;--(B)---- Resource Owner -------&gt;|               |
+ |         |         Password Credentials     | Authorization |
+ | Client  |                                  |     Server    |
+ |         |&lt;--(C)---- Access Token ---------&lt;|               |
+ |         |    (w/ Optional Refresh Token)   |               |
+ +---------+                                  +---------------+
+
+        Figure 5: Resource Owner Password Credentials Flow ```
+</code></pre>
+
+<hr />
 
 <h1 id="issuing-an-access-token">Issuing an Access Token</h1>
 
@@ -273,7 +284,7 @@ credentials with a long-lived access token or refresh token.
    authorization constructs (e.g., username and password) with a single
    token understood by the resource server.  This abstraction enables
    issuing access tokens more restrictive than the authorization grant
-   used to obtain them, as well as removing the resource server&#39;s need
+   used to obtain them, as well as removing the resource server’s need
    to understand a wide range of authentication methods.</p>
 
 <p>Access tokens can have different formats, structures, and methods of
@@ -283,7 +294,7 @@ credentials with a long-lived access token or refresh token.
    this specification and are defined by companion specifications such
    as</p>
 
-<hr>
+<hr />
 
 <h1 id="refreshing-an-access-token">Refreshing an Access Token</h1>
 
@@ -303,7 +314,9 @@ credentials with a long-lived access token or refresh token.
    the client.  The token denotes an identifier used to retrieve the   authorization information.  Unlike access tokens, refresh tokens are
    intended for use only with authorization servers and are never sent
    to resource servers.</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">  +--------+                                           +---------------+
+
+<p><code>
+  +--------+                                           +---------------+
   |        |--(A)------- Authorization Grant ---------&gt;|               |
   |        |                                           |               |
   |        |&lt;-(B)----------- Access Token -------------|               |
@@ -323,8 +336,8 @@ credentials with a long-lived access token or refresh token.
   |        |                                           |               |
   |        |&lt;-(H)----------- Access Token -------------|               |
   +--------+           &amp; Optional Refresh Token        +---------------+
-</code></pre></div>
-<p>The flow illustrated in Figure 2 includes the following steps:</p>
+</code>
+   The flow illustrated in Figure 2 includes the following steps:</p>
 
 <p>(A)  The client requests an access token by authenticating with the
         authorization server and presenting an authorization grant.</p>

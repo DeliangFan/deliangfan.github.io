@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>理解 Deffie-Hellman 密钥交换算法</title>
-  <meta name="description" content="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;">
+  <meta name="description" content="        ">
 
   <link rel="stylesheet" href="/css/main.css">
   <link rel="canonical" href="http://wsfdl.com/algorithm/2016/02/05/%E7%90%86%E8%A7%A3Diffie-Hellman%E5%AF%86%E9%92%A5%E4%BA%A4%E6%8D%A2%E7%AE%97%E6%B3%95.html">
@@ -62,61 +62,70 @@
   </header>
 
   <div class="post-content" itemprop="articleBody">
-    <hr>
-
-<p>&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;</p>
+    <hr />
+<p>    
+    </p>
 
 <blockquote>
-<p>再拾此书时，怀念 4 年前阳光明媚的午后，我在浙大紫金港图书馆的三楼，梦回了中学奥数的小伙伴，和那时曾想证明哥德巴尔猜想的情怀！</p>
+  <p>再拾此书时，怀念 4 年前阳光明媚的午后，我在浙大紫金港图书馆的三楼，梦回了中学奥数的小伙伴，和那时曾想证明哥德巴尔猜想的情怀！</p>
 </blockquote>
 
-<h1 id="deffie-hellman-算法简介">Deffie-Hellman 算法简介</h1>
+<h1 id="deffie-hellman-">Deffie-Hellman 算法简介</h1>
 
 <p><a href="https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange">Deffie-Hellman</a>(简称 DH) 密钥交换是最早的密钥交换算法之一，它使得通信的双方能在非安全的信道中安全的交换密钥，用于加密后续的通信消息。 Whitfield Diffie 和 Martin Hellman 于 1976 提出该算法，之后被应用于安全领域，比如 Https 协议的 TSL(<a href="https://en.wikipedia.org/wiki/Transport_Layer_Security">Transport Layer Security</a>) 和 IPsec 协议的 IKE(<a href="https://en.wikipedia.org/wiki/Internet_Key_Exchange">Internet Key Exchange</a>) 均以 DH 算法作为密钥交换算法。</p>
 
-<hr>
+<hr />
 
-<h1 id="数论知识">数论知识</h1>
+<h1 id="section">数论知识</h1>
 
 <p>理解 DH 算法前，先介绍一些必要的数论领域知识，分别是离散对数问题和一个求模公式。</p>
 
-<h2 id="离散对数问题">离散对数问题</h2>
+<h2 id="section-1">离散对数问题</h2>
 
 <p>假定 a, p 均是素数，下面两个集合相等，证明过程请参考 <a href="http://www.amazon.com/Cryptography-Network-Security-Principles-Practice/dp/0133354695">Cryptography and Network Security</a> 第八章：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">{ a^1 mod p, a^2 mod p, ..., a^(p-1) mod p } = {1, 2, ... , p-1 }   {} 表示集合
-</code></pre></div>
+
+<p><code>
+{ a^1 mod p, a^2 mod p, ..., a^(p-1) mod p } = {1, 2, ... , p-1 }   {} 表示集合
+</code></p>
+
 <p>上述式子可概括成以下三点，对于 1 &lt;= x,y &lt;= p - 1，有：</p>
 
 <ul>
-<li>a^x mod p 一定属于 {1, 2, ..., p -1 }</li>
-<li>如果 x != y，则 a^x mod p != a^y mod p</li>
-<li>对于 1 &lt;= b &lt;= p - 1，一定存在唯一的 1 &lt;= x &lt;= p-1，使得 b = a^x mod p</li>
+  <li>a^x mod p 一定属于 {1, 2, …, p -1 }</li>
+  <li>如果 x != y，则 a^x mod p != a^y mod p</li>
+  <li>对于 1 &lt;= b &lt;= p - 1，一定存在唯一的 1 &lt;= x &lt;= p-1，使得 b = a^x mod p</li>
 </ul>
 
 <p>第三点在求解上有这么一个特点：已知 x 求 b 非常容易，已知 b 求 x 非常困难，特别当 p 很大时，求解的复杂度非常高，所以它又被称为离散对数问题  (<a href="https://en.wikipedia.org/wiki/Discrete_logarithm">Discrete logarithm</a>)，它是 DH 算法能够安全交换密钥的基础！</p>
 
-<h2 id="求模公式">求模公式</h2>
+<h2 id="section-2">求模公式</h2>
 
 <p>假设 q 为素数，对于正整数 a,x,y，有：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">(a^x mod p)^y mod p = a^(xy) mod p
-</code></pre></div>
+
+<p><code>
+(a^x mod p)^y mod p = a^(xy) mod p
+</code></p>
+
 <p>证明如下：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">令 a^x = mp + n， 其中 m, n 为自然数， 0 &lt;= n &lt; p，则有
+
+<p><code>
+令 a^x = mp + n， 其中 m, n 为自然数， 0 &lt;= n &lt; p，则有
 C = (a^x mod p)^y mod p
   = ((mp + n) mod p)^y mod p
   = n^y mod p
   = (mp +n)^y mod p
   = a^(xy) mod p
-</code></pre></div>
-<hr>
+</code>
+————-</p>
 
-<h1 id="deffie-hellman-算法原理">Deffie-Hellman 算法原理</h1>
+<h1 id="deffie-hellman--1">Deffie-Hellman 算法原理</h1>
 
 <p>本文参考 <a href="http://www.amazon.com/Cryptography-Network-Security-Principles-Practice/dp/0133354695">Cryptography and Network Security</a> 一书，介绍 DH 算法原理，在掌握上节数论知识的基础上，理解 DH 算法原理非常容易。</p>
 
 <p>假设 A, B 两方进行通信前需要交换密钥，首先 A, B 共同选取 q 和 a 两个素数，其中 q 和 a 均公开。之后 A 选择一个自然数 Xa，计算出 Ya，Xa 保密，Ya 公开；同理，B 选择 Xb 并计算出 Yb，其中 Xb 保密，Yb 公开。之后 A 用 Yb 和 Xa 计算出密钥 K，而 B 用 Ya 和 Xb 计算密钥 K，流程如下：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">+-------------------------------------------------------------------+
+
+<p><code>
++-------------------------------------------------------------------+
 |                    Global Pulic Elements                          |
 |                                                                   |
 |       q                               prime number                |
@@ -144,24 +153,29 @@ C = (a^x mod p)^y mod p
 |                                                                   |
 |       Secret Key K                    K = Ya^Xb mod q             |
 +-------------------------------------------------------------------+
-</code></pre></div>
+</code></p>
+
 <p>下面证明，A 和 B 计算出来的密钥 K 相同。</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">K = Yb^Xa mod q
+
+<p><code>
+K = Yb^Xa mod q
   = (a^Xb mod q)^Xa mod q      
   = a^(Xa * Xb) mod q          根据上述求模公式
   = (a^Xa mod q)^Xb mod q
   = Ya^Xb mod q
-</code></pre></div>
+</code></p>
+
 <p>上面一共出现了 q, a, Xa, Ya, Xb, Yb, K 共 7 个数，其中：</p>
 
 <ul>
-<li>公开的数：q, a, Ya, Yb</li>
-<li>非公开数：Xa, Xb, K</li>
+  <li>公开的数：q, a, Ya, Yb</li>
+  <li>非公开数：Xa, Xb, K</li>
 </ul>
 
 <p>通常情况下，a 一般为 2 或 5，而 q 的取值非常大，至少几百位，Xa 和 Xb 的取值也非常大。对于攻击者来说，已知 Ya，Xa 的求解非常困难，同理 Xb 的求解也很困难，所以攻击者难以求出 K，所以 DH 能够保证通信双方在透明的信道中安全的交换密钥。<a href="https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange#/media/File:Diffie-Hellman_Key_Exchange.svg">下图</a>非常形象的描述密钥交换流程：</p>
 
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="http://7xp2eu.com1.z0.glb.clouddn.com/DH%20exchange%20Key.png?imageView2/1/w/310/h/450/q/100" alt="DH key exchange"></p>
+<p>                                                <img src="http://7xp2eu.com1.z0.glb.clouddn.com/DH%20exchange%20Key.png?imageView2/1/w/310/h/450/q/100" alt="DH key exchange" /></p>
+
 
   </div>
 

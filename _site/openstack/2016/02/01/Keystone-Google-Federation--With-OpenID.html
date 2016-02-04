@@ -62,70 +62,70 @@
   </header>
 
   <div class="post-content" itemprop="articleBody">
-    <hr>
+    <hr />
 
 <p>本文是 Keystone federation identity 系列的第二篇，主要介基于 OpenID Connect 协议搭建 Keystone 和 Google 单点登录的 demo。Federation Identity 的概念、原理以及基于 SAML2 协议的文章请见<a href="http://wsfdl.com/openstack/2016/01/14/Keystone-Federation-Identity-with-SAML2.html">第一篇</a></p>
 
 <p>环境：</p>
 
 <ul>
-<li>Linux: Ubuntu 14.04 LTS</li>
-<li>OpenStack: Kilo</li>
-<li>Identity Provider: Google</li>
-<li>Federation Protocol： OpenID Connect</li>
+  <li>Linux: Ubuntu 14.04 LTS</li>
+  <li>OpenStack: Kilo</li>
+  <li>Identity Provider: Google</li>
+  <li>Federation Protocol： OpenID Connect</li>
 </ul>
 
-<hr>
+<hr />
 
 <h1 id="openid-connect-protocol">OpenID Connect Protocol</h1>
 
 <p><a href="http://openid.net/connect/">OpenID</a> 的官网是这样定义 OpenID Connect：</p>
 
 <blockquote>
-<p>OpenID Connect 1.0 is a simple identity layer on top of the OAuth 2.0 protocol. It allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server, as well as to obtain basic profile information about the End-User in an interoperable and REST-like manner.</p>
+  <p>OpenID Connect 1.0 is a simple identity layer on top of the OAuth 2.0 protocol. It allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server, as well as to obtain basic profile information about the End-User in an interoperable and REST-like manner.</p>
 </blockquote>
 
 <p>以上话语可简单的概括成如下几点：</p>
 
 <ul>
-<li>用于认证 (Authtication) 用户，认证成功后返回用户的基本信息</li>
-<li>基于 OAuth 2.0 协议，其中 OAuth 是授权(Authorization)相关协议</li>
-<li>提供了友好的 API，支持 Rest-like 风格</li>
-<li>支持 web 和 app 等</li>
+  <li>用于认证 (Authtication) 用户，认证成功后返回用户的基本信息</li>
+  <li>基于 OAuth 2.0 协议，其中 OAuth 是授权(Authorization)相关协议</li>
+  <li>提供了友好的 API，支持 Rest-like 风格</li>
+  <li>支持 web 和 app 等</li>
 </ul>
 
 <p>即：</p>
 
-<p>OpenID Connect = OAuth + Identity + Authentication </p>
+<p>OpenID Connect = OAuth + Identity + Authentication</p>
 
-<hr>
+<hr />
 
 <h1 id="setup-google">Setup Google</h1>
 
 <p>首先申请一个域名，并将域名指向 Keystone server，本文在阿里云申请如下域名：</p>
 
 <blockquote>
-<p>keystonegoogle.com</p>
+  <p>keystonegoogle.com</p>
 </blockquote>
 
 <p>Keystone server 的 IP 为 209.9.108.221，设置如下 DNS 解析：</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/keystonegoogledns.png?imageView2/1/w/360/h/80/q/100" alt="dns"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/keystonegoogledns.png?imageView2/1/w/360/h/80/q/100" alt="dns" /></p>
 
 <p>参考<a href="https://www.youtube.com/watch?v=Rfxy0FKOfgw">此文</a>在 <a href="https://console.developers.google.com/">console.developers.google.com</a> 注册一个 application，获取 application 的 Client ID 和 Client Secret 信息，并在 Authorized redirect URIs 中填入重定向 URI，以本文为例：</p>
 
 <ul>
-<li>Client ID：388517667150-adc2etk5ohfif5bluber4ho2150pqb3k.apps.googleusercontent.com</li>
-<li>Client secret：2CnpJ5mm8mfqfoN_6aqd-72A</li>
-<li>Authorized redirect URIs：www.keystonegoogle.com:5000/v3/auth/OS-FEDERATION/websso/oidc/redirect</li>
+  <li>Client ID：388517667150-adc2etk5ohfif5bluber4ho2150pqb3k.apps.googleusercontent.com</li>
+  <li>Client secret：2CnpJ5mm8mfqfoN_6aqd-72A</li>
+  <li>Authorized redirect URIs：www.keystonegoogle.com:5000/v3/auth/OS-FEDERATION/websso/oidc/redirect</li>
 </ul>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/googleclientsetup.png" alt="google-openid-client"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/googleclientsetup.png" alt="google-openid-client" /></p>
 
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
+<p>      
+      </p>
 
-<hr>
+<hr />
 
 <h1 id="setup-keystone">Setup Keystone</h1>
 
@@ -134,127 +134,154 @@
 <h2 id="configure-keystone">Configure Keystone</h2>
 
 <p>下面的安装和配置主要参考 <a href="http://shop.oreilly.com/product/0636920045960.do">Identity, Authentication &amp; Access Management in OpenStack</a>，首先安装 libapache2-mode-auth-openidc：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>apt-get install libjansson4 libhiredis0.10 libcurl3
-<span class="nv">$ </span>wget https://github.com/pingidentity/mod_auth_openidc/releases/download/v1.8.6/libapache2-mod-auth-openidc_1.8.6-1_amd64.deb
-<span class="nv">$ </span>dpkg -i libapache2-mod-auth-openidc_1.8.6-1_amd64.deb
-<span class="nv">$ </span>cp /opt/stack/keystone/etc/sso_callback_template.html /etc/keystone
-</code></pre></div>
+
+<p><code>bash
+$ apt-get install libjansson4 libhiredis0.10 libcurl3
+$ wget https://github.com/pingidentity/mod_auth_openidc/releases/download/v1.8.6/libapache2-mod-auth-openidc_1.8.6-1_amd64.deb
+$ dpkg -i libapache2-mod-auth-openidc_1.8.6-1_amd64.deb
+$ cp /opt/stack/keystone/etc/sso_callback_template.html /etc/keystone
+</code></p>
+
 <p>更新 /etc/keystone/keystone.conf 的如下配置：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">[auth]
+
+<p>```
+[auth]
 methods = external,password,token,oauth1,oidc
-oidc = keystone.auth.plugins.mapped.Mapped
+oidc = keystone.auth.plugins.mapped.Mapped</p>
 
-[oidc]
-remote_id_attribute = HTTP_OIDC_ISS
+<p>[oidc]
+remote_id_attribute = HTTP_OIDC_ISS</p>
 
-[federation]
+<p>[federation]
 remote_id_attribute = HTTP_OIDC_ISS
 trusted_dashboard = http://keystonegoogle.com/auth/websso/
-</code></pre></div>
+```</p>
+
 <p>更新 /etc/apache2/sites-available/wsgi-keystone.conf 配置如下，注意到 OIDCClientID，OIDCClientSecret 和 OIDCRedirectURI 依次对应上文 Google Client 的参数：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>cat /etc/apache2/sites-available/wsgi-keystone.conf
+
+<p>```bash
+$ cat /etc/apache2/sites-available/wsgi-keystone.conf
 Listen 5000
-Listen 35357
+Listen 35357</p>
 
-LoadModule auth_openidc_module /usr/lib/apache2/modules/mod_auth_openidc.so
+<p>LoadModule auth_openidc_module /usr/lib/apache2/modules/mod_auth_openidc.so</p>
 
-&lt;VirtualHost *:5000&gt;
-    WSGIDaemonProcess keystone-public <span class="nv">processes</span><span class="o">=</span><span class="m">5</span> <span class="nv">threads</span><span class="o">=</span><span class="m">1</span> <span class="nv">user</span><span class="o">=</span>keystone display-name<span class="o">=</span>%<span class="o">{</span>GROUP<span class="o">}</span>
+<p>&lt;VirtualHost *:5000&gt;
+    WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone display-name=%{GROUP}
     WSGIProcessGroup keystone-public
     WSGIScriptAlias / /var/www/cgi-bin/keystone/main
-    WSGIApplicationGroup %<span class="o">{</span>GLOBAL<span class="o">}</span>
+    WSGIApplicationGroup %{GLOBAL}
     WSGIPassAuthorization On
-    &lt;IfVersion &gt;<span class="o">=</span> 2.4&gt;
-      ErrorLogFormat <span class="s2">&quot;%{cu}t %M&quot;</span>
-    &lt;/IfVersion&gt;
+    <ifversion>= 2.4&gt;
+      ErrorLogFormat "%{cu}t %M"
+    </ifversion>
     LogLevel debug
     ErrorLog /var/log/apache2/keystone-error.log
-    CustomLog /var/log/apache2/keystone-access.log combined
+    CustomLog /var/log/apache2/keystone-access.log combined</p>
 
-    OIDCClaimPrefix <span class="s2">&quot;OIDC-&quot;</span>
-    OIDCResponseType <span class="s2">&quot;id_token&quot;</span>
-    OIDCScope <span class="s2">&quot;openid email profile&quot;</span>
-    OIDCProviderMetadataURL <span class="s2">&quot;https://accounts.google.com/.well-known/openid-configuration&quot;</span>
-    OIDCClientID <span class="s2">&quot;388517667150-adc2etk5ohfif5bluber4ho2150pqb3k.apps.googleusercontent.com&quot;</span>
-    OIDCClientSecret 2CnpJ5mm8mfqfoN_6aqd-72A
-    OIDCCryptoPassphrase openstack
-    OIDCRedirectURI <span class="s2">&quot;http://keystonegoogle.com:5000/v3/auth/OS-FEDERATION/websso/oidc/redirect&quot;</span>
-    &lt;Location ~ <span class="s2">&quot;/v3/auth/OS-FEDERATION/websso/oidc&quot;</span>&gt;
-      AuthType openid-connect
-      Require valid-user
-      LogLevel debug
-    &lt;/Location&gt;
-&lt;/VirtualHost&gt;
+<pre><code>OIDCClaimPrefix "OIDC-"
+OIDCResponseType "id_token"
+OIDCScope "openid email profile"
+OIDCProviderMetadataURL "https://accounts.google.com/.well-known/openid-configuration"
+OIDCClientID "388517667150-adc2etk5ohfif5bluber4ho2150pqb3k.apps.googleusercontent.com"
+OIDCClientSecret 2CnpJ5mm8mfqfoN_6aqd-72A
+OIDCCryptoPassphrase openstack
+OIDCRedirectURI "http://keystonegoogle.com:5000/v3/auth/OS-FEDERATION/websso/oidc/redirect"
+&lt;Location ~ "/v3/auth/OS-FEDERATION/websso/oidc"&gt;
+  AuthType openid-connect
+  Require valid-user
+  LogLevel debug
+&lt;/Location&gt;
+</code></pre>
+<p>&lt;/VirtualHost&gt;</p>
 
-&lt;VirtualHost *:35357&gt;
-......
-</code></pre></div>
+<p>&lt;VirtualHost *:35357&gt;
+……</p>
+
+<p>```</p>
+
 <h2 id="configure-horizon">Configure Horizon</h2>
 
 <p>Horizon 默认不启用 websso，所以需要更新 local_settings.py 以下配置：</p>
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">OPENSTACK_KEYSTONE_URL</span> <span class="o">=</span> <span class="s">&quot;http://keystonegoogle.com:5000/v3”</span>
 
-<span class="n">OPENSTACK_API_VERSIONS</span> <span class="o">=</span> <span class="p">{</span>
-         <span class="s">&quot;identity&quot;</span><span class="p">:</span> <span class="mi">3</span>
-<span class="p">}</span>
+<p>```python
+OPENSTACK_KEYSTONE_URL = “http://keystonegoogle.com:5000/v3”</p>
 
-<span class="n">WEBSSO_ENABLED</span> <span class="o">=</span> <span class="bp">True</span>
-<span class="n">WEBSSO_CHOICES</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="p">(</span><span class="s">&quot;credentials&quot;</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;Keystone Credentials&quot;</span><span class="p">)),</span>
-    <span class="p">(</span><span class="s">&quot;oidc&quot;</span><span class="p">,</span> <span class="n">_</span><span class="p">(</span><span class="s">&quot;Google Login&quot;</span><span class="p">)))</span>
+<p>OPENSTACK_API_VERSIONS = {
+         “identity”: 3
+}</p>
 
-<span class="n">WEBSSO_INITIAL_CHOICE</span> <span class="o">=</span> <span class="s">&quot;credentials&quot;</span>
-</code></pre></div>
+<p>WEBSSO_ENABLED = True
+WEBSSO_CHOICES = (
+    (“credentials”, _(“Keystone Credentials”)),
+    (“oidc”, _(“Google Login”)))</p>
+
+<p>WEBSSO_INITIAL_CHOICE = “credentials”
+```</p>
+
 <p>重启 Keystone 和 Horizon：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>service apache2 restart
-</code></pre></div>
+
+<p><code>bash
+$ service apache2 restart
+</code></p>
+
 <h2 id="create-user-etc">Create User etc</h2>
 
 <p>创建 Google 的 Group 和 Project：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>openstack group create google_group
-<span class="nv">$ </span>openstack project create google_project
-<span class="nv">$ </span>openstack role add admin --group google_group --project google_project
-</code></pre></div>
-<p>创建 Google Identity Provider：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>curl -g -X POST http://keystonegoogle.com:35357/v3/OS-FEDERATION/identity_providers/google_idp
- -H <span class="s2">&quot;Content-Type: application/json&quot;</span> -H <span class="s2">&quot;Accept: application/json&quot;</span> -H <span class="s2">&quot;X-Auth-Token: $token&quot;</span> -d <span class="s1">&#39;{&quot;identity_provider&quot;: {&quot;enabled&quot;: true, &quot;description&quot;: null, &quot;remote_ids&quot;: [&quot;https://accounts.google.com&quot;]}}&#39;</span>
-</code></pre></div>
-<p>创建 mapping 等相关信息：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>cat google_mapping.json
-<span class="o">[</span>
-  <span class="o">{</span>
-    <span class="s2">&quot;local&quot;</span>: <span class="o">[</span>
-      <span class="o">{</span>
-        <span class="s2">&quot;group&quot;</span>: <span class="o">{</span>
-          <span class="s2">&quot;id&quot;</span>: <span class="s2">&quot;a52d06a163f049e29416e20d0e8a12ea&quot;</span>
-          <span class="o">}</span>
-        <span class="o">}</span>
-      <span class="o">]</span>,
-    <span class="s2">&quot;remote&quot;</span>: <span class="o">[</span>
-        <span class="o">{</span>
-          <span class="s2">&quot;type&quot;</span>: <span class="s2">&quot;HTTP_OIDC_ISS&quot;</span>,
-          <span class="s2">&quot;any_one_of&quot;</span>: <span class="o">[</span>
-            <span class="s2">&quot;https://accounts.google.com&quot;</span>
-            <span class="o">]</span>
-          <span class="o">}</span>
-        <span class="o">]</span>
-  <span class="o">}</span>
-<span class="o">]</span>
 
-<span class="nv">$ </span>openstack mapping create google_mapping --rules google_mapping.json
-<span class="nv">$ </span>openstack federation protocol create oidc --identity-provider google_idp --mapping google_mapping
-</code></pre></div>
-<hr>
+<p><code>bash
+$ openstack group create google_group
+$ openstack project create google_project
+$ openstack role add admin --group google_group --project google_project
+</code></p>
+
+<p>创建 Google Identity Provider：</p>
+
+<p><code>bash
+$ curl -g -X POST http://keystonegoogle.com:35357/v3/OS-FEDERATION/identity_providers/google_idp
+ -H "Content-Type: application/json" -H "Accept: application/json" -H "X-Auth-Token: $token" -d '{"identity_provider": {"enabled": true, "description": null, "remote_ids": ["https://accounts.google.com"]}}'
+</code></p>
+
+<p>创建 mapping 等相关信息：</p>
+
+<p>```bash
+$ cat google_mapping.json
+[
+  {
+    “local”: [
+      {
+        “group”: {
+          “id”: “a52d06a163f049e29416e20d0e8a12ea”
+          }
+        }
+      ],
+    “remote”: [
+        {
+          “type”: “HTTP_OIDC_ISS”,
+          “any_one_of”: [
+            “https://accounts.google.com”
+            ]
+          }
+        ]
+  }
+]</p>
+
+<p>$ openstack mapping create google_mapping –rules google_mapping.json
+$ openstack federation protocol create oidc –identity-provider google_idp –mapping google_mapping
+```</p>
+
+<hr />
 
 <h1 id="test">Test</h1>
 
 <p>登录 keystonegoogle.com，进入 Login 页面。</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/Login.png" alt="login"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/Login.png" alt="login" /></p>
 
 <p>选择 Google Login，输入 Google 账户密码即可登录。</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/keystonegooglegoogleinstance.png" alt="dashboard"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/keystonegooglegoogleinstance.png" alt="dashboard" /></p>
+
 
   </div>
 

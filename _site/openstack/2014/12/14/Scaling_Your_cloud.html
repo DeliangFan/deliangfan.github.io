@@ -62,27 +62,26 @@
   </header>
 
   <div class="post-content" itemprop="articleBody">
-    <hr>
+    <hr />
 
 <p>为了提供规模化、分布式部署、资源优化利用和兼容 AWS 的功能，openstack 引入了 Region，Cell，Availability Zone(AZ) 和 Host Aggregates Zone(HAZ) 四个概念，其中 Region 和 AZ 是从公有云大哥 AWS 引入，Cell 是为了扩充一个 Region 下的集群的规模而引入的，Host Aggregates 是优化资源调度和利用引入的。这四个概念均和集群部署相关，某些地方含义有相近之处，对于初学 openstack 的童鞋来说容易混淆和模糊，本文将详细分析这四个概念。</p>
 
 <p>从部署层次来说，它们有以下关系：</p>
 
 <blockquote>
-<p>Region &gt; Cell &gt; Availabiliy Zone &gt; Host Aggregates</p>
+  <p>Region &gt; Cell &gt; Availabiliy Zone &gt; Host Aggregates</p>
 </blockquote>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/az_cell_region.jpg" alt="az-region-cell"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/az_cell_region.jpg" alt="az-region-cell" /></p>
 
-<hr>
-
-<h1 id="region">Region</h1>
+<hr />
+<p>#Region</p>
 
 <p>顾名思义，Region 直译过来就是区域，地域的概念，而事实上，AWS 按地域(国家或者城市)设置一个 Region，每个 Region 下有多个 Availability Zone。Openstack 同样支持 Region 的概念，支持全球化部署，比如为了降低网络延时，用户可以选择特定的 Region 来部署服务。各个 Region 之间的计算资源、网络资源、存储资源都是独立的，但所有 Region 共享账户用户信息，因为 Keystone 是实现 openstack 租户用户管理和认证的功能的组件，所以 Keystone 全局唯一，所有 Region 共享一个 Keystone，Keystone endpoint 中存储了访问各个 Region 的 URL。</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/region.jpg" alt="region"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/region.jpg" alt="region" /></p>
 
-<hr>
+<hr />
 
 <h1 id="cell">Cell</h1>
 
@@ -90,102 +89,131 @@
 
 <p>官网手册提到 Cell 不成熟（Considered experimental），巴黎峰会也提到 Cell 的痛点，虽然现在已进入 K 版本迭代开发中了，但是本人还未听说业界成熟使用 Cell 的案例。关于 Cell <a href="http://www.ibm.com/developerworks/cn/cloud/library/1409_zhaojian_openstacknovacell/index.html">此文</a>有更详细的介绍。</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/cell.jpg" alt="cell"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/cell.jpg" alt="cell" /></p>
 
-<hr>
+<hr />
 
-<h1 id="availability-zone-amp-host-aggregates-zone">Availability Zone &amp; Host Aggregates Zone</h1>
+<h1 id="availability-zone--host-aggregates-zone">Availability Zone &amp; Host Aggregates Zone</h1>
 
 <p>之所以把 AZ 和 HAZ 放到一同分析，是因为二者的概念实在类似。AWS 每个 Region 下有多个 AZ。Openstack 也引入了 AZ 的概念，我个人理解 AZ 的引入是基于安全的角度考虑，比如我们定义一个机房为一个 AZ，把该机房所有计算节点纳入到一个 AZ 中，其中一个机房因为某种原因down 掉，不会影响其它机房的虚拟机和网络；同时， AZ 对用户来说是一个可见的概念，用户创建虚拟机时，可以明确指出在哪个 AZ，用户可以通过在多个 AZ 创建虚拟机来保证高可靠性。</p>
 
 <p>HAZ 也是把一批具有共同属性的计算节点划分到同一个 Zone 中，HAZ 可以对 AZ 进一步细分，一个 AZ 可以有多个 HAZ。 同一个 HAZ 下的机器都具有某种共同的属性，比如高性能计算，高性能存储(SSD)，高性能网络(支持SRIOV等)。HAZ 和 AZ 另一个不同之处在于 HAZ 对用户不是明确可见的，用户在创建虚拟机时不能像指定 AZ 一样直接指定 HAZ，但是可以通过在 Instance Flavor 中设置相关属性，由 nova-scheduler 调度根据该调度策略调度到满足该属性的的 Host Aggregates Zones 中。</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/az-haz.jpg" alt="az"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/az-haz.jpg" alt="az" /></p>
 
-<hr>
+<hr />
 
 <h1 id="how-to-use-availability-zone-and-host-aggregates-zone">How to use availability zone and host aggregates zone</h1>
 
 <h2 id="how-to-use-availability-zone">How to use availability zone</h2>
 
 <p>Nova 调用创建 HAZ 的 API 创建 AZ，即在创建 HAZ 时，定义一个 AZ。</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>nova aggregate-create HAZ-01 AZ-01
+
+<p><code>bash
+$ nova aggregate-create HAZ-01 AZ-01
 +----+-------+-------------------+-------+----------+
-<span class="p">|</span> Id <span class="p">|</span> Name  <span class="p">|</span> Availability Zone <span class="p">|</span> Hosts <span class="p">|</span> Metadata <span class="p">|</span>
+| Id | Name  | Availability Zone | Hosts | Metadata |
 +----+-------+-------------------+-------+----------+
-<span class="p">|</span> <span class="m">3</span>  <span class="p">|</span> HAZ-01<span class="p">|</span>  AZ-01            <span class="p">|</span>       <span class="p">|</span>          <span class="p">|</span>
+| 3  | HAZ-01|  AZ-01            |       |          |
 +----+-------+-------------------+-------+----------+
-</code></pre></div>
+</code></p>
+
 <p>创建好 AZ 后，把计算节点加入到该 HAZ，因为 HAZ 属于 AZ，因此新增的计算节点也属于该 AZ。</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>nova aggregate-add-host <span class="m">3</span> compute01
+
+<p><code>bash
+$ nova aggregate-add-host 3 compute01
 +----+-------+-------------------+---------------+--------------------------------+
-<span class="p">|</span> Id <span class="p">|</span> Name  <span class="p">|</span> Availability Zone <span class="p">|</span>      Hosts    <span class="p">|</span>            Metadata            <span class="p">|</span>
+| Id | Name  | Availability Zone |      Hosts    |            Metadata            |
 +----+-------+-------------------+---------------+--------------------------------+
-<span class="p">|</span> <span class="m">3</span>  <span class="p">|</span> HAZ-01<span class="p">|</span>  AZ-01            <span class="p">|</span> <span class="o">[</span><span class="s1">&#39;compute-1&#39;</span><span class="o">]</span> <span class="p">|</span> <span class="o">{</span><span class="s1">&#39;availability_zone&#39;</span>: <span class="s1">&#39;AZ-01&#39;</span><span class="o">}</span> <span class="p">|</span>
+| 3  | HAZ-01|  AZ-01            | ['compute-1'] | {'availability_zone': 'AZ-01'} |
 +----+-------+-------------------+---------------+--------------------------------+
-</code></pre></div>
+</code></p>
+
 <p>创建虚拟机时，指定 AZ 名字即可。</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ nova boot --flavor m1.small --image cirros --availability-zone AZ-01 vm
-</code></pre></div>
+
+<p><code>
+$ nova boot --flavor m1.small --image cirros --availability-zone AZ-01 vm
+</code></p>
+
 <h2 id="how-to-use-host-aggregates-zone">How to use host aggregates zone</h2>
 
 <p>nova.conf 新增 AggregateInstanceExtraSpecsFilter filters，如下：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">scheduler_default_filters=AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
-</code></pre></div>
-<p>创建一个 HAZ：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>nova aggregate-create HAZ-SSD
-+----+--------+-------------------+-------+----------+
-<span class="p">|</span> Id <span class="p">|</span>  Name  <span class="p">|</span> Availability Zone <span class="p">|</span> Hosts <span class="p">|</span> Metadata <span class="p">|</span>
-+----+--------+-------------------+-------+----------+
-<span class="p">|</span> <span class="m">4</span>  <span class="p">|</span> HAZ-SSD<span class="p">|</span>       None        <span class="p">|</span>       <span class="p">|</span>          <span class="p">|</span>
-+----+--------+-------------------+-------+----------+
-</code></pre></div>
-<p>设置 Metadata 属性：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>nova aggregate-set-metadata <span class="m">4</span> <span class="nv">ssd</span><span class="o">=</span><span class="nb">true</span>
-+----+--------+-------------------+-------+-----------------+
-<span class="p">|</span> Id <span class="p">|</span>  Name  <span class="p">|</span> Availability Zone <span class="p">|</span> Hosts <span class="p">|</span>    Metadata     <span class="p">|</span>
-+----+--------+-------------------+-------+-----------------+
-<span class="p">|</span> <span class="m">4</span>  <span class="p">|</span> HAZ-SSD<span class="p">|</span>       None        <span class="p">|</span>  <span class="o">[]</span>   <span class="p">|</span> <span class="o">{</span><span class="s1">&#39;ssd&#39;</span>: <span class="s1">&#39;true&#39;</span><span class="o">}</span> <span class="p">|</span>
-+----+--------+-------------------+-------+-----------------+
-</code></pre></div>
-<p>添加计算节点到 HAZ：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>nova aggregate-add-host <span class="m">4</span> compute02
-+----+--------+-------------------+---------------+-----------------+
-<span class="p">|</span> Id <span class="p">|</span>  Name  <span class="p">|</span> Availability Zone <span class="p">|</span>      Hosts    <span class="p">|</span>    Metadata     <span class="p">|</span>
-+----+--------+-------------------+---------------+-----------------+
-<span class="p">|</span> <span class="m">4</span>  <span class="p">|</span> HAZ-SSD<span class="p">|</span>       None        <span class="p">|</span> <span class="o">[</span><span class="s1">&#39;compute02&#39;</span><span class="o">]</span> <span class="p">|</span> <span class="o">{</span><span class="s1">&#39;ssd&#39;</span>: <span class="s1">&#39;true&#39;</span><span class="o">}</span> <span class="p">|</span>
-+----+--------+-------------------+---------------+-----------------+
-</code></pre></div>
-<p>创建 flavor：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>nova flavor-create m1.ssd auto <span class="m">4096</span> <span class="m">10</span> <span class="m">2</span> --is-public <span class="nb">true</span>
-+----+--------+-----------+------+-----------+------+-------+------------+-----------+---------------+
-<span class="p">|</span> ID <span class="p">|</span>  Name  <span class="p">|</span> Memory_MB <span class="p">|</span> Disk <span class="p">|</span> Ephemeral <span class="p">|</span> Swap <span class="p">|</span> VCPUs <span class="p">|</span> RXTX_Factor<span class="p">|</span> Is_Public <span class="p">|</span> extra_specs   <span class="p">|</span>
-+----+--------+-----------+------+-----------+------+-------+------------+-----------+---------------+
-<span class="p">|</span>    <span class="p">|</span> m1.ssd <span class="p">|</span> <span class="m">4096</span>      <span class="p">|</span> <span class="m">10</span>   <span class="p">|</span>    <span class="m">0</span>      <span class="p">|</span>      <span class="p">|</span>   <span class="m">2</span>   <span class="p">|</span>    1.0     <span class="p">|</span>    True   <span class="p">|</span>      <span class="o">{}</span>       <span class="p">|</span>
-+----+--------+-----------+------+-----------+------+-------+------------+-----------+---------------+
-</code></pre></div>
-<p>设置 flavor 属性：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>nova flavor-key m1.ssd <span class="nb">set </span><span class="nv">ssd</span><span class="o">=</span><span class="nb">true</span>
 
-<span class="nv">$ </span>nova flavor-show m1.ssd
-+----+--------+-----------+------+-----------+------+-------+------------+-----------+------------------+
-<span class="p">|</span> ID <span class="p">|</span>  Name  <span class="p">|</span> Memory_MB <span class="p">|</span> Disk <span class="p">|</span> Ephemeral <span class="p">|</span> Swap <span class="p">|</span> VCPUs <span class="p">|</span> RXTX_Factor<span class="p">|</span> Is_Public <span class="p">|</span>   extra_specs    <span class="p">|</span>
-+----+--------+-----------+------+-----------+------+-------+------------+-----------+------------------+
-<span class="p">|</span>    <span class="p">|</span> m1.ssd <span class="p">|</span> <span class="m">4096</span>      <span class="p">|</span> <span class="m">10</span>   <span class="p">|</span>    <span class="m">0</span>      <span class="p">|</span>      <span class="p">|</span>   <span class="m">2</span>   <span class="p">|</span>    1.0     <span class="p">|</span>    True   <span class="p">|</span> <span class="o">{</span><span class="s1">&#39;ssd&#39;</span>: <span class="s1">&#39;true&#39;</span><span class="o">}</span>  <span class="p">|</span>
-+----+--------+-----------+------+-----------+------+-------+------------+-----------+------------------+
-</code></pre></div>
+<p><code>
+scheduler_default_filters=AggregateInstanceExtraSpecsFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter
+</code></p>
+
+<p>创建一个 HAZ：</p>
+
+<p><code>bash
+$ nova aggregate-create HAZ-SSD
++----+--------+-------------------+-------+----------+
+| Id |  Name  | Availability Zone | Hosts | Metadata |
++----+--------+-------------------+-------+----------+
+| 4  | HAZ-SSD|       None        |       |          |
++----+--------+-------------------+-------+----------+
+</code></p>
+
+<p>设置 Metadata 属性：</p>
+
+<p><code>bash
+$ nova aggregate-set-metadata 4 ssd=true
++----+--------+-------------------+-------+-----------------+
+| Id |  Name  | Availability Zone | Hosts |    Metadata     |
++----+--------+-------------------+-------+-----------------+
+| 4  | HAZ-SSD|       None        |  []   | {'ssd': 'true'} |
++----+--------+-------------------+-------+-----------------+
+</code></p>
+
+<p>添加计算节点到 HAZ：</p>
+
+<p><code>bash
+$ nova aggregate-add-host 4 compute02
++----+--------+-------------------+---------------+-----------------+
+| Id |  Name  | Availability Zone |      Hosts    |    Metadata     |
++----+--------+-------------------+---------------+-----------------+
+| 4  | HAZ-SSD|       None        | ['compute02'] | {'ssd': 'true'} |
++----+--------+-------------------+---------------+-----------------+
+</code></p>
+
+<p>创建 flavor：</p>
+
+<p><code>bash
+$ nova flavor-create m1.ssd auto 4096 10 2 --is-public true
++----+--------+-----------+------+-----------+------+-------+------------+-----------+---------------+
+| ID |  Name  | Memory_MB | Disk | Ephemeral | Swap | VCPUs | RXTX_Factor| Is_Public | extra_specs   |
++----+--------+-----------+------+-----------+------+-------+------------+-----------+---------------+
+|    | m1.ssd | 4096      | 10   |    0      |      |   2   |    1.0     |    True   |      {}       |
++----+--------+-----------+------+-----------+------+-------+------------+-----------+---------------+
+</code></p>
+
+<p>设置 flavor 属性：</p>
+
+<p>```bash
+$ nova flavor-key m1.ssd set ssd=true</p>
+
+<p>$ nova flavor-show m1.ssd
++—-+——–+———–+——+———–+——+——-+————+———–+——————+
+| ID |  Name  | Memory_MB | Disk | Ephemeral | Swap | VCPUs | RXTX_Factor| Is_Public |   extra_specs    |
++—-+——–+———–+——+———–+——+——-+————+———–+——————+
+|    | m1.ssd | 4096      | 10   |    0      |      |   2   |    1.0     |    True   | {‘ssd’: ‘true’}  |
++—-+——–+———–+——+———–+——+——-+————+———–+——————+
+```</p>
+
 <p>采用 m1.ssd 创建虚拟机：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>nova boot --flavor m1.ssd --image cirros vm_ssd
-</code></pre></div>
-<hr>
+
+<p><code>bash
+$ nova boot --flavor m1.ssd --image cirros vm_ssd
+</code></p>
+
+<hr />
 
 <h1 id="reference">Reference</h1>
-
 <ol>
-<li>http://docs.openstack.org/openstack-ops/content/scaling.html</li>
-<li>http://www.ibm.com/developerworks/cn/cloud/library/1409<u>zhaojian</u>openstacknovacell/index.html</li>
-<li>http://kimizhang.wordpress.com/tag/availability-zone/</li>
-<li>http://blog.chinaunix.net/xmlrpc.php?r=blog/article&amp;uid=20940095&amp;id=4064233</li>
+  <li>http://docs.openstack.org/openstack-ops/content/scaling.html</li>
+  <li>http://www.ibm.com/developerworks/cn/cloud/library/1409_zhaojian_openstacknovacell/index.html</li>
+  <li>http://kimizhang.wordpress.com/tag/availability-zone/</li>
+  <li>http://blog.chinaunix.net/xmlrpc.php?r=blog/article&amp;uid=20940095&amp;id=4064233</li>
 </ol>
 
   </div>

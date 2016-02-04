@@ -62,154 +62,202 @@
   </header>
 
   <div class="post-content" itemprop="articleBody">
-    <hr>
+    <hr />
 
 <h1 id="snapshot-overview">Snapshot Overview</h1>
 
 <p>严格的说，nova 虚拟机的快照并不是真正意义的快照，它仅仅将虚拟机的磁盘文件完整的复制一份，然后把复制的文件上传至 glance 中作为镜像，之后二者毫无关联。所以 nova 用 image-create 而非 snapshot 来定义该 API，但为了方便表述，本文依旧用 snapshot 来表述 nova 快照。</p>
 
 <ul>
-<li><p>Libvirt snapshot: 采用 virDomainSnapshotCreateXML() (CLI为virsh snapshot-create) 创建快照，新建的快照与虚拟机有关联：若为内置快照，新建的快照和虚拟机磁盘文件存在同一个 qcow2 文件中；若为外置快照，快照为一个新建的 qcow2 文件，原虚拟机的磁盘文件将变为 read-only 模板，快照文件记录与模板的差异数据。它包含快照链信息，也保留了 RAM 信息，可回滚至快照点。</p></li>
-<li><p>Nova snapshot: nova 并未采用 virDomainSnapshotCreateXML() 实现快照，它仅仅将虚拟机磁盘文件完整拷贝一份并上传至 glance 中。这种快照不包含快照链和 RAM，只保留了磁盘文件信息，无法回滚至快照点。</p></li>
+  <li>
+    <p>Libvirt snapshot: 采用 virDomainSnapshotCreateXML() (CLI为virsh snapshot-create) 创建快照，新建的快照与虚拟机有关联：若为内置快照，新建的快照和虚拟机磁盘文件存在同一个 qcow2 文件中；若为外置快照，快照为一个新建的 qcow2 文件，原虚拟机的磁盘文件将变为 read-only 模板，快照文件记录与模板的差异数据。它包含快照链信息，也保留了 RAM 信息，可回滚至快照点。</p>
+  </li>
+  <li>
+    <p>Nova snapshot: nova 并未采用 virDomainSnapshotCreateXML() 实现快照，它仅仅将虚拟机磁盘文件完整拷贝一份并上传至 glance 中。这种快照不包含快照链和 RAM，只保留了磁盘文件信息，无法回滚至快照点。</p>
+  </li>
 </ul>
 
 <p>因 nova 的 snapshot 只是对虚拟机磁盘文件的完整拷贝，所以和真正意义的 snapshot 相比，存在以下缺点：</p>
 
 <ul>
-<li>没有快照链信息，不支持虚拟机回滚至某个快照点</li>
-<li>只对系统盘进行快照，不支持内存快照</li>
-<li>不支持同时对虚拟机和磁盘做快照</li>
-<li>需要用户进行一致性操作</li>
-<li>不支持含元数据导出，不支持含元数据导入</li>
-<li>只支持虚拟机全量数据快照（与快照的实现方式有关，因为是通过image进行保存的），过程较长（需要先通过存储快照，然后抽取并上传至glance)，快照以Image方式保存，而非以cinder卷方式保存，无法充分利用存储本身能力加快快照的创建和使用</li>
+  <li>没有快照链信息，不支持虚拟机回滚至某个快照点</li>
+  <li>只对系统盘进行快照，不支持内存快照</li>
+  <li>不支持同时对虚拟机和磁盘做快照</li>
+  <li>需要用户进行一致性操作</li>
+  <li>不支持含元数据导出，不支持含元数据导入</li>
+  <li>只支持虚拟机全量数据快照（与快照的实现方式有关，因为是通过image进行保存的），过程较长（需要先通过存储快照，然后抽取并上传至glance)，快照以Image方式保存，而非以cinder卷方式保存，无法充分利用存储本身能力加快快照的创建和使用</li>
 </ul>
 
-<hr>
+<hr />
 
-<h1 id="cold-snapshot-amp-live-snapshot">Cold Snapshot &amp; Live Snapshot</h1>
+<h1 id="cold-snapshot--live-snapshot">Cold Snapshot &amp; Live Snapshot</h1>
 
 <p>受磁盘文件格式以及 libvirt、qemu 版本的影响，nova 的 snapshot 分两种，cold snapshot 和 live snapshot，本文用命令行表示对应的步骤，：</p>
 
 <ul>
-<li>Cold snapshot: 创建 snapshot 时，需先关闭虚拟机，快照完成后再启动虚拟机</li>
-<li>Live snapshot: 创建 snapshot 时，无需关闭虚拟机</li>
+  <li>Cold snapshot: 创建 snapshot 时，需先关闭虚拟机，快照完成后再启动虚拟机</li>
+  <li>Live snapshot: 创建 snapshot 时，无需关闭虚拟机</li>
 </ul>
-<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">snapshot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">instance</span><span class="p">,</span> <span class="n">image_href</span><span class="p">,</span> <span class="n">update_task_state</span><span class="p">):</span>
-    <span class="o">......</span>
 
-    <span class="c"># NOTE(rmk): Live snapshots require QEMU 1.3 and Libvirt 1.0.0.</span>
-    <span class="c">#            These restrictions can be relaxed as other configurations</span>
-    <span class="c">#            can be validated.</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_min_version</span><span class="p">(</span><span class="n">MIN_LIBVIRT_LIVESNAPSHOT_VERSION</span><span class="p">,</span>
-                            <span class="n">MIN_QEMU_LIVESNAPSHOT_VERSION</span><span class="p">,</span>
-                            <span class="n">REQ_HYPERVISOR_LIVESNAPSHOT</span><span class="p">)</span> \
-            <span class="ow">and</span> <span class="ow">not</span> <span class="n">source_format</span> <span class="o">==</span> <span class="s">&quot;lvm&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">source_format</span> <span class="o">==</span> <span class="s">&#39;rbd&#39;</span><span class="p">:</span>
-        <span class="n">live_snapshot</span> <span class="o">=</span> <span class="bp">True</span>
-        <span class="c"># Abort is an idempotent operation, so make sure any block</span>
-        <span class="c"># jobs which may have failed are ended. This operation also</span>
-        <span class="c"># confirms the running instance, as opposed to the system as a</span>
-        <span class="c"># whole, has a new enough version of the hypervisor (bug 1193146).</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">virt_dom</span><span class="o">.</span><span class="n">blockJobAbort</span><span class="p">(</span><span class="n">disk_path</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="k">except</span> <span class="n">libvirt</span><span class="o">.</span><span class="n">libvirtError</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
-            <span class="n">error_code</span> <span class="o">=</span> <span class="n">ex</span><span class="o">.</span><span class="n">get_error_code</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">error_code</span> <span class="o">==</span> <span class="n">libvirt</span><span class="o">.</span><span class="n">VIR_ERR_CONFIG_UNSUPPORTED</span><span class="p">:</span>
-                <span class="n">live_snapshot</span> <span class="o">=</span> <span class="bp">False</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">pass</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">live_snapshot</span> <span class="o">=</span> <span class="bp">False</span>
+<p>```python
+def snapshot(self, context, instance, image_href, update_task_state):
+    ……</p>
 
-    <span class="o">......</span>
-</code></pre></div>
-<h2 id="cold-snapshot-流程">Cold Snapshot 流程:</h2>
+<pre><code># NOTE(rmk): Live snapshots require QEMU 1.3 and Libvirt 1.0.0.
+#            These restrictions can be relaxed as other configurations
+#            can be validated.
+if self.has_min_version(MIN_LIBVIRT_LIVESNAPSHOT_VERSION,
+                        MIN_QEMU_LIVESNAPSHOT_VERSION,
+                        REQ_HYPERVISOR_LIVESNAPSHOT) \
+        and not source_format == "lvm" and not source_format == 'rbd':
+    live_snapshot = True
+    # Abort is an idempotent operation, so make sure any block
+    # jobs which may have failed are ended. This operation also
+    # confirms the running instance, as opposed to the system as a
+    # whole, has a new enough version of the hypervisor (bug 1193146).
+    try:
+        virt_dom.blockJobAbort(disk_path, 0)
+    except libvirt.libvirtError as ex:
+        error_code = ex.get_error_code()
+        if error_code == libvirt.VIR_ERR_CONFIG_UNSUPPORTED:
+            live_snapshot = False
+        else:
+            pass
+else:
+    live_snapshot = False
+
+...... ```
+</code></pre>
+
+<h2 id="cold-snapshot-">Cold Snapshot 流程:</h2>
 
 <p>1.卸载 pci 设备，保持虚拟机状态并关机。</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">Python:
-virt_dom.managedSave(0)
 
-Cli:
+<p>```
+Python:
+virt_dom.managedSave(0)</p>
+
+<p>Cli:
 $ virsh managedsave vm
-</code></pre></div>
+```</p>
+
 <p>2.复制虚拟机的磁盘文件, 然后把复制的文件上传至 glance 中。</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>qemu-img convert -f qcow2 vm.qcow2 -O qcow2 vm_snapshot.qcow2
-<span class="nv">$ </span>glance image-update vm_snapshot --file vm_snapshot.qcow2
-</code></pre></div>
+
+<p><code>bash
+$ qemu-img convert -f qcow2 vm.qcow2 -O qcow2 vm_snapshot.qcow2
+$ glance image-update vm_snapshot --file vm_snapshot.qcow2
+</code></p>
+
 <p>3.启动虚拟机，挂载 pci 设备</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>virsh start vm
-</code></pre></div>
-<h2 id="live-snapshot-流程">Live Snapshot 流程</h2>
+
+<p><code>bash
+$ virsh start vm
+</code></p>
+
+<h2 id="live-snapshot-">Live Snapshot 流程</h2>
 
 <p>1.暂停所有的 block job：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">Python
-virt_dom.blockJobAbort<span class="o">(</span>disk_path, 0<span class="o">)</span>
 
-Cli
-<span class="nv">$ </span>virsh blockjob vm vda --abort
-</code></pre></div>
+<p>```bash
+Python
+virt_dom.blockJobAbort(disk_path, 0)</p>
+
+<p>Cli
+$ virsh blockjob vm vda –abort
+```</p>
+
 <p>2.新建一个带有 backing file 的 vm_delta.qcow2 文件，大小和虚拟机磁盘大小一致：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ qemu-img create -f qcow2 vm_delta.qcow2 --backing_file=base_image --size=root_disk_size
-</code></pre></div>
+
+<p><code>
+$ qemu-img create -f qcow2 vm_delta.qcow2 --backing_file=base_image --size=root_disk_size
+</code></p>
+
 <p>3.Undefine 虚拟机，以便保持数据一致性，期间虚拟机依旧运行：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">Python
-domain.undefine<span class="o">()</span>
 
-Cli
-<span class="nv">$ </span>virsh undefine vm
-</code></pre></div>
+<p>```bash
+Python
+domain.undefine()</p>
+
+<p>Cli
+$ virsh undefine vm
+```</p>
+
 <p>4.把虚拟机磁盘文件复制到新建的 vm_delta.qcow2 文件中：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">Python
-domain.blockRebase<span class="o">()</span>
 
-Cli
-<span class="nv">$ </span>virsh blockcopy --domain vm vda vm_delta.qcow2 --wait --verbose
-</code></pre></div>
+<p>```bash
+Python
+domain.blockRebase()</p>
+
+<p>Cli
+$ virsh blockcopy –domain vm vda vm_delta.qcow2 –wait –verbose
+```</p>
+
 <p>5.Define 虚拟机</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">Python
-_conn.defineXML<span class="o">(</span>xml<span class="o">)</span>
 
-Cli
-<span class="nv">$ </span>virsh define vm
-</code></pre></div>
+<p>```bash
+Python
+_conn.defineXML(xml)</p>
+
+<p>Cli
+$ virsh define vm
+```</p>
+
 <p>6.因 vm_delta.qcow2 只是一个增量文件，所以需把它和 backing file 文件合并成一个 snapshot.qcow2 文件，然后把这个完整的 snapshot.qcow2 文件上传至 glance 中:</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>qemu-img convert -f qcow2 -O raw vm_delta.qcow2 snapshot.qcow2
-<span class="nv">$ </span>glance image-update vm_snapshot --file vm_snapshot.qcow2
-</code></pre></div>
-<hr>
 
-<h1 id="基于-ceph-rbd-的-snapshot">基于 Ceph RBD 的 Snapshot</h1>
+<p><code>bash
+$ qemu-img convert -f qcow2 -O raw vm_delta.qcow2 snapshot.qcow2
+$ glance image-update vm_snapshot --file vm_snapshot.qcow2
+</code></p>
+
+<hr />
+
+<h1 id="ceph-rbd--snapshot">基于 Ceph RBD 的 Snapshot</h1>
 
 <p>上述 snapshot 的流程都是基于本地存储，基于 Ceph RBD 的 <a href="http://docs.ceph.com/docs/hammer/rbd/rbd-snapshot/">Snapshot</a> 相对复杂些，下面介绍基于 Ceph RBD 的虚拟机 snapshot 流程，由于 live snapshot 和 cold snapshot 的区别和基于本地存储的区别不大，所以本文着重关注 RBD 层面的流程。</p>
 
 <p>1.创建快照并设置快照属性为 protected：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>rbd snap create nova-pool/vm@nova_vm_snap
-<span class="nv">$ </span>rbd snap protect nova-pool/vm@nova_vm_snap
-</code></pre></div>
+
+<p><code>bash
+$ rbd snap create nova-pool/vm@nova_vm_snap
+$ rbd snap protect nova-pool/vm@nova_vm_snap
+</code></p>
+
 <p>2.Clone 该快照至 glance pool 中：</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>rbd clone nova-pool/vm@nova_vm_snao glance-pool/glance_vm_snap_clone
-</code></pre></div>
+
+<p><code>bash
+$ rbd clone nova-pool/vm@nova_vm_snao glance-pool/glance_vm_snap_clone
+</code></p>
+
 <p>3.Flatten the clone in glance pool：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ rbd flatten glance-pool/glance_vm_snap_clone
-</code></pre></div>
-<p>4.对 glance pool 的 glance<u>vm</u>snap_clone 做快照，并设置其属性为 protected：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ rbd snap create glance-pool/glance_vm_snap_clone@vm_snapshot
+
+<p><code>
+$ rbd flatten glance-pool/glance_vm_snap_clone
+</code></p>
+
+<p>4.对 glance pool 的 glance_vm_snap_clone 做快照，并设置其属性为 protected：</p>
+
+<p><code>
+$ rbd snap create glance-pool/glance_vm_snap_clone@vm_snapshot
 $ rbd snap protect glance-pool/glance_vm_snap_clone@vm_snapshot
-</code></pre></div>
+</code></p>
+
 <p>5.删除 nova pool 的快照：</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ rbd snap unprotect nova-pool/vm@nova_vm_snap
+
+<p><code>
+$ rbd snap unprotect nova-pool/vm@nova_vm_snap
 $ rbd snap rm nova-pool/vm@nova_vm_snap
-</code></pre></div>
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/cephrbdsnapshotflow.png" alt="Ceph RBD flow"></p>
+</code></p>
 
-<hr>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/cephrbdsnapshotflow.png" alt="Ceph RBD flow" /></p>
 
-<h1 id="参考资料：">参考资料：</h1>
+<hr />
 
+<h1 id="section">参考资料：</h1>
 <ol>
-<li><a href="https://www.redhat.com/archives/libvirt-users/2012-April/msg00142.html">https://www.redhat.com/archives/libvirt-users/2012-April/msg00142.html</a></li>
-<li><a href="http://blog.csdn.net/halcyonbaby/article/details/19998155">http://blog.csdn.net/halcyonbaby/article/details/19998155</a></li>
-<li><a href="http://itxx.sinaapp.com/blog/content/130">http://itxx.sinaapp.com/blog/content/130</a></li>
-<li><a href="http://kashyapc.com/2012/09/14/externaland-live-snapshots-with-libvirt/">http://kashyapc.com/2012/09/14/externaland-live-snapshots-with-libvirt/</a></li>
+  <li><a href="https://www.redhat.com/archives/libvirt-users/2012-April/msg00142.html">https://www.redhat.com/archives/libvirt-users/2012-April/msg00142.html</a></li>
+  <li><a href="http://blog.csdn.net/halcyonbaby/article/details/19998155">http://blog.csdn.net/halcyonbaby/article/details/19998155</a></li>
+  <li><a href="http://itxx.sinaapp.com/blog/content/130">http://itxx.sinaapp.com/blog/content/130</a></li>
+  <li><a href="http://kashyapc.com/2012/09/14/externaland-live-snapshots-with-libvirt/">http://kashyapc.com/2012/09/14/externaland-live-snapshots-with-libvirt/</a></li>
 </ol>
 
   </div>

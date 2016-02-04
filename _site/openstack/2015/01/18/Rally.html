@@ -62,67 +62,84 @@
   </header>
 
   <div class="post-content" itemprop="articleBody">
-    <hr>
+    <hr />
 
 <h1 id="what-is-rally">What is Rally</h1>
 
 <p>Rally 集成了部署、API测试、压力测试功能(如下图)，但我们一般用 devstack 部署，tempest 做 API 测试，因此 Rally 常用于模拟高并发场景的压力测试。Rally 测试 openstack 在并发下 API 的相应时间和请求成功率，从而测试出 openstack 集群的性能。</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/rally.jpg" alt="rally"></p>
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/rally.jpg" alt="rally" /></p>
 
-<hr>
+<hr />
 
-<h1 id="deploy-rally">Deploy  Rally</h1>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>git clone https://git.openstack.org/stackforge/rally
-<span class="nv">$ </span>./rally/install_rally.sh -v
-</code></pre></div>
-<hr>
+<h1 id="deploy--rally">Deploy  Rally</h1>
+
+<p><code>bash
+$ git clone https://git.openstack.org/stackforge/rally
+$ ./rally/install_rally.sh -v
+</code></p>
+
+<hr />
 
 <h1 id="configure-rally">Configure Rally</h1>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">source</span> /opt/rally/bin/activate
-</code></pre></div>
+
+<p><code>bash
+$ source /opt/rally/bin/activate
+</code></p>
+
 <p>初始化 Rally，把所需测试 openstack 集群的 keystone url，用户租户信息写入到 existing.json 中</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>rally deployment create --filename<span class="o">=</span>existing.json --name<span class="o">=</span>openstack
-</code></pre></div>
+
+<p><code>bash
+$ rally deployment create --filename=existing.json --name=openstack
+</code></p>
+
 <p>查看集群的 service</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>rally deployment check
+
+<p><code>bash
+$ rally deployment check
 keystone endpoints are valid and following services are available:
 +------------+----------------+-----------+
-<span class="p">|</span> services   <span class="p">|</span> <span class="nb">type</span>           <span class="p">|</span> status    <span class="p">|</span>
+| services   | type           | status    |
 +------------+----------------+-----------+
-<span class="p">|</span> ceilometer <span class="p">|</span> metering       <span class="p">|</span> Available <span class="p">|</span>
-<span class="p">|</span> cinder     <span class="p">|</span> volume         <span class="p">|</span> Available <span class="p">|</span>
-<span class="p">|</span> cinderv2   <span class="p">|</span> volumev2       <span class="p">|</span> Available <span class="p">|</span>
-<span class="p">|</span> ec2        <span class="p">|</span> ec2            <span class="p">|</span> Available <span class="p">|</span>
-<span class="p">|</span> glance     <span class="p">|</span> image          <span class="p">|</span> Available <span class="p">|</span>
-<span class="p">|</span> heat       <span class="p">|</span> cloudformation <span class="p">|</span> Available <span class="p">|</span>
-<span class="p">|</span> heat       <span class="p">|</span> orchestration  <span class="p">|</span> Available <span class="p">|</span>
-<span class="p">|</span> keystone   <span class="p">|</span> identity       <span class="p">|</span> Available <span class="p">|</span>
-<span class="p">|</span> neutron    <span class="p">|</span> network        <span class="p">|</span> Available <span class="p">|</span>
-<span class="p">|</span> nova       <span class="p">|</span> compute        <span class="p">|</span> Available <span class="p">|</span>
-<span class="p">|</span> novav3     <span class="p">|</span> computev3      <span class="p">|</span> Available <span class="p">|</span>
-<span class="p">|</span> s3         <span class="p">|</span> s3             <span class="p">|</span> Available <span class="p">|</span>
-<span class="p">|</span> trove      <span class="p">|</span> database       <span class="p">|</span> Available <span class="p">|</span>
+| ceilometer | metering       | Available |
+| cinder     | volume         | Available |
+| cinderv2   | volumev2       | Available |
+| ec2        | ec2            | Available |
+| glance     | image          | Available |
+| heat       | cloudformation | Available |
+| heat       | orchestration  | Available |
+| keystone   | identity       | Available |
+| neutron    | network        | Available |
+| nova       | compute        | Available |
+| novav3     | computev3      | Available |
+| s3         | s3             | Available |
+| trove      | database       | Available |
 +------------+----------------+-----------+
-</code></pre></div>
-<hr>
+</code></p>
 
-<h1 id="benchmark-openstack-peformance">Benchmark  Openstack Peformance</h1>
+<hr />
+
+<h1 id="benchmark--openstack-peformance">Benchmark  Openstack Peformance</h1>
 
 <p>在 rally/doc/samples/tasks/scenarios/ 里头包含各个组件的配置文件，直接使用即可，举例：</p>
 
 <p>测试 keystone 创建-删除用户性能</p>
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>rally -v task start rally/doc/samples/tasks/scenarios/keystone/create-and-delete-user.json
+
+<p><code>bash
+$ rally -v task start rally/doc/samples/tasks/scenarios/keystone/create-and-delete-user.json
 +--------------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
-<span class="p">|</span> action                   <span class="p">|</span> min <span class="o">(</span>sec<span class="o">)</span> <span class="p">|</span> avg <span class="o">(</span>sec<span class="o">)</span> <span class="p">|</span> max <span class="o">(</span>sec<span class="o">)</span> <span class="p">|</span> <span class="m">90</span> percentile <span class="p">|</span> <span class="m">95</span> percentile <span class="p">|</span> success <span class="p">|</span> count <span class="p">|</span>
+| action                   | min (sec) | avg (sec) | max (sec) | 90 percentile | 95 percentile | success | count |
 +--------------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
-<span class="p">|</span> keystone.create_user     <span class="p">|</span> 0.653     <span class="p">|</span> 2.117     <span class="p">|</span> 4.912     <span class="p">|</span> 2.921         <span class="p">|</span> 3.259         <span class="p">|</span> 100.0%  <span class="p">|</span> <span class="m">100</span>   <span class="p">|</span>
-<span class="p">|</span> keystone.delete_resource <span class="p">|</span> 0.112     <span class="p">|</span> 0.534     <span class="p">|</span> 1.684     <span class="p">|</span> 0.934         <span class="p">|</span> 1.119         <span class="p">|</span> 100.0%  <span class="p">|</span> <span class="m">100</span>   <span class="p">|</span>
-<span class="p">|</span> total                    <span class="p">|</span> 1.461     <span class="p">|</span> 2.651     <span class="p">|</span> 5.351     <span class="p">|</span> 3.512         <span class="p">|</span> 3.924         <span class="p">|</span> 100.0%  <span class="p">|</span> <span class="m">100</span>   <span class="p">|</span>
+| keystone.create_user     | 0.653     | 2.117     | 4.912     | 2.921         | 3.259         | 100.0%  | 100   |
+| keystone.delete_resource | 0.112     | 0.534     | 1.684     | 0.934         | 1.119         | 100.0%  | 100   |
+| total                    | 1.461     | 2.651     | 5.351     | 3.512         | 3.924         | 100.0%  | 100   |
 +--------------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
-</code></pre></div>
+</code></p>
+
 <p>测试 nova 创建-删除虚拟机性能</p>
-<div class="highlight"><pre><code class="language-text" data-lang="text">$ rally -v task start rally/doc/samples/tasks/scenarios/nova/boot-and-delete.json
+
+<p><code>
+$ rally -v task start rally/doc/samples/tasks/scenarios/nova/boot-and-delete.json
 +--------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
 | action             | min (sec) | avg (sec) | max (sec) | 90 percentile | 95 percentile | success | count |
 +--------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
@@ -130,14 +147,15 @@ keystone endpoints are valid and following services are available:
 | nova.delete_server | 2.227     | 2.293     | 2.459     | 2.355         | 2.407         | 100.0%  | 10   |
 | total              | 4.861     | 4.981     | 5.113     | 5.081         | 5.096         | 100.0%  | 10   |
 +--------------------+-----------+-----------+-----------+---------------+---------------+---------+-------+
-</code></pre></div>
-<hr>
+</code></p>
+
+<hr />
 
 <h1 id="refference">Refference</h1>
 
 <ol>
-<li><a href="https://wiki.openstack.org/wiki/Rally">https://wiki.openstack.org/wiki/Rally</a></li>
-<li><a href="http://prajnagarden.com/openstack/2014/05/06/rally-guide-01/">http://prajnagarden.com/openstack/2014/05/06/rally-guide-01/</a></li>
+  <li><a href="https://wiki.openstack.org/wiki/Rally">https://wiki.openstack.org/wiki/Rally</a></li>
+  <li><a href="http://prajnagarden.com/openstack/2014/05/06/rally-guide-01/">http://prajnagarden.com/openstack/2014/05/06/rally-guide-01/</a></li>
 </ol>
 
   </div>
