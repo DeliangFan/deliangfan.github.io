@@ -77,7 +77,7 @@
 
 <hr />
 
-<h1 id="openid-connect-protocol">OpenID Connect Protocol</h1>
+<h1 id="id-openid-connect-protocol">OpenID Connect Protocol</h1>
 
 <p><a href="http://openid.net/connect/">OpenID</a> 的官网是这样定义 OpenID Connect：</p>
 
@@ -100,7 +100,7 @@
 
 <hr />
 
-<h1 id="setup-google">Setup Google</h1>
+<h1 id="id-setup-google">Setup Google</h1>
 
 <p>首先申请一个域名，并将域名指向 Keystone server，本文在阿里云申请如下域名：</p>
 
@@ -127,11 +127,11 @@
 
 <hr />
 
-<h1 id="setup-keystone">Setup Keystone</h1>
+<h1 id="id-setup-keystone">Setup Keystone</h1>
 
 <p>在某公有云厂商创建一台境外服务器，以便能访问 Google。参考官网文档 <a href="http://docs.openstack.org/kilo/install-guide/install/apt/content/">OpenStack Kilo Installation Guide</a> 安装至第六章 network 即可，因 ubuntu 对 horizon 做了较大改动，所以参考<a href="http://docs.openstack.org/developer/horizon/topics/install.html">文档</a>采用源码安装 horizon。</p>
 
-<h2 id="configure-keystone">Configure Keystone</h2>
+<h2 id="id-configure-keystone">Configure Keystone</h2>
 
 <p>下面的安装和配置主要参考 <a href="http://shop.oreilly.com/product/0636920045960.do">Identity, Authentication &amp; Access Management in OpenStack</a>，首先安装 libapache2-mode-auth-openidc：</p>
 
@@ -195,21 +195,17 @@ LoadModule auth_openidc_module /usr/lib/apache2/modules/mod_auth_openidc.so
 ......
 </code></pre>
 
-<h2 id="configure-horizon">Configure Horizon</h2>
+<h2 id="id-configure-horizon">Configure Horizon</h2>
 
 <p>Horizon 默认不启用 websso，所以需要更新 local_settings.py 以下配置：</p>
 
 <pre><code class="language-python">OPENSTACK_KEYSTONE_URL = "http://keystonegoogle.com:5000/v3”
-
 OPENSTACK_API_VERSIONS = {
-         "identity": 3
-}
-
+         "identity": 3}
 WEBSSO_ENABLED = True
 WEBSSO_CHOICES = (
     ("credentials", _("Keystone Credentials")),
     ("oidc", _("Google Login")))
-
 WEBSSO_INITIAL_CHOICE = "credentials"
 </code></pre>
 
@@ -218,7 +214,7 @@ WEBSSO_INITIAL_CHOICE = "credentials"
 <pre><code class="language-bash">$ service apache2 restart
 </code></pre>
 
-<h2 id="create-user-etc">Create User etc</h2>
+<h2 id="id-create-user-etc">Create User etc</h2>
 
 <p>创建 Google 的 Group 和 Project：</p>
 
@@ -262,7 +258,7 @@ $ openstack federation protocol create oidc --identity-provider google_idp --map
 
 <hr />
 
-<h1 id="test">Test</h1>
+<h1 id="id-test">Test</h1>
 
 <p>登录 keystonegoogle.com，进入 Login 页面。</p>
 

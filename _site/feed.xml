@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 04 Feb 2016 17:43:24 +0800</pubDate>
-    <lastBuildDate>Thu, 04 Feb 2016 17:43:24 +0800</lastBuildDate>
+    <pubDate>Sat, 06 Feb 2016 17:59:40 +0800</pubDate>
+    <lastBuildDate>Sat, 06 Feb 2016 17:59:40 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -20,17 +20,17 @@
   &lt;p&gt;再拾此书时，怀念 4 年前阳光明媚的午后，我在浙大紫金港图书馆的三楼，梦回了中学奥数的小伙伴，和那时曾想证明哥德巴尔猜想的情怀！&lt;/p&gt;
 &lt;/blockquote&gt;
 
-&lt;h1 id=&quot;deffie-hellman-&quot;&gt;Deffie-Hellman 算法简介&lt;/h1&gt;
+&lt;h1 id=&quot;id-deffie-hellman-&quot;&gt;Deffie-Hellman 算法简介&lt;/h1&gt;
 
 &lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange&quot;&gt;Deffie-Hellman&lt;/a&gt;(简称 DH) 密钥交换是最早的密钥交换算法之一，它使得通信的双方能在非安全的信道中安全的交换密钥，用于加密后续的通信消息。 Whitfield Diffie 和 Martin Hellman 于 1976 提出该算法，之后被应用于安全领域，比如 Https 协议的 TSL(&lt;a href=&quot;https://en.wikipedia.org/wiki/Transport_Layer_Security&quot;&gt;Transport Layer Security&lt;/a&gt;) 和 IPsec 协议的 IKE(&lt;a href=&quot;https://en.wikipedia.org/wiki/Internet_Key_Exchange&quot;&gt;Internet Key Exchange&lt;/a&gt;) 均以 DH 算法作为密钥交换算法。&lt;/p&gt;
 
 &lt;hr /&gt;
 
-&lt;h1 id=&quot;section&quot;&gt;数论知识&lt;/h1&gt;
+&lt;h1 id=&quot;id-section&quot;&gt;数论知识&lt;/h1&gt;
 
 &lt;p&gt;理解 DH 算法前，先介绍一些必要的数论领域知识，分别是离散对数问题和一个求模公式。&lt;/p&gt;
 
-&lt;h2 id=&quot;section-1&quot;&gt;离散对数问题&lt;/h2&gt;
+&lt;h2 id=&quot;id-section-1&quot;&gt;离散对数问题&lt;/h2&gt;
 
 &lt;p&gt;假定 a, p 均是素数，下面两个集合相等，证明过程请参考 &lt;a href=&quot;http://www.amazon.com/Cryptography-Network-Security-Principles-Practice/dp/0133354695&quot;&gt;Cryptography and Network Security&lt;/a&gt; 第八章：&lt;/p&gt;
 
@@ -47,7 +47,7 @@
 
 &lt;p&gt;第三点在求解上有这么一个特点：已知 x 求 b 非常容易，已知 b 求 x 非常困难，特别当 p 很大时，求解的复杂度非常高，所以它又被称为离散对数问题  (&lt;a href=&quot;https://en.wikipedia.org/wiki/Discrete_logarithm&quot;&gt;Discrete logarithm&lt;/a&gt;)，它是 DH 算法能够安全交换密钥的基础！&lt;/p&gt;
 
-&lt;h2 id=&quot;section-2&quot;&gt;求模公式&lt;/h2&gt;
+&lt;h2 id=&quot;id-section-2&quot;&gt;求模公式&lt;/h2&gt;
 
 &lt;p&gt;假设 q 为素数，对于正整数 a,x,y，有：&lt;/p&gt;
 
@@ -66,7 +66,7 @@ C = (a^x mod p)^y mod p
 
 &lt;hr /&gt;
 
-&lt;h1 id=&quot;deffie-hellman--1&quot;&gt;Deffie-Hellman 算法原理&lt;/h1&gt;
+&lt;h1 id=&quot;id-deffie-hellman--1&quot;&gt;Deffie-Hellman 算法原理&lt;/h1&gt;
 
 &lt;p&gt;本文参考 &lt;a href=&quot;http://www.amazon.com/Cryptography-Network-Security-Principles-Practice/dp/0133354695&quot;&gt;Cryptography and Network Security&lt;/a&gt; 一书，介绍 DH 算法原理，在掌握上节数论知识的基础上，理解 DH 算法原理非常容易。&lt;/p&gt;
 
@@ -148,7 +148,7 @@ C = (a^x mod p)^y mod p
 
 &lt;hr /&gt;
 
-&lt;h1 id=&quot;openid-connect-protocol&quot;&gt;OpenID Connect Protocol&lt;/h1&gt;
+&lt;h1 id=&quot;id-openid-connect-protocol&quot;&gt;OpenID Connect Protocol&lt;/h1&gt;
 
 &lt;p&gt;&lt;a href=&quot;http://openid.net/connect/&quot;&gt;OpenID&lt;/a&gt; 的官网是这样定义 OpenID Connect：&lt;/p&gt;
 
@@ -171,7 +171,7 @@ C = (a^x mod p)^y mod p
 
 &lt;hr /&gt;
 
-&lt;h1 id=&quot;setup-google&quot;&gt;Setup Google&lt;/h1&gt;
+&lt;h1 id=&quot;id-setup-google&quot;&gt;Setup Google&lt;/h1&gt;
 
 &lt;p&gt;首先申请一个域名，并将域名指向 Keystone server，本文在阿里云申请如下域名：&lt;/p&gt;
 
@@ -198,11 +198,11 @@ C = (a^x mod p)^y mod p
 
 &lt;hr /&gt;
 
-&lt;h1 id=&quot;setup-keystone&quot;&gt;Setup Keystone&lt;/h1&gt;
+&lt;h1 id=&quot;id-setup-keystone&quot;&gt;Setup Keystone&lt;/h1&gt;
 
 &lt;p&gt;在某公有云厂商创建一台境外服务器，以便能访问 Google。参考官网文档 &lt;a href=&quot;http://docs.openstack.org/kilo/install-guide/install/apt/content/&quot;&gt;OpenStack Kilo Installation Guide&lt;/a&gt; 安装至第六章 network 即可，因 ubuntu 对 horizon 做了较大改动，所以参考&lt;a href=&quot;http://docs.openstack.org/developer/horizon/topics/install.html&quot;&gt;文档&lt;/a&gt;采用源码安装 horizon。&lt;/p&gt;
 
-&lt;h2 id=&quot;configure-keystone&quot;&gt;Configure Keystone&lt;/h2&gt;
+&lt;h2 id=&quot;id-configure-keystone&quot;&gt;Configure Keystone&lt;/h2&gt;
 
 &lt;p&gt;下面的安装和配置主要参考 &lt;a href=&quot;http://shop.oreilly.com/product/0636920045960.do&quot;&gt;Identity, Authentication &amp;amp; Access Management in OpenStack&lt;/a&gt;，首先安装 libapache2-mode-auth-openidc：&lt;/p&gt;
 
@@ -266,21 +266,17 @@ LoadModule auth_openidc_module /usr/lib/apache2/modules/mod_auth_openidc.so
 ......
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h2 id=&quot;configure-horizon&quot;&gt;Configure Horizon&lt;/h2&gt;
+&lt;h2 id=&quot;id-configure-horizon&quot;&gt;Configure Horizon&lt;/h2&gt;
 
 &lt;p&gt;Horizon 默认不启用 websso，所以需要更新 local_settings.py 以下配置：&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;OPENSTACK_KEYSTONE_URL = &quot;http://keystonegoogle.com:5000/v3”
-
 OPENSTACK_API_VERSIONS = {
-         &quot;identity&quot;: 3
-}
-
+         &quot;identity&quot;: 3}
 WEBSSO_ENABLED = True
 WEBSSO_CHOICES = (
     (&quot;credentials&quot;, _(&quot;Keystone Credentials&quot;)),
     (&quot;oidc&quot;, _(&quot;Google Login&quot;)))
-
 WEBSSO_INITIAL_CHOICE = &quot;credentials&quot;
 &lt;/code&gt;&lt;/pre&gt;
 
@@ -289,7 +285,7 @@ WEBSSO_INITIAL_CHOICE = &quot;credentials&quot;
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ service apache2 restart
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h2 id=&quot;create-user-etc&quot;&gt;Create User etc&lt;/h2&gt;
+&lt;h2 id=&quot;id-create-user-etc&quot;&gt;Create User etc&lt;/h2&gt;
 
 &lt;p&gt;创建 Google 的 Group 和 Project：&lt;/p&gt;
 
@@ -333,7 +329,7 @@ $ openstack federation protocol create oidc --identity-provider google_idp --map
 
 &lt;hr /&gt;
 
-&lt;h1 id=&quot;test&quot;&gt;Test&lt;/h1&gt;
+&lt;h1 id=&quot;id-test&quot;&gt;Test&lt;/h1&gt;
 
 &lt;p&gt;登录 keystonegoogle.com，进入 Login 页面。&lt;/p&gt;
 
@@ -479,7 +475,7 @@ $ openstack federation protocol create oidc --identity-provider google_idp --map
 
 &lt;hr /&gt;
 
-&lt;h1 id=&quot;authoriztion-grant&quot;&gt;Authoriztion Grant&lt;/h1&gt;
+&lt;h1 id=&quot;id-authoriztion-grant&quot;&gt;Authoriztion Grant&lt;/h1&gt;
 
 &lt;ul&gt;
   &lt;li&gt;Authorization Code&lt;/li&gt;
@@ -1209,7 +1205,7 @@ if __name__ == &quot;__main__&quot;:
 
 &lt;hr /&gt;
 
-&lt;h1 id=&quot;reference&quot;&gt;Reference&lt;/h1&gt;
+&lt;h1 id=&quot;id-reference&quot;&gt;Reference&lt;/h1&gt;
 &lt;ol&gt;
   &lt;li&gt;https://developer.rackspace.com/blog/keystone-to-keystone-federation-with-openstack-ansible/&lt;/li&gt;
   &lt;li&gt;https://specs.openstack.org/openstack/keystone-specs/api/v3/identity-api-v3-os-federation-ext.html&lt;/li&gt;
@@ -1256,7 +1252,7 @@ if __name__ == &quot;__main__&quot;:
 &lt;/code&gt;&lt;/pre&gt;
 &lt;hr /&gt;
 
-&lt;h1 id=&quot;install-ldap&quot;&gt;Install LDAP&lt;/h1&gt;
+&lt;h1 id=&quot;id-install-ldap&quot;&gt;Install LDAP&lt;/h1&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ apt-get install slapd ldap-utils
 &lt;/code&gt;&lt;/pre&gt;
@@ -1285,7 +1281,7 @@ if __name__ == &quot;__main__&quot;:
 
 &lt;hr /&gt;
 
-&lt;h1 id=&quot;configure-ldap&quot;&gt;Configure LDAP&lt;/h1&gt;
+&lt;h1 id=&quot;id-configure-ldap&quot;&gt;Configure LDAP&lt;/h1&gt;
 
 &lt;p&gt;由于 LDAP 的用户属性和 Keystone 默认的用户属性有所差异，所以 LDAP 需生成与 Keystone 中的 User 和 Group 相匹配的对象，可通过以下脚本(add_user_group.ldif)添加该对象，并生成 demo 和 admin 两个用户。&lt;/p&gt;
 
@@ -1372,7 +1368,7 @@ group_allow_delete = true
 
 &lt;hr /&gt;
 
-&lt;h1 id=&quot;test&quot;&gt;Test&lt;/h1&gt;
+&lt;h1 id=&quot;id-test&quot;&gt;Test&lt;/h1&gt;
 
 &lt;p&gt;用 admin_token 创建 project 和 role，并赋予 demo 和 admin 用户在 project 中的 role 后，即可使用该用户获得 scope token 访问 Keystone 的 API。&lt;/p&gt;
 

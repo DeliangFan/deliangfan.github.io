@@ -135,8 +135,15 @@ LoadModule auth_openidc_module /usr/lib/apache2/modules/mod_auth_openidc.so
 Horizon 默认不启用 websso，所以需要更新 local_settings.py 以下配置：
 
 ~~~ python
-OPENSTACK_KEYSTONE_URL = "http://keystonegoogle.com:5000/v3”OPENSTACK_API_VERSIONS = {         "identity": 3}WEBSSO_ENABLED = TrueWEBSSO_CHOICES = (    ("credentials", _("Keystone Credentials")),    ("oidc", _("Google Login")))
-WEBSSO_INITIAL_CHOICE = "credentials"~~~ 
+OPENSTACK_KEYSTONE_URL = "http://keystonegoogle.com:5000/v3”
+OPENSTACK_API_VERSIONS = {
+         "identity": 3}
+WEBSSO_ENABLED = True
+WEBSSO_CHOICES = (
+    ("credentials", _("Keystone Credentials")),
+    ("oidc", _("Google Login")))
+WEBSSO_INITIAL_CHOICE = "credentials"
+~~~ 
 
 重启 Keystone 和 Horizon：
 
