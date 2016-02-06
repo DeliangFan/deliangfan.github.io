@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>搭建 GitLab</title>
-  <meta name="description" content="">
+  <meta name="description" content="----------">
 
   <link rel="stylesheet" href="/css/main.css">
   <link rel="canonical" href="http://wsfdl.com/devops/2014/08/18/%E6%90%AD%E5%BB%BAgitlab.html">
@@ -62,80 +62,76 @@
   </header>
 
   <div class="post-content" itemprop="articleBody">
-    <hr />
+    ----------
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/gitlab.png" alt="gitlab" /></p>
+![gitlab](http://7xp2eu.com1.z0.glb.clouddn.com/gitlab.png)
 
-<p><a href="http:\\github.com">Github</a> 一个非常优秀的代码托管平台，但是私有的项目是收费的。出于安全等因素考虑，企业很有必要搭建属于自己的代码托管平台，<a href="https://about.gitlab.com/">GitLab</a> 就是一款优秀的构建私有代码托管平台的软件，和 github 非常相像。</p>
+[Github](http:\\github.com) 一个非常优秀的代码托管平台，但是私有的项目是收费的。出于安全等因素考虑，企业很有必要搭建属于自己的代码托管平台，[GitLab](https://about.gitlab.com/) 就是一款优秀的构建私有代码托管平台的软件，和 github 非常相像。
 
-<ul>
-  <li>Linux: Ubuntu 14.04 LTS</li>
-  <li>GitLab: gitlab-ce_8.4.0-ce.0_amd64.deb</li>
-</ul>
+- Linux: Ubuntu 14.04 LTS
+- GitLab: gitlab-ce\_8.4.0-ce.0\_amd64.deb
 
-<hr />
+-----------
 
-<p>#Installation</p>
+#Installation
 
-<p>GitLab 的<a href="https://about.gitlab.com/installation/">安装</a>非常简便，有多种方式：</p>
+GitLab 的[安装](https://about.gitlab.com/installation/)非常简便，有多种方式：
 
-<ul>
-  <li><a href="https://about.gitlab.com/downloads/">Omnibus package installation</a> (recommended)</li>
-  <li><a href="https://gitlab.com/gitlab-org/gitlab-development-kit/blob/master/README.md">GitLab Development Kit</a></li>
-  <li><a href="https://gitlab.com/gitlab-org/cookbook-omnibus-gitlab/blob/master/README.md">GitLab Omnibus Cookbook</a></li>
-  <li><a href="https://gitlab.com/gitlab-org/gitlab-ce/blob/master/doc/install/installation.md">Installation from source guide</a></li>
-  <li><a href="https://gitlab.com/gitlab-org/gitlab-ce/tree/master/docker">Docker installation instructions</a></li>
-  <li>GitLab as a Service In Cloud Platform</li>
-</ul>
+- [Omnibus package installation](https://about.gitlab.com/downloads/) (recommended)
+- [GitLab Development Kit](https://gitlab.com/gitlab-org/gitlab-development-kit/blob/master/README.md)
+- [GitLab Omnibus Cookbook](https://gitlab.com/gitlab-org/cookbook-omnibus-gitlab/blob/master/README.md)
+- [Installation from source guide](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/doc/install/installation.md)
+- [Docker installation instructions](https://gitlab.com/gitlab-org/gitlab-ce/tree/master/docker)
+- GitLab as a Service In Cloud Platform
 
-<p>本文采用官网推荐的第一种安装方式，即 Omnibus package installation，首先安装依赖</p>
+本文采用官网推荐的第一种安装方式，即 Omnibus package installation，首先安装依赖
 
-<pre><code class="language-bash">$ apt-get install curl openssh-server ca-certificates postfix
-</code></pre>
-<p>下载并安装 gitlab：</p>
+~~~bash
+$ apt-get install curl openssh-server ca-certificates postfix
+~~~
+下载并安装 gitlab：
 
-<pre><code class="language-bash">$ curl -LJO https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/trusty/gitlab-ce_8.4.0-ce.0_amd64.deb/download
+~~~bash
+$ curl -LJO https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/trusty/gitlab-ce_8.4.0-ce.0_amd64.deb/download
 $ dpkg -i gitlab-ce_8.4.0-ce.0_amd64.deb
-</code></pre>
+~~~
 
-<p>GitLab 安装包大约为 300 MB，里面包含多个常用的服务：</p>
+GitLab 安装包大约为 300 MB，里面包含多个常用的服务：
 
-<ul>
-  <li>Redis：缓存服务</li>
-  <li>Nginx：Web 服务</li>
-  <li>Ldap：用户管理服务</li>
-  <li>SMTP：邮件服务</li>
-  <li>Postgres：数据库服务</li>
-  <li>Logs: 日志管理服务</li>
-</ul>
+- Redis：缓存服务
+- Nginx：Web 服务
+- Ldap：用户管理服务
+- SMTP：邮件服务
+- Postgres：数据库服务
+- Logs: 日志管理服务
 
-<hr />
+-----------
 
-<p>#Configure</p>
+#Configure
 
-<p>更新 /etc/gitlab/gitlab.rb 的如下配置项：</p>
+更新 /etc/gitlab/gitlab.rb 的如下配置项：
 
-<pre><code>external_url 'http://&lt;your_gitlab_host&gt;'
-</code></pre>
+~~~
+external_url 'http://<your_gitlab_host>'
+~~~
 
-<p>重启 GitLab：</p>
+重启 GitLab：
 
-<pre><code class="language-bash">$ gitlab-ctl reconfigure
-</code></pre>
+~~~bash
+$ gitlab-ctl reconfigure
+~~~
 
-<p>更多的配置和说明请见<a href="http://doc.gitlab.com/omnibus/">官网文档</a>。</p>
+更多的配置和说明请见[官网文档](http://doc.gitlab.com/omnibus/)。
 
-<hr />
-<p>#Test</p>
+----------
+#Test
 
-<p>打开浏览器，输入 &lt;your_gitlab_host&gt; 登录 GitLab，默认的用户名和密码为：</p>
+打开浏览器，输入 \<your\_gitlab\_host\> 登录 GitLab，默认的用户名和密码为：
 
-<ul>
-  <li>Username: root</li>
-  <li>Password: 5iveL!fe</li>
-</ul>
+- Username: root 
+- Password: 5iveL!fe
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/gitlab_example.png" alt="example" /></p>
+![example](http://7xp2eu.com1.z0.glb.clouddn.com/gitlab_example.png)
 
   </div>
 

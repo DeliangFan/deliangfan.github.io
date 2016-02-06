@@ -28,15 +28,15 @@ GitLab 的[安装](https://about.gitlab.com/installation/)非常简便，有多�
 
 本文采用官网推荐的第一种安装方式，即 Omnibus package installation，首先安装依赖
 
-```bash
+~~~ bash
 $ apt-get install curl openssh-server ca-certificates postfix
-```
+~~~ 
 下载并安装 gitlab：
 
-```bash
+~~~ bash
 $ curl -LJO https://packages.gitlab.com/gitlab/gitlab-ce/packages/ubuntu/trusty/gitlab-ce_8.4.0-ce.0_amd64.deb/download
 $ dpkg -i gitlab-ce_8.4.0-ce.0_amd64.deb
-```
+~~~ 
 
 GitLab 安装包大约为 300 MB，里面包含多个常用的服务：
 
@@ -53,15 +53,15 @@ GitLab 安装包大约为 300 MB，里面包含多个常用的服务：
 
 更新 /etc/gitlab/gitlab.rb 的如下配置项：
 
-```
+~~~ 
 external_url 'http://<your_gitlab_host>'
-```
+~~~ 
 
 重启 GitLab：
 
-```bash
+~~~ bash
 $ gitlab-ctl reconfigure
-```
+~~~ 
 
 更多的配置和说明请见[官网文档](http://doc.gitlab.com/omnibus/)。
 
