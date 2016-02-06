@@ -6,7 +6,7 @@ categories: OpenStack
 
 ---------------------
 
-#引言
+# 引言
 运维的同事常常遇到这么四个问题：
 
  - Nova 如何统计 OpenStack 计算资源？
@@ -18,7 +18,7 @@ categories: OpenStack
 
 ---------------------
 
-#Nova 需统计哪些资源
+# Nova 需统计哪些资源
 云计算的本质在于将硬件资源软件化，以达到快速按需交付的效果，最基本的计算、存储和网络基础元素并没有因此改变。就计算而言，CPU、RAM 和 DISK等依旧是必不可少的核心资源。
 
 从源码和数据库相关表可以得出，Nova 统计计算节点的四类计算资源：
@@ -34,8 +34,8 @@ categories: OpenStack
 
 ---------------------
 
-#Nova 如何收集资源
-从 [源码](https://github.com/openstack/nova/blob/master/nova/virt/libvirt/driver.py#L4878)  可以看出，Nova 每分钟统计一次资源，方式如下：
+# Nova 如何收集资源
+从 [源码](https://github.com/openstack/nova/blob/master/nova/virt/libvirt/driver.py# L4878)  可以看出，Nova 每分钟统计一次资源，方式如下：
 
  - CPU
      - vcpus: libvirt 中 get\_Info()
@@ -55,8 +55,8 @@ categories: OpenStack
 
 ---------------------
 
-#Nova 资源再统计
-首先分析为什么需要再次统计资源以及统计哪些资源。从 [源码](https://github.com/openstack/nova/blob/master/nova/compute/resource\_tracker.py#L365)  可以发现，Nova 根据该节点上的虚拟机再次统计了 RAM、DISK 和 PCI 资源。
+# Nova 资源再统计
+首先分析为什么需要再次统计资源以及统计哪些资源。从 [源码](https://github.com/openstack/nova/blob/master/nova/compute/resource\_tracker.py# L365)  可以发现，Nova 根据该节点上的虚拟机再次统计了 RAM、DISK 和 PCI 资源。
 
 为什么需再次统计 RAM 资源？以启动一个 4G 内存的虚拟机为例，虚拟机启动前后，对比宿主机上可用内存，发现宿主机上的 free memory 虽有所减少(本次测试减少 600 MB)，却没有减少到 4G，如果虚拟机运行很吃内存的应用，可发现宿主机上的可用内存迅速减少 3G多。试想，以 64G 的服务器为例，假设每个 4G 内存的虚拟机启动后，宿主机仅减少 1G 内存，服务器可以成功创建 64 个虚拟机，但是当这些虚拟机在跑大量业务时，服务器的内存迅速不足，轻着影响虚拟机效率，重者导致虚拟机 shutdown等。除此以外，宿主机上的内存并不是完全分给虚拟机，系统和其它应用程序也需要内存资源。因此必须重新统计 RAM 资源，统计的方式为：
 
@@ -74,7 +74,7 @@ categories: OpenStack
 
 ---------------------
 
-#资源超配与调度
+# 资源超配与调度
 即使 free\_ram\_mb 或 free\_disk\_gb 为负，虚拟机依旧有可能创建成功。事实上，当 nova-scheduler 在调度过程中，某些 filter 允许资源超配，比如 CPU、RAM 和 DISK 等 filter，它们默认的超配比为：
 
  - CPU: CONF.cpu\_allocation\_ratio = 16
@@ -89,7 +89,7 @@ categories: OpenStack
 
 相关代码如下(稍有精简)：
 
-```python
+~~~ python
 def host_passes(self, host_state, instance_type):
 
     """Only return hosts with sufficient available RAM."""
@@ -105,7 +105,7 @@ def host_passes(self, host_state, instance_type):
     if not usable_ram >= requested_ram:
         LOG.debug("host does not have requested_ram")
         return False
-```
+~~~ 
 
 宿主机 RAM 和 DISK 的使用率往往要小于虚拟机理论使用的 RAM 和 DISK，在剩余资源充足的条件下，libvirt 将成功创建虚拟机。
 
@@ -119,13 +119,13 @@ def host_passes(self, host_state, instance_type):
 
 ---------------------
 
-#指定 host 创建虚拟机
+# 指定 host 创建虚拟机
 本节用于回答问题四，当所有宿主机的资源使用过多，即超出限定的超配值时(total\_resource * allocation\_ratio)，nova-scheduler 将过滤这些宿主机，若未找到符合要求的宿主机，虚拟机创建失败。
 
 创建虚拟机的 API 支持指定 host 创建虚拟机，指定 host 时，nova-scheduler 采取特别的处理方式：不再判断该 host 上的资源是否满足需求，而是直接将请求发给该 host 上的 nova-compute。
 相关代码如下(稍有精简)：
 
-```python
+~~~ python
 def get_filtered_hosts(self, hosts, filter_properties,
             filter_class_names=None, index=0):
     '''Filter hosts and return only ones passing all filters.'''
@@ -138,7 +138,7 @@ def get_filtered_hosts(self, hosts, filter_properties,
                 return name_to_cls_map.values()
 
         return self.filter_handler.get_filtered_objects()
-```
+~~~ 
 
 当该 host 上实际可用资源时满足要求时，libvirt 依旧能成功创建虚拟机。最后，一图蔽之
  ![这里写图片描述](http://img.blog.csdn.net/20150501235350782) 

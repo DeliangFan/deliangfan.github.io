@@ -6,7 +6,7 @@ categories: OpenStack
 
 ------------
 
-#Snapshot Overview
+# Snapshot Overview
 
 严格的说，nova 虚拟机的快照并不是真正意义的快照，它仅仅将虚拟机的磁盘文件完整的复制一份，然后把复制的文件上传至 glance 中作为镜像，之后二者毫无关联。所以 nova 用 image-create 而非 snapshot 来定义该 API，但为了方便表述，本文依旧用 snapshot 来表述 nova 快照。
 
@@ -26,7 +26,7 @@ categories: OpenStack
 
 ------------
 
-#Cold Snapshot & Live Snapshot
+# Cold Snapshot & Live Snapshot
 
 受磁盘文件格式以及 libvirt、qemu 版本的影响，nova 的 snapshot 分两种，cold snapshot 和 live snapshot，本文用命令行表示对应的步骤，：
 
@@ -37,18 +37,18 @@ categories: OpenStack
 def snapshot(self, context, instance, image_href, update_task_state):
     ......
     
-    # NOTE(rmk): Live snapshots require QEMU 1.3 and Libvirt 1.0.0.
-    #            These restrictions can be relaxed as other configurations
-    #            can be validated.
+    #  NOTE(rmk): Live snapshots require QEMU 1.3 and Libvirt 1.0.0.
+    #             These restrictions can be relaxed as other configurations
+    #             can be validated.
     if self.has_min_version(MIN_LIBVIRT_LIVESNAPSHOT_VERSION,
                             MIN_QEMU_LIVESNAPSHOT_VERSION,
                             REQ_HYPERVISOR_LIVESNAPSHOT) \
             and not source_format == "lvm" and not source_format == 'rbd':
         live_snapshot = True
-        # Abort is an idempotent operation, so make sure any block
-        # jobs which may have failed are ended. This operation also
-        # confirms the running instance, as opposed to the system as a
-        # whole, has a new enough version of the hypervisor (bug 1193146).
+        #  Abort is an idempotent operation, so make sure any block
+        #  jobs which may have failed are ended. This operation also
+        #  confirms the running instance, as opposed to the system as a
+        #  whole, has a new enough version of the hypervisor (bug 1193146).
         try:
             virt_dom.blockJobAbort(disk_path, 0)
         except libvirt.libvirtError as ex:
@@ -63,7 +63,7 @@ def snapshot(self, context, instance, image_href, update_task_state):
     ......
 ~~~ 
 
-##Cold Snapshot 流程:
+# # Cold Snapshot 流程:
 
 1.卸载 pci 设备，保持虚拟机状态并关机。
 
@@ -88,7 +88,7 @@ $ glance image-update vm_snapshot --file vm_snapshot.qcow2
 $ virsh start vm
 ~~~ 
 
-##Live Snapshot 流程
+# # Live Snapshot 流程
 
 1.暂停所有的 block job：
 
@@ -145,7 +145,7 @@ $ glance image-update vm_snapshot --file vm_snapshot.qcow2
                                                  
 ------------
 
-#基于 Ceph RBD 的 Snapshot
+# 基于 Ceph RBD 的 Snapshot
 
 上述 snapshot 的流程都是基于本地存储，基于 Ceph RBD 的 [Snapshot](http://docs.ceph.com/docs/hammer/rbd/rbd-snapshot/) 相对复杂些，下面介绍基于 Ceph RBD 的虚拟机 snapshot 流程，由于 live snapshot 和 cold snapshot 的区别和基于本地存储的区别不大，所以本文着重关注 RBD 层面的流程。
 
@@ -188,7 +188,7 @@ $ rbd snap rm nova-pool/vm@nova_vm_snap
 ------------
 
 
-#参考资料：
+# 参考资料：
 1. [https://www.redhat.com/archives/libvirt-users/2012-April/msg00142.html](https://www.redhat.com/archives/libvirt-users/2012-April/msg00142.html)
 2. [http://blog.csdn.net/halcyonbaby/article/details/19998155](http://blog.csdn.net/halcyonbaby/article/details/19998155)
 3. [http://itxx.sinaapp.com/blog/content/130](http://itxx.sinaapp.com/blog/content/130)

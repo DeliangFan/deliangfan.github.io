@@ -6,7 +6,7 @@ categories: DevOps
 
 ----------------
 
-#1. 三种代理简介
+# 1. 三种代理简介
 
 VPN、SOCKS 和 PAC 是三种常见的代理方式，本文以 QQ 和访问网站为例，深入浅出图解三者区别，并推荐最优雅的代理方式——PAC。
 
@@ -32,22 +32,22 @@ VPN、SOCKS 和 PAC 是三种常见的代理方式，本文以 QQ 和访问网�
 
 ----------------
 
-#2. 如何配置 PAC
+# 2. 如何配置 PAC
 
 配置 PAC 主要有两个步骤
 
 - 搭建 SOCKS 服务器
 - 编写 PAC 脚本
 
-##2.1 搭建 SOCKS 服务器
+## 2.1 搭建 SOCKS 服务器
 
 在云计算百花齐放的时代，假设你已有服务器，只需安装 ss5 即可搭建 SOCKS 服务器，步骤非常简单，可参考[此文](http://cstriker1407.info/blog/centos-build-socks5-proxy-using-ss5/)：
 
-```bash
-#安装依赖
+~~~ bash
+# 安装依赖
 yum install make automake gcc gcc-c++ pam-devel openssl-devel openldap-devel cyrus-sasl-devel
 
-#下载与安装
+# 下载与安装
 wget http://sourceforge.net/projects/ss5/files/ss5/3.8.9-5/ss5-3.8.9-5.tar.gz/download
 tar -zxvf ss5-3.8.9-5.tar.gz
 cd ss5-3.8.9
@@ -55,28 +55,26 @@ cd ss5-3.8.9
 make
 make install
 
-#设置开机启动
+# 设置开机启动
 chmod +x /etc/init.d/ss5
 chkconfig --add ss5
 chkconfig --level 345 ss5 on
 
 
-#设置无密码不限制 IP 访问，更新 /etc/opt/ss5/ss5.conf 如下配置：
-#           SHost           SPort   Authentication
+# 设置无密码不限制 IP 访问，更新 /etc/opt/ss5/ss5.conf 如下配置：
+#            SHost           SPort   Authentication
 auth        0.0.0.0/0       –       –
 permit –    0.0.0.0/0       –       0.0.0.0/0
 
-#启动服务
+# 启动服务
 service ss5 start
+~~~ 
 
-```
-
-
-##2.2 编写 PAC 文件
+## 2.2 编写 PAC 文件
 
 PAC 的编写更为简单，请参考[此文](http://www.truevue.org/javascript/pac-format)，假设 SOCKS 服务器 IP 和端口为 1.2.3.4:1080，下例代码表示如果网站的域名包含 a.com，则使用 SOCKS 代理，更多样例请参考 github.com。
 
-```js
+~~~ js
 SOCKS5 1.2.3.4:1080
 
 function FindProxyForURL(url, host) {
@@ -86,4 +84,4 @@ function FindProxyForURL(url, host) {
 
    return "DIRECT"; 
 }
-```
+~~~ 

@@ -13,7 +13,7 @@ Keystone federation identity 涉及很多概念，安装配置复杂，官网的
 - [Configure Keystone federation with multi-IDP](https://zenodo.org/record/11982/files/CERN_openlab_Luca_Tartarini.pdf) 
 
 ------------------
-#1. Federation Identity 简介
+# 1. Federation Identity 简介
 
 
 关于 [federation identity](https://en.wikipedia.org/wiki/Federated_identity)，维基百科的定义如下：
@@ -40,7 +40,7 @@ Federation identity 具有以下优点：
 - 避免用户注册多个账号，增加用户负担
 
 --------------
-#Keystone Federation 的原理
+# Keystone Federation 的原理
 
 Federation identity 为 hybrid cloud 在用户管理层面提供了良好的解决方案。Keystone 从 Icehouse 开始逐步增加 federation identity 的功能，Icehouse 支持 Keystone 作为 Service Provider，Juno 版本新增了 Identity Provider，支持 SAML 和 OpenID 两种认证协议。OpenStack 作为云服务的解决方案，对外提供计算、存储和网络等服务，多数场景下 Keystone 常常作为服务端，对接其它的 Identity Provider，所以本节着重阐述 Service Provider 的原理和流程。首先先介绍 3 类重要的 [API](https://specs.openstack.org/openstack/keystone-specs/api/v3/identity-api-v3-os-federation-ext.html)。
 
@@ -63,7 +63,7 @@ Federation identity 为 hybrid cloud 在用户管理层面提供了良好的解�
 
 --------------
 
-#Configure Keystone as a Service Provider
+# Configure Keystone as a Service Provider
 
 本节开始介绍如何安装配置 Keystone to Keystone Federation，重点参考了 [it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo](http://blog.rodrigods.com/it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo/)(原文存在 2 处配置错误，本文已给予纠正)。 我们有两个服务器，分别作为 SP 和 IDP，二者均需按照[官网的手册](http://docs.openstack.org/kilo/install-guide/install/apt/content/ch_keystone.html)安装 Keystone。
 
@@ -148,7 +148,7 @@ Module shib2 already enabled
 
 ----------
 
-#Configure Keystone as an Identity Provider
+# Configure Keystone as an Identity Provider
 安装 xmlsec1 和 pysaml2：
 
 ~~~bash
@@ -174,7 +174,7 @@ $ keystone-manage saml_idp_metadata > /etc/keystone/keystone_idp_metadata.xml
 service apache2 restart
 ~~~
 -----------
-#Test Keystone to Keystone federation
+# Test Keystone to Keystone federation
 
 * 在 Service Provider 端执行以下脚本，创建 domain, group, mapping, idp, protocol 等。其中 idp 指向另外一个作为 Identity Provider 的 Keystone，protocol 采用了 saml2 协议，mapping 的规则为只要 IDP 中名为 bob 或者 acme 的用户都可通过认证，并且映射到 Service 端的 federated_user 用户上。
 

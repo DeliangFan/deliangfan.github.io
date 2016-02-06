@@ -5,7 +5,7 @@ categories: OpenStack
 ---
 ------------------
 
-###现场回顾
+# 现场回顾
 故事发生于某个下午，采用 salt 更新某集群的 neutron.conf (log 相关配置项) 并批量重启 neutron-openvswitch-agent(以下简称 neutron-ovs-agent)，不久便有人反馈云主机宕机。
 
 立即排查发现云主机并没有宕机，只是网络不通，大部分计算节点的 ovs 流表空空如也。Nova 和 Neutron 打出 ERROR 级别的日志。
@@ -36,14 +36,14 @@ nova Log：
 
 ------------------
 
-###导火索
+# 导火索
 深入剖析之前，先了解该 Icehouse 集群的基本信息：该集群有 102 个计算节点，运行着 nova, neutron, glance，ceilometer 等服务，为了避免单点故障，我们去除了 neutron l3 等相关服务，采用大二层的网络，虚拟机通过物理路由与外界通信。理论上说，无论哪个服务异常，甚至任意节点宕机，最差的结果是 openstack 服务不可用或者少量虚拟机故障，但绝大部分虚拟机依旧能正常运行。
 
 经验告知，采用以上网络模型的多个集群一年多以来从未发生如此规模的故障。由于 log 模块配置项不会影响流表，直觉上推测批量重启可能是触发 ovs 流表被清空的导火索。
 
 ------------------
 
-###Neutron 的一个坑 
+# Neutron 的一个坑 
 
 由于流表被清空前仅仅重启了 neutron-openvs-agent，而计算节点，仅仅只有 neutron-ovs-agent 与 ovs 有交互，故按图索骥的浏览 neutron-ovs-agent 重启流程，梳理其逻辑如下：
 
@@ -65,7 +65,7 @@ neutron-ovs-agent 在重启的过程中就流表的处理留下了一个隐患�
 
 ------------------
 
-###最大连接数
+# 最大连接数
 
 现在解释为什么批量重启 neutron-ovs-agent 会触发上述隐患，重启过程中，neutron 日志报出如下错误：
 
@@ -83,7 +83,7 @@ neutron-ovs-agent 在重启的过程中就流表的处理留下了一个隐患�
 
 ------------------
 
-###进程的性能问题
+# 进程的性能问题
 
 然而问题并没有完全解决，请注意 nova 的错误日志：
 
@@ -101,7 +101,7 @@ rpc\_workers = $workers
 
 ------------------
 
-###Python 的并发 & IO
+# Python 的并发 & IO
 
 值得思考的是，对双路 12 核共 24 线程的服务器来说，数百并发请求真的算高么？neutron-server 进程的 CPU 最大使用率只能到达 100 %，意味着 neutron-server 仅仅利用了服务器的一个线程。这里不得不提协程(crontine)[2]，这种伪并发的“用户态线程” 意味着任意时刻只有一个协程在执行，即任意时刻只能利用服务器 CPU 的一个线程，而 openstack 所有组件的进程里满满都是协程(只有一个主线程)，因而单个进程下，neutron-server 不能充分利用多核的优势以提高处理并发的能力。
 
@@ -114,7 +114,7 @@ rpc\_workers = $workers
 
 ------------------
 
-###Reference
+# Reference
 
 1. [http://docs.sqlalchemy.org/en/rel\_0\_9/core/pooling.html](http://docs.sqlalchemy.org/en/rel\_0\_9/core/pooling.html)
 2. [http://www.dabeaz.com/coroutines/Coroutines.pdf](http://www.dabeaz.com/coroutines/Coroutines.pdf)

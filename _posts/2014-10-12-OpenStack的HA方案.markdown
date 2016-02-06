@@ -13,34 +13,34 @@ categories: OpenStack
 
 ---------------
 
-#OpenStack HA 实现
+# OpenStack HA 实现
 
 ![OpenStack HA](http://7xp2eu.com1.z0.glb.clouddn.com/HA.png?imageView2/1/w/600/q/100)
 
-##Database(Active/Active):
+## Database(Active/Active):
 官方推荐：[MySQL with Galera](http://docs.OpenStack.org/high-availability-guide/content/ha-aa-db.html)
 
-##AMQP(Active/Active): 
+## AMQP(Active/Active): 
 官方推荐：[RabbitMQ cluster](https://OpenStack.redhat.com/RabbitMQ)
 
-##OpenStack API(Active/Active):
+## OpenStack API(Active/Active):
 
 Keystone, Glance-api, Glance-registry, Neutron-server, Ceilometer-api, Dashboard 均为 stateless 服务，通过 Load Balancer + Keepalive 保证 HA，部署于 Apache server 可提高性能，Haproxy(1.5.0)支持 SSL。
 
 - [Loadbalance for OpenStack API](http://OpenStack.redhat.com/Load_Balance_OpenStack_API)
 - [Configuration SSL for haproxy](http://www.b2btech.in/implement-ssl-termination-haproxy-ubuntu-14-04)
-- [Runs OpenStack API in apache](http://andy.mc.it/2013/07/apache2-mod_wsgi-OpenStack-pt-2-nova-api-os-compute-nova-api-ec2/#comment-35)
+- [Runs OpenStack API in apache](http://andy.mc.it/2013/07/apache2-mod_wsgi-OpenStack-pt-2-nova-api-os-compute-nova-api-ec2/# comment-35)
 
-##OpenStack scheduler(Active/Active):
+## OpenStack scheduler(Active/Active):
 
 Nova-scheduler, nova-conductor, nova-consoleauth, nova-novncproxy, ceilometer-collector, cinder-scheduler 等均为 stateless 服务，恰当的配置与 AMQP server 连接参数即可，具体详见[社区文档](http://docs.OpenStack.org/high-availability-guide/content/_run_OpenStack_api_and_schedulers.html)
 
-##Memcached(Active/Active):
+## Memcached(Active/Active):
 
 - 提高 Dashboard 的性能
 - 解决 nova-consoleauth 单点问题
 
-##Network:
+## Network:
 
 - neutron DHCP agent(Active/Passive)
 - neutron L3 agent(Active/Passive)
@@ -49,6 +49,6 @@ Nova-scheduler, nova-conductor, nova-consoleauth, nova-novncproxy, ceilometer-co
 
 [以上三者均由 Pacemaker + Corosync 配置](http://docs.OpenStack.org/high-availability-guide/content/ch-network.html)。
  
-##Storage:
+## Storage:
 
 [Ceph 保证 Image storage, Volume storage, Nova backend 可靠性](http://www.ceph.com/docs/next/rbd/rbd-OpenStack/)。

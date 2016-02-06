@@ -15,7 +15,7 @@ categories: DevOps
 
 -----------
 
-#Installation
+# Installation
 
 GitLab 的[安装](https://about.gitlab.com/installation/)非常简便，有多种方式：
 
@@ -49,7 +49,7 @@ GitLab 安装包大约为 300 MB，里面包含多个常用的服务：
 
 -----------
 
-#Configure
+# Configure
 
 更新 /etc/gitlab/gitlab.rb 的如下配置项：
 
@@ -66,7 +66,7 @@ $ gitlab-ctl reconfigure
 更多的配置和说明请见[官网文档](http://doc.gitlab.com/omnibus/)。
 
 ----------
-#Test
+# Test
 
 打开浏览器，输入 \<your\_gitlab\_host\> 登录 GitLab，默认的用户名和密码为：
 

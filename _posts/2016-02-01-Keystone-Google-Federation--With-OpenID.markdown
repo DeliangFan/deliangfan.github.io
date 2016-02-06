@@ -207,7 +207,3 @@ $ openstack federation protocol create oidc --identity-provider google_idp --map
 选择 Google Login，输入 Google 账户密码即可登录。
 
 ![dashboard](http://7xp2eu.com1.z0.glb.clouddn.com/keystonegooglegoogleinstance.png)
-
-
-
-

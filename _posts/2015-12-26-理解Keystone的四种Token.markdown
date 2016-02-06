@@ -6,14 +6,14 @@ categories: OpenStack
 
 ---------------------
 
-#Token 是什么
+# Token 是什么
 
 通俗的讲，token 是用户的一种凭证，需拿正确的用户名/密码向 Keystone 申请才能得到。如果用户每次都采用用户名/密码访问 OpenStack API，容易泄露用户信息，带来安全隐患。所以 OpenStack 要求用户访问其 API 前，必须先获取 token，然后用 token 作为用户凭据访问 OpenStack API。
 ![P1](http://7xp2eu.com1.z0.glb.clouddn.com/uuid.png)
 
 ---------------------
 
-#四种 Token 的由来
+# 四种 Token 的由来
 D 版本时，仅有 UUID 类型的 Token，UUID token 简单易用，却容易给 Keystone 带来性能问题，从图一的步骤 4 可看出，每当 OpenStack API 收到用户请求，都需要向 Keystone 验证该 token 是否有效。随着集群规模的扩大，Keystone 需处理大量验证 token 的请求，在高并发下容易出现性能问题。
 
 于是 PKI([Public Key Infrastructrue](https://wiki.openstack.org/wiki/PKI)) token 在 G 版本运用而生，和 UUID 相比，PKI token 携带更多用户信息的同时还附上了数字签名，以支持本地认证，从而避免了步骤 4。因为 PKI token 携带了更多的信息，这些信息就包括 service catalog，随着 OpenStack 的 Region 数增多，service catalog 携带的 endpoint 数量越多，PKI token 也相应增大，很容易超出 HTTP Server 允许的最大 HTTP Header(默认为 8 KB)，导致 HTTP 请求失败。
@@ -24,13 +24,13 @@ D 版本时，仅有 UUID 类型的 Token，UUID token 简单易用，却容易�
 
 ---------------------
 
-#UUID
+# UUID
 UUID token 是长度固定为 32 Byte 的随机字符串，由 uuid.uuid4().hex 生成。
 
-```python
+~~~ python
 def _get_token_id(self, token_data):
     return uuid.uuid4().hex
-```
+~~~ 
 
 但是因 UUID token 不携带其它信息，OpenStack API 收到该 token 后，既不能判断该 token 是否有效，更无法得知该 token 携带的用户信息，所以需经图一步骤 4 向 Keystone 校验 token，并获用户相关的信息。其样例如下：
 
@@ -40,7 +40,7 @@ UUID token 简单美观，不携带其它信息，因此 Keystone 必须实现 t
 
 ---------------------
 
-#PKI
+# PKI
 ![P2](http://7xp2eu.com1.z0.glb.clouddn.com/pki.png)
 在阐述 PKI（Public Key Infrastruction） token 前，让我们简单的回顾[公开密钥加密(public-key cryptography)](https://zh.wikipedia.org/wiki/%E5%85%AC%E5%BC%80%E5%AF%86%E9%92%A5%E5%8A%A0%E5%AF%86)和[数字签名](http://www.youdzone.com/signature.html)。公开密钥加密，也称为非对称加密(asymmetric cryptography，加密密钥和解密密钥不相同)，在这种密码学方法中，需要一对密钥，分别为公钥(Public Key)和私钥(Private Key)，公钥是公开的，私钥是非公开的，需用户妥善保管。如果把加密和解密的流程当做函数 C(x) 和 D(x)，P 和 S 分别代表公钥和私钥，对明文 A 和密文 B 而言，数学的角度上有以下公式：
 
@@ -53,7 +53,7 @@ UUID token 简单美观，不携带其它信息，因此 Keystone 必须实现 t
 
 PKI 的本质就是基于数字签名，Keystone 用私钥对 token 进行数字签名，各个 API server 用公钥在本地验证该 token。相关代码简化如下：
 
-```python
+~~~ python
 def _get_token_id(self, token_data):
     try:
         token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
@@ -61,11 +61,11 @@ def _get_token_id(self, token_data):
                                           CONF.signing.certfile,
                                           CONF.signing.keyfile))
         return token_id
-```
+~~~ 
 
 其中 cms.cms\_sign\_token 调用 openssl cms --sign 对 token\_data 进行签名，token\_data 的样式如下：
 
-```json
+~~~ json
 {
   "token": {
     "methods": [ "password" ],
@@ -94,7 +94,7 @@ def _get_token_id(self, token_data):
     "issued_at": "2015-12-25T08:57:28.404304Z"
   }
 }
-```
+~~~ 
 
 token\_data 经 cms.cms\_sign\_token 签名生成的 token\_id 如下，共 1932 Byte：
 
@@ -104,11 +104,11 @@ token\_data 经 cms.cms\_sign\_token 签名生成的 token\_id 如下，共 1932
 
 ---------------------
 
-#PKIZ
+# PKIZ
 ![P3](http://7xp2eu.com1.z0.glb.clouddn.com/pkiz.png)
 PKIZ 在 PKI 的基础上做了压缩处理，但是压缩的效果极其有限，一般情况下，压缩后的大小为 PKI token 的 90 % 左右，所以 PKIZ 不能友好的解决 token size 太大问题。
 
-```python
+~~~ python
 def _get_token_id(self, token_data):
     try:
         token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
@@ -116,13 +116,13 @@ def _get_token_id(self, token_data):
                                      CONF.signing.certfile,
                                      CONF.signing.keyfile))
         return token_id
-```
+~~~ 
 
 其中 cms.pkiz\_sign() 中的以下代码调用 zlib 对签名后的消息进行压缩级别为 6 的压缩。
 
-```python
+~~~ python
 compressed = zlib.compress(token_id, compression_level=6)
-```
+~~~ 
 
 PKIZ token 样例如下，共 1645 Byte，比 PKI token 减小 14.86 %：
 
@@ -132,12 +132,12 @@ PKIZ token 样例如下，共 1645 Byte，比 PKI token 减小 14.86 %：
 
 ---------------------
 
-#Fernet
+# Fernet
 ![P4](http://7xp2eu.com1.z0.glb.clouddn.com/fernet.png)
 用户可能会碰上这么一个问题，当集群运行较长一段时间后，访问其 API 会变得奇慢无比，究其原因在于 Keystone 数据库存储了大量的 token 导致性能太差，解决的办法是经常清理 token。为了避免上述问题，社区提出了[Fernet token](https://github.com/openstack/keystone-specs/blob/master/specs/kilo/klwt.rst)，它采用 [cryptography](http://cryptography.readthedocs.org/en/latest/fernet/) 对称加密库(symmetric cryptography，加密密钥和解密密钥相同) 加密 token，具体由 AES-CBC 加密和散列函数 SHA256 签名。[Fernet](http://cryptography.readthedocs.org/en/latest/fernet/)
 是专为 API token 设计的一种轻量级安全消息格式，不需要存储于数据库，减少了磁盘的 IO，带来了一定的[性能提升](http://dolphm.com/benchmarking-openstack-keystone-token-formats/)。为了提高安全性，需要采用 [Key Rotation](http://lbragstad.com/fernet-tokens-and-key-rotation/) 更换密钥。
 
-```python
+~~~ python
 def create_token(self, user_id, expires_at, audit_ids, methods=None,
                  domain_id=None, project_id=None, trust_id=None,
                  federated_info=None):
@@ -160,11 +160,11 @@ def create_token(self, user_id, expires_at, audit_ids, methods=None,
     token = self.pack(serialized_payload)
 
     return token
-```
+~~~ 
 
 以上代码表明，token 包含了 user\_id，project\_id，domain\_id，methods，expires\_at 等信息，重要的是，它没有 service\_catalog，所以 region 的数量并不影响它的大小。self.pack() 最终调用如下代码对上述信息加密：
 
-```python
+~~~ python
 def crypto(self):
     keys = utils.load_keys()
 
@@ -173,7 +173,7 @@ def crypto(self):
 
     fernet_instances = [fernet.Fernet(key) for key in utils.load_keys()]
     return fernet.MultiFernet(fernet_instances)
-```
+~~~ 
 
 该 token 的大小一般在 200 多 Byte 左右，本例样式如下，大小为 186 Byte：
 
@@ -183,7 +183,7 @@ def crypto(self):
 
 ---------------------
 
-#如何选择 Token
+# 如何选择 Token
 
 |Token 类型|UUID|PKI|PKIZ|Fernet|
 |:---|:----|:---|:---|:---|

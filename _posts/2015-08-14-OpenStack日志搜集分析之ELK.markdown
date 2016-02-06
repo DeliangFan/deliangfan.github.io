@@ -15,7 +15,7 @@ ELK 安装配置简单，用于管理 OpenStack 日志时需注意两点：
 
 ------------------
 
-#ELK 简介
+# ELK 简介
 
 ELK 是一套优秀的日志搜集、存储和查询的开源软件，广泛用于日志系统。当 OpenStack 集群达到一定规模时，日志管理和分析显得日益重要，良好统一的日志管理和分析平台有助于快速定位问题。Mirantis 的 fuel 和 HPE 的 helion 均集成了 ELK。
 
@@ -31,15 +31,15 @@ ELK 是一套优秀的日志搜集、存储和查询的开源软件，广泛用�
 
 ------------------
 
-#规划与设计
+# 规划与设计
 
-##部署架构
+## 部署架构
 
 控制节点作为日志服务器，存储所有 OpenStack 及其相关日志。Logstash 部署于所有节点，收集本节点下所需收集的日志，然后以网络(node/http)方式输送给控制节点的 Elasticsearch，Kibana 作为 web portal 提供展示日志信息：
 
 ![ELK](http://7xp2eu.com1.z0.glb.clouddn.com/ELK.png?imageView2/1/w/600/h/300/q/100)
 
-##日志格式
+## 日志格式
 
 为了提供快速直观的检索功能，对于每一条 OpenStack 日志，我们希望它能包含以下属性，用于检索和过滤：
 
@@ -54,17 +54,17 @@ ELK 是一套优秀的日志搜集、存储和查询的开源软件，广泛用�
 
 -------------
 
-#安装与配置
+# 安装与配置
 
-##安装
+## 安装
 
 ELK 的安装步骤非常简单，可参考 [logstash-es-Kibana](http://www.icyfire.me/2014/11/13/logstash-es-kibana.html) 安装，如遇异常，请 Google。
 
-##配置
+## 配置
 
 Logstash 的配置文件有专门的一套语法，学习的成本比较高，可参考 [openstack logstash config]( https://github.com/osops/tools-logging/blob/master/logstash/basic/logstash.conf) 后，再根据自身需求改写：
 
-```
+~~~ 
 input {
   file {
     path => ['/var/log/nova/nova-api.log']
@@ -151,12 +151,12 @@ input {
     tags => ['neutron', 'oslofmt']
     type => "neutron-server"
   }
-# Not collecting RabbitMQ logs for the moment
-#  file {
-#	path => ['/var/log/rabbitmq/rabbit@<%= @hostname %>.log']
-#	tags => ['rabbitmq', 'oslofmt']
-#	type => "rabbitmq"
-#  }
+#  Not collecting RabbitMQ logs for the moment
+#   file {
+# 	path => ['/var/log/rabbitmq/rabbit@<%= @hostname %>.log']
+# 	tags => ['rabbitmq', 'oslofmt']
+# 	type => "rabbitmq"
+#   }
   file {
     path => ['/var/log/httpd/access_log']
     tags => ['horizon']
@@ -191,22 +191,22 @@ filter {
       what => "previous"
     }
     grok {
-      # Do multiline matching as the above mutliline filter may add newlines
-      # to the log messages.
-      # TODO move the LOGLEVELs into a proper grok pattern.
+      #  Do multiline matching as the above mutliline filter may add newlines
+      #  to the log messages.
+      #  TODO move the LOGLEVELs into a proper grok pattern.
       match => { "message" => "(?m)^%{TIMESTAMP_ISO8601:logdate}%{SPACE}%{NUMBER:pid}?%{SPACE}?(?<loglevel>AUDIT|CRITICAL|DEBUG|INFO|TRACE|WARNING|ERROR) \[?\b%{NOTSPACE:module}\b\]?%{SPACE}?%{GREEDYDATA:logmessage}?" }
       add_field => { "received_at" => "%{@timestamp}" }
     }
   } else if "keystonefmt" in [tags] {
     grok {
-      # Do multiline matching as the above mutliline filter may add newlines
-      # to the log messages.
-      # TODO move the LOGLEVELs into a proper grok pattern.
+      #  Do multiline matching as the above mutliline filter may add newlines
+      #  to the log messages.
+      #  TODO move the LOGLEVELs into a proper grok pattern.
       match => { "message" => "(?m)^%{TIMESTAMP_ISO8601:logdate}%{SPACE}%{NUMBER:pid}?%{SPACE}?(?<loglevel>AUDIT|CRITICAL|DEBUG|INFO|TRACE|WARNING|ERROR) \[?\b%{NOTSPACE:module}\b\]?%{SPACE}?%{GREEDYDATA:logmessage}?" }
       add_field => { "received_at" => "%{@timestamp}" }
     }
     if [module] == "iso8601.iso8601" {
-  #log message for each part of the date?  Really?
+  # log message for each part of the date?  Really?
   drop {}
     }
   } else if "libvirt" in [tags] {
@@ -244,6 +244,6 @@ filter {
 output {
     elasticsearch { host => controller }
 }
-```
+~~~ 
 
 
