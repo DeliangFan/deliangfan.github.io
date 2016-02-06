@@ -10,23 +10,30 @@ categories: OpenStack
 
 立即排查发现云主机并没有宕机，只是网络不通，大部分计算节点的 ovs 流表空空如也。Nova 和 Neutron 打出 ERROR 级别的日志。
 
-> $ ovs-ofctl dump-flows br-bond   
-NXST\_FLOW repy (xid=0x4)
- cookies=0x0, duration=433.691s, table=0, n\_packages=568733, n\_bytes=113547542, idle\_age=0, priority=1 actions=NORMAL
- cookies=0x0, duration=432.358s, table=0, n\_packages=8418, n\_bytes=356703, idle\_age=0, priority=2, in\_port=3 actions=drop
+~~~
+$ ovs-ofctl dump-flows br-bond   
+NXST_FLOW repy (xid=0x4)
+ cookies=0x0, duration=433.691s, table=0, n_packages=568733, n_bytes=113547542, idle_age=0, priority=1 actions=NORMAL
+ cookies=0x0, duration=432.358s, table=0, n_packages=8418, n_bytes=356703, idle_age=0, priority=2, in_port=3 actions=drop
+~~~
 
 neutron-ovs-agent Log:
 
-> DeviceListRetrievalError: Unable to retrieve port details for devices because of error: Remote error: TimeoutError QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout 10
-
+~~~
+DeviceListRetrievalError: Unable to retrieve port details for devices because of error: Remote error: TimeoutError QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout 10
+~~~
 
 neutron-server Log：
 
-> File "/usr/lib64/python2.6/site-packages/sqlalchemy/pool.py", ... 'TimeoutError: QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout 10\n'
+~~~
+File "/usr/lib64/python2.6/site-packages/sqlalchemy/pool.py", ... 'TimeoutError: QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout 10\n'
+~~~
 
 nova Log：
 
-> NeutronClientException: Request Failed: internal server error while processing your request.
+~~~
+NeutronClientException: Request Failed: internal server error while processing your request.
+~~~
 
 上述信息可得出以下结论：
 
@@ -69,15 +76,19 @@ neutron-ovs-agent 在重启的过程中就流表的处理留下了一个隐患�
 
 现在解释为什么批量重启 neutron-ovs-agent 会触发上述隐患，重启过程中，neutron 日志报出如下错误：
 
-> 'TimeoutError: QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout。
+~~~ 
+TimeoutError: QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout。
+~~~ 
 
 这条日志意味着 neutron-server 和数据库的连接数超出客户端连接池的上限，当 neutron-ovs-agent 批量重启时，上百并发的通过 rpc 向 neutron-server 请求构建流表的相关信息，neutron-server 和数据库的连接数也就远远超过 30，造成大量的请求失败，计算节点获取不到流表相关信息无法重建流表，故计算节点的流表为空。
 
 要解决因 QueuePool 的限制而引起的 TimeoutError 问题也很简单，sqlalchemy 提供了两个配置项[1]，把下面两个参数适当调大即可。
 
->[database]   
->max\_overflow =   
->max\_pool\_size =
+~~~ 
+[database]   
+max_overflow =   
+max_pool_size =
+~~~ 
 
 **Note:** MySQL server 默认最大连接数为 100，当集群的规模上升时，需适当调整 MySQL server 最大连接数。
 
@@ -87,17 +98,22 @@ neutron-ovs-agent 在重启的过程中就流表的处理留下了一个隐患�
 
 然而问题并没有完全解决，请注意 nova 的错误日志：
 
-> nova.compute.manager  NeutronClientException: Request Failed: internal server error while processing your request.
+~~~
+nova.compute.manager  NeutronClientException: Request Failed: internal server error while processing your request.
+~~~
 
 这是nova 发给 neutron-server 的一条 HTTP 请求，neutron 返回了 internal server error。Internal server error 对应的 HTTP status code 为 500，意味着 neutron-server 无法响应 nova 请求。为什么会无法响应呢，批量重启的过程中，发现 neutron-server 进程的 CPU 使用率为 100 %，意味着 neutron-server 正忙于处理 neutron-ovs-agent 大量的请求，因而无暇处理 nova 的 HTTP 请求。
 
 解决该问题的方法同样很简答，增加更多的 neutron-server 进程数即可。事实上，因 nova-conductor 要处理 nova-compute 大量的 rpc 请求(nova-compute 通过 nova-conductor 访问数据库)，自 Icehouse 起，nova-conductor 就默认启动了多个进程，进程的数目等同服务器 CPU 的逻辑核数。
 
-> $ workers=\`cat /proc/cpuinfo |grep processor |wc | awk '{print $1}'\`   
->
->[DEFAULT]   
-api\_workers = $workers   
-rpc\_workers = $workers   
+~~~
+$ workers=\`cat /proc/cpuinfo |grep processor |wc | awk '{print $1}'\`   
+
+[DEFAULT]   
+api_workers = $workers   
+rpc_workers = $workers   
+~~~
+
 
 ------------------
 
