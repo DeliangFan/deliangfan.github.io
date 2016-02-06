@@ -1,0 +1,63 @@
+---
+layout: post
+title:  "搭建 Jenkins"
+categories: DevOps
+---
+
+----------
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ![jenkins](http://7xp2eu.com1.z0.glb.clouddn.com/jenkins%20logo.png?imageView2/1/w/320/h/100/q/100)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+
+
+[Jenkins](https://jenkins-ci.org/) 一款非常优秀的搭建持续集成的软件，团队在项目开发时，每当有代码提交，Jenkins 自动化的构建验证环境，包括编译、发布和测试。只有通过这道最基础的门槛才会进入 code review 流程，本文介绍 Jenkins 的安装流程。
+
+- Linux: Ubuntu 14.04 LTS
+
+-----------
+
+# Installation
+
+Jenkins 的[安装](https://wiki.jenkins-ci.org/display/JENKINS/Installing+Jenkins+on+Ubuntu)非常简便，首先安装 java：
+
+~~~ 
+$ apt-get install default-jre
+~~~ 
+
+配置 jenkins 源，并安装 jenkins
+
+~~~
+$ wget -q -O - https://jenkins-ci.org/debian/jenkins-ci.org.key | sudo apt-key add -
+$ sh -c 'echo deb http://pkg.jenkins-ci.org/debian binary/ > /etc/apt/sources.list.d/jenkins.list'
+$ apt-get update
+$ apt-get install jenkins
+~~~
+
+
+-----------
+
+# Configuration
+
+根据需求，重点更新 /etc/default/jenkins 以下配置项，
+
+~~~ 
+HTTP_PORT=8080
+~~~ 
+
+重新启动：
+
+~~~ 
+$ service jenkins restart
+~~~
+
+----------
+
+# Test
+
+浏览器登录 \<your_host\>:8080，即可见如下页面：
+
+![jenkins-demo](http://7xp2eu.com1.z0.glb.clouddn.com/jenkins%20sample.png)
