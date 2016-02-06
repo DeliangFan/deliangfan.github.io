@@ -33,7 +33,7 @@ categories: OpenStack
 - Cold snapshot: 创建 snapshot 时，需先关闭虚拟机，快照完成后再启动虚拟机
 - Live snapshot: 创建 snapshot 时，无需关闭虚拟机
 
-```python
+~~~ python
 def snapshot(self, context, instance, image_href, update_task_state):
     ......
     
@@ -61,87 +61,87 @@ def snapshot(self, context, instance, image_href, update_task_state):
         live_snapshot = False
 
     ......
-```
+~~~ 
 
 ##Cold Snapshot 流程:
 
 1.卸载 pci 设备，保持虚拟机状态并关机。
 
-```
+~~~ 
 Python:
 virt_dom.managedSave(0)
 
 Cli:
 $ virsh managedsave vm
-```
+~~~ 
 
 2.复制虚拟机的磁盘文件, 然后把复制的文件上传至 glance 中。
 
-```bash
+~~~ bash
 $ qemu-img convert -f qcow2 vm.qcow2 -O qcow2 vm_snapshot.qcow2
 $ glance image-update vm_snapshot --file vm_snapshot.qcow2
-```
+~~~ 
 
 3.启动虚拟机，挂载 pci 设备
 
-```bash
+~~~ bash
 $ virsh start vm
-```
+~~~ 
 
 ##Live Snapshot 流程
 
 1.暂停所有的 block job：
 
-```bash
+~~~ bash
 Python
 virt_dom.blockJobAbort(disk_path, 0)
 
 Cli
 $ virsh blockjob vm vda --abort
-```
+~~~ 
 
 2.新建一个带有 backing file 的 vm_delta.qcow2 文件，大小和虚拟机磁盘大小一致：
 
-```
+~~~ 
 $ qemu-img create -f qcow2 vm_delta.qcow2 --backing_file=base_image --size=root_disk_size
-```
+~~~ 
 
 3.Undefine 虚拟机，以便保持数据一致性，期间虚拟机依旧运行：
 
-```bash
+~~~ bash
 Python
 domain.undefine()
 
 Cli
 $ virsh undefine vm
-```
+~~~ 
 
 4.把虚拟机磁盘文件复制到新建的 vm_delta.qcow2 文件中：
 
-```bash
+~~~ bash
 Python
 domain.blockRebase()
 
 Cli
 $ virsh blockcopy --domain vm vda vm_delta.qcow2 --wait --verbose
-```
+~~~ 
 
 5.Define 虚拟机
 
-```bash
+~~~ bash
 Python
 _conn.defineXML(xml)
 
 Cli
 $ virsh define vm
-```
+~~~ 
 
 6.因 vm_delta.qcow2 只是一个增量文件，所以需把它和 backing file 文件合并成一个 snapshot.qcow2 文件，然后把这个完整的 snapshot.qcow2 文件上传至 glance 中:
 
-```bash
+~~~ bash
 $ qemu-img convert -f qcow2 -O raw vm_delta.qcow2 snapshot.qcow2
 $ glance image-update vm_snapshot --file vm_snapshot.qcow2
-```         
+~~~          
                                                  
 ------------
 
@@ -151,36 +151,36 @@ $ glance image-update vm_snapshot --file vm_snapshot.qcow2
 
 1.创建快照并设置快照属性为 protected：
 
-```bash
+~~~ bash
 $ rbd snap create nova-pool/vm@nova_vm_snap
 $ rbd snap protect nova-pool/vm@nova_vm_snap
-```
+~~~ 
 
 2.Clone 该快照至 glance pool 中：
 
-```bash
+~~~ bash
 $ rbd clone nova-pool/vm@nova_vm_snao glance-pool/glance_vm_snap_clone
-```
+~~~ 
 
 3.Flatten the clone in glance pool：
 
-```
+~~~ 
 $ rbd flatten glance-pool/glance_vm_snap_clone
-```
+~~~ 
 
 4.对 glance pool 的 glance_vm_snap_clone 做快照，并设置其属性为 protected：
 
-```
+~~~ 
 $ rbd snap create glance-pool/glance_vm_snap_clone@vm_snapshot
 $ rbd snap protect glance-pool/glance_vm_snap_clone@vm_snapshot
-```
+~~~ 
 
 5.删除 nova pool 的快照：
 
-```
+~~~ 
 $ rbd snap unprotect nova-pool/vm@nova_vm_snap
 $ rbd snap rm nova-pool/vm@nova_vm_snap
-```
+~~~ 
 
 ![Ceph RBD flow](http://7xp2eu.com1.z0.glb.clouddn.com/cephrbdsnapshotflow.png)
 
