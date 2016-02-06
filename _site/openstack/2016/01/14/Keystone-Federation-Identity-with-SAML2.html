@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>Keystone Federation Identity With SAML2</title>
-  <meta name="description" content="Keystone federation identity 涉及很多概念，安装配置复杂，官网的文档又不够清晰，下面 4 篇文章在安装配置方面阐述的非常详细。">
+  <meta name="description" content="">
 
   <link rel="stylesheet" href="/css/main.css">
   <link rel="canonical" href="http://wsfdl.com/openstack/2016/01/14/Keystone-Federation-Identity-with-SAML2.html">
@@ -63,6 +63,7 @@
 
   <div class="post-content" itemprop="articleBody">
     <hr />
+
 <p>Keystone federation identity 涉及很多概念，安装配置复杂，官网的文档又不够清晰，下面 4 篇文章在安装配置方面阐述的非常详细。</p>
 
 <ul>
@@ -73,7 +74,8 @@
 </ul>
 
 <hr />
-<p>#1. Federation Identity 简介</p>
+
+<h1 id="id-federation-identity-">Federation Identity 简介</h1>
 
 <p>关于 <a href="https://en.wikipedia.org/wiki/Federated_identity">federation identity</a>，维基百科的定义如下：</p>
 
@@ -104,7 +106,8 @@
 </ul>
 
 <hr />
-<p>#Keystone Federation 的原理</p>
+
+<h1 id="id-keystone-federation-">Keystone Federation 的原理</h1>
 
 <p>Federation identity 为 hybrid cloud 在用户管理层面提供了良好的解决方案。Keystone 从 Icehouse 开始逐步增加 federation identity 的功能，Icehouse 支持 Keystone 作为 Service Provider，Juno 版本新增了 Identity Provider，支持 SAML 和 OpenID 两种认证协议。OpenStack 作为云服务的解决方案，对外提供计算、存储和网络等服务，多数场景下 Keystone 常常作为服务端，对接其它的 Identity Provider，所以本节着重阐述 Service Provider 的原理和流程。首先先介绍 3 类重要的 <a href="https://specs.openstack.org/openstack/keystone-specs/api/v3/identity-api-v3-os-federation-ext.html">API</a>。</p>
 
@@ -131,7 +134,7 @@
 
 <hr />
 
-<p>#Configure Keystone as a Service Provider</p>
+<h1 id="id-configure-keystone-as-a-service-provider">Configure Keystone as a Service Provider</h1>
 
 <p>本节开始介绍如何安装配置 Keystone to Keystone Federation，重点参考了 <a href="http://blog.rodrigods.com/it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo/">it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo</a>(原文存在 2 处配置错误，本文已给予纠正)。 我们有两个服务器，分别作为 SP 和 IDP，二者均需按照<a href="http://docs.openstack.org/kilo/install-guide/install/apt/content/ch_keystone.html">官网的手册</a>安装 Keystone。</p>
 
@@ -210,8 +213,9 @@ Module shib2 already enabled
 
 <hr />
 
-<p>#Configure Keystone as an Identity Provider<br />
-安装 xmlsec1 和 pysaml2：</p>
+<h1 id="id-configure-keystone-as-an-identity-provider">Configure Keystone as an Identity Provider</h1>
+
+<p>安装 xmlsec1 和 pysaml2：</p>
 
 <pre><code class="language-bash">$ apt-get install xmlsec1  
 $ pip install pysaml2
@@ -232,8 +236,10 @@ idp_metadata_path=/etc/keystone/keystone_idp_metadata.xml
 <pre><code class="language-bash">$ keystone-manage saml_idp_metadata &gt; /etc/keystone/keystone_idp_metadata.xml
 service apache2 restart
 </code></pre>
+
 <hr />
-<p>#Test Keystone to Keystone federation</p>
+
+<h1 id="id-test-keystone-to-keystone-federation">Test Keystone to Keystone federation</h1>
 
 <ul>
   <li>在 Service Provider 端执行以下脚本，创建 domain, group, mapping, idp, protocol 等。其中 idp 指向另外一个作为 Identity Provider 的 Keystone，protocol 采用了 saml2 协议，mapping 的规则为只要 IDP 中名为 bob 或者 acme 的用户都可通过认证，并且映射到 Service 端的 federated_user 用户上。</li>

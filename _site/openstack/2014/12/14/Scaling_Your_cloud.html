@@ -75,7 +75,8 @@
 <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/az_cell_region.jpg" alt="az-region-cell" /></p>
 
 <hr />
-<p>#Region</p>
+
+<h1 id="id-region">Region</h1>
 
 <p>顾名思义，Region 直译过来就是区域，地域的概念，而事实上，AWS 按地域(国家或者城市)设置一个 Region，每个 Region 下有多个 Availability Zone。Openstack 同样支持 Region 的概念，支持全球化部署，比如为了降低网络延时，用户可以选择特定的 Region 来部署服务。各个 Region 之间的计算资源、网络资源、存储资源都是独立的，但所有 Region 共享账户用户信息，因为 Keystone 是实现 openstack 租户用户管理和认证的功能的组件，所以 Keystone 全局唯一，所有 Region 共享一个 Keystone，Keystone endpoint 中存储了访问各个 Region 的 URL。</p>
 
@@ -83,7 +84,7 @@
 
 <hr />
 
-<p>#Cell</p>
+<h1 id="id-cell">Cell</h1>
 
 <p>Cell 概念的引入，是为了扩充单个 Region 下的集群规模，主要解决 AMQP 和 Database 的性能瓶颈，每个 Region 下的 openstack 集群都有自己的消息中间件和数据库，当计算节点达到一定规模(和IBM，easystack，华为等交流的数据是300~500)，消息中间件就成为了扩展计算节点的性能瓶颈。Cell 的引入就是为了解决单个 Region 的规模问题，每个 Region 下可以有多个 Cell，每个 Cell 维护自己的数据库和消息中间件，所有 Cell 共享本 Region 下的 nova-api，共享全局唯一的 Keystone。</p>
 
@@ -93,7 +94,7 @@
 
 <hr />
 
-<p>#Availability Zone &amp; Host Aggregates Zone</p>
+<h1 id="id-availability-zone--host-aggregates-zone">Availability Zone &amp; Host Aggregates Zone</h1>
 
 <p>之所以把 AZ 和 HAZ 放到一同分析，是因为二者的概念实在类似。AWS 每个 Region 下有多个 AZ。Openstack 也引入了 AZ 的概念，我个人理解 AZ 的引入是基于安全的角度考虑，比如我们定义一个机房为一个 AZ，把该机房所有计算节点纳入到一个 AZ 中，其中一个机房因为某种原因down 掉，不会影响其它机房的虚拟机和网络；同时， AZ 对用户来说是一个可见的概念，用户创建虚拟机时，可以明确指出在哪个 AZ，用户可以通过在多个 AZ 创建虚拟机来保证高可靠性。</p>
 
@@ -103,9 +104,9 @@
 
 <hr />
 
-<p>#How to use availability zone and host aggregates zone</p>
+<h1 id="id-how-to-use-availability-zone-and-host-aggregates-zone">How to use availability zone and host aggregates zone</h1>
 
-<p>##How to use availability zone</p>
+<h1 id="id-how-to-use-availability-zone"># How to use availability zone</h1>
 
 <p>Nova 调用创建 HAZ 的 API 创建 AZ，即在创建 HAZ 时，定义一个 AZ。</p>
 
@@ -132,7 +133,7 @@
 <pre><code>$ nova boot --flavor m1.small --image cirros --availability-zone AZ-01 vm
 </code></pre>
 
-<p>##How to use host aggregates zone</p>
+<h1 id="id-how-to-use-host-aggregates-zone"># How to use host aggregates zone</h1>
 
 <p>nova.conf 新增 AggregateInstanceExtraSpecsFilter filters，如下：</p>
 

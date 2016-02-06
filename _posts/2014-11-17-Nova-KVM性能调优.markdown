@@ -9,6 +9,7 @@ categories: OpenStack
 KVM 作为 Nova 的虚拟化 Driver，是真正意义上负责虚拟机生命周期管理虚拟化基础设施，所以，如果清楚 KVM 的某些调优参数和策略，就有可能为 Nova 提供调优的基础和入口。Qemu-KVM 负责虚拟机的 CPU、Memory、存储和网络的虚拟化，所以可从该四个方面进行调优。
 
 ----------
+
 # 1. CPU Tuning
 
 ## 1.1 Cache share tuning
@@ -85,7 +86,7 @@ Qcow2 格式发展到现在，[已经有和 Raw 相近的性能](http://www.linu
 # 3. Memory Tuning
 
 
-## 3.1. Disable KSM
+## 3.1 Disable KSM
 
 When KSM merges across nodes on a NUMA host with multiple guest virtual machines, guests and CPUs from more distant nodes can suffer a significant increase of access latency to the merged [KSM page](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/Virtualization_Tuning_and_Optimization_Guide/index.html).
 Disable KSM 方式有两种：
@@ -133,9 +134,10 @@ echo 0 > /sys/kernel/mm/transparent_hugepage/khugepaged/defrag
 
 ----------
 
-
 # 4. Network IO Tuning
+
 ## 4.1 Enable vhost_net
+
 [VhostNet](http://www.linux-kvm.org/page/UsingVhost) provides better latency (10% less than e1000 on my system) and greater throughput (8x the normal virtio, around 7~8 Gigabits/sec here) for network.
 
 ~~~ bash

@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <title>搭建 yum 源</title>
-  <meta name="description" content="">
+  <meta name="description" content="    ">
 
   <link rel="stylesheet" href="/css/main.css">
   <link rel="canonical" href="http://wsfdl.com/devops/2014/09/10/Build-Yum-Repo.html">
@@ -63,6 +63,7 @@
 
   <div class="post-content" itemprop="articleBody">
     <hr />
+<p>    </p>
 
 <blockquote>
   <p>注：此博文由陈尚华和本人整理所作。</p>
@@ -195,7 +196,7 @@ install -p -D -m 644 %{SOURCE2} %{buildroot}%{_sysconfdir}/yum.repos.d/foreman.r
 install -p -D -m 644 %{SOURCE4} %{buildroot}%{_sysconfdir}/yum.repos.d/puppetlabs.repo
 install -p -D -m 644 %{SOURCE6} %{buildroot}%{_sysconfdir}/yum.repos.d/epel.repo
 
-#GPG Keys
+# GPG Keys
 install -Dpm 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-RDO-Icehouse
 install -Dpm 644 %{SOURCE3} %{buildroot}%{_sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-foreman
 install -Dpm 644 %{SOURCE5} %{buildroot}%{_sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-puppetlabs
@@ -250,7 +251,7 @@ $ yum -y install nginx
 
 <hr />
 
-<p>#Troubleshooting:</p>
+<h1 id="id-troubleshooting">Troubleshooting:</h1>
 
 <p>yum repolist 出现</p>
 

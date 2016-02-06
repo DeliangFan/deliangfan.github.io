@@ -5,6 +5,7 @@ categories: OpenStack
 ---
 
 ---------------
+
 Keystone federation identity 涉及很多概念，安装配置复杂，官网的文档又不够清晰，下面 4 篇文章在安装配置方面阐述的非常详细。
 
 - [Configure Keystone to Keystone Federation](http://blog.rodrigods.com/it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo/)
@@ -13,8 +14,8 @@ Keystone federation identity 涉及很多概念，安装配置复杂，官网的
 - [Configure Keystone federation with multi-IDP](https://zenodo.org/record/11982/files/CERN_openlab_Luca_Tartarini.pdf) 
 
 ------------------
-# 1. Federation Identity 简介
 
+# Federation Identity 简介
 
 关于 [federation identity](https://en.wikipedia.org/wiki/Federated_identity)，维基百科的定义如下：
 
@@ -40,6 +41,7 @@ Federation identity 具有以下优点：
 - 避免用户注册多个账号，增加用户负担
 
 --------------
+
 # Keystone Federation 的原理
 
 Federation identity 为 hybrid cloud 在用户管理层面提供了良好的解决方案。Keystone 从 Icehouse 开始逐步增加 federation identity 的功能，Icehouse 支持 Keystone 作为 Service Provider，Juno 版本新增了 Identity Provider，支持 SAML 和 OpenID 两种认证协议。OpenStack 作为云服务的解决方案，对外提供计算、存储和网络等服务，多数场景下 Keystone 常常作为服务端，对接其它的 Identity Provider，所以本节着重阐述 Service Provider 的原理和流程。首先先介绍 3 类重要的 [API](https://specs.openstack.org/openstack/keystone-specs/api/v3/identity-api-v3-os-federation-ext.html)。
@@ -59,8 +61,6 @@ Federation identity 为 hybrid cloud 在用户管理层面提供了良好的解�
 2. 外部的 Identity Provider 认证用户的身份并把用户的某些身份信息返回给 Apache，Apache 再把信息传给 Keystone。
 3. Keystone 根据 mapping rule 把判断用户是否有访问权限，如果有访问权限，返回一个 unscoped token。用户可拿 unscoped token 查看可用的 project 并生成 scoped token，进而访问 OpenStack 的 API。
 
-
-
 --------------
 
 # Configure Keystone as a Service Provider
@@ -69,7 +69,6 @@ Federation identity 为 hybrid cloud 在用户管理层面提供了良好的解�
 
 - Linux: Ubuntu 14.04 LTS
 - OpenStack: Kilo
-
 
 更新 keystone.conf 如下配置：
 
@@ -149,6 +148,7 @@ Module shib2 already enabled
 ----------
 
 # Configure Keystone as an Identity Provider
+
 安装 xmlsec1 和 pysaml2：
 
 ~~~bash
@@ -173,7 +173,9 @@ idp_metadata_path=/etc/keystone/keystone_idp_metadata.xml
 $ keystone-manage saml_idp_metadata > /etc/keystone/keystone_idp_metadata.xml
 service apache2 restart
 ~~~
+
 -----------
+
 # Test Keystone to Keystone federation
 
 * 在 Service Provider 端执行以下脚本，创建 domain, group, mapping, idp, protocol 等。其中 idp 指向另外一个作为 Identity Provider 的 Keystone，protocol 采用了 saml2 协议，mapping 的规则为只要 IDP 中名为 bob 或者 acme 的用户都可通过认证，并且映射到 Service 端的 federated_user 用户上。
@@ -469,7 +471,6 @@ if __name__ == "__main__":
 ~~~
 
 ----------
-
 
 # Reference
 1. https://developer.rackspace.com/blog/keystone-to-keystone-federation-with-openstack-ansible/

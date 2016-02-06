@@ -75,6 +75,7 @@ backend bk_web
 ~~~ 
 
 ----------
+
 # DDOS
 
 Haproxy 可在一定程度上提高服务端抗击 DDOS 攻击能力，DDOS 主要有 UDP，TCP sync flood，Http slowloris attack 等攻击手段，[use-a-load-balancer-as-a-first-row-of-defense-against-ddos](http://blog.haproxy.com/2012/02/27/use-a-load-balancer-as-a-first-row-of-defense-against-ddos/) 详细的阐述了配置过程，主要表现在以下几个方面：
@@ -97,7 +98,6 @@ net.ipv4.tcp_max_syn_backlog = 1024
 sysctl -p
 ~~~ 
 
-----------
 ## Slowloris like attacks
  
 一个 HTTP 请求通常包括头部、url、methods 等，服务器需要接收整个请求后才能做出响应。如果恶意用户发送缓慢的请求，比如一个字节一个字节的发送头部，服务器将一直处于 waiting 状态，耗费服务器的资源。通过配置 timeout http-request 参数，当一个用户的请求时间超过设定值时，haproxy 自动断开该连接。
@@ -135,8 +135,6 @@ Your browser didn't send a complete request in time.
 Connection closed by foreign host.
 ~~~ 
 
-----------
-
 ## Limiting the number of connections per users
  
 普通用户访问某个 OpenStack 服务时，如果恶意打开了大量 TCP 链接，会耗费服务器内存资源，影响其它用户的体验，因此我们需要根据实际情况，限制同一个用户的链接并发数。
@@ -173,7 +171,6 @@ Connected to 127.0.0.1.
 Escape character is '^]'.
 Connection closed by foreign host.
 ~~~ 
-----------
 
 ## Limiting the connection rate per user
 
@@ -258,5 +255,4 @@ frontend nova-api-cluster
   server controller1 10.0.0.1:8774 check inter 2000 rise 2 fall 5
   server controller2 10.0.0.2:8774 check inter 2000 rise 2 fall 5
   server controller3 10.0.0.3:8774 check inter 2000 rise 2 fall 5
-
 ~~~ 

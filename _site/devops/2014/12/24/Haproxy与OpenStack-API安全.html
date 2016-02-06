@@ -88,7 +88,7 @@
 
 <hr />
 
-<p>#HTTPS</p>
+<h1 id="id-https">HTTPS</h1>
 
 <p>1.5.0 版本的 Release Notes 有下面这么一行话，意味着从该版本开始， haproxy 支持由 HTTPS 加密客户端和服务端的通信消息，避免明文传输。</p>
 
@@ -97,7 +97,7 @@
 
 <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/https-http.png?imageView2/1/w/800/q/100" alt="https-http" /></p>
 
-<p><a href="https://www.digitalocean.com/community/tutorials/how-to-implement-ssl-termination-with-haproxy-on-ubuntu-14-04">how-to-implement-ssl-termination-with-haproxy</a> 详细的说明如何配置 HTTPS，主要包括证书 和 SSL 相关配置项。证书可以到 CA 机构购买，也可用 openssl 自制证书，甚至可用 <a href="http://docs.openstack.org/developer/keystone/configuration.html#ssl">keystone 生成证书</a>。</p>
+<p><a href="https://www.digitalocean.com/community/tutorials/how-to-implement-ssl-termination-with-haproxy-on-ubuntu-14-04">how-to-implement-ssl-termination-with-haproxy</a> 详细的说明如何配置 HTTPS，主要包括证书 和 SSL 相关配置项。证书可以到 CA 机构购买，也可用 openssl 自制证书，甚至可用 <a href="http://docs.openstack.org/developer/keystone/configuration.html# ssl">keystone 生成证书</a>。</p>
 
 <pre><code>[eventlet_server_ssl]
 enable = True
@@ -124,19 +124,20 @@ defaults
 	...
 
 frontend ft_web
-    bind &lt;Virtual IP&gt;:443 ssl crt /etc/haproxy/https.pem #证书
-    reqadd X-Forwarded-Proto:\ https #相关配置
+    bind &lt;Virtual IP&gt;:443 ssl crt /etc/haproxy/https.pem # 证书
+    reqadd X-Forwarded-Proto:\ https # 相关配置
     default_backend bk_web
  
 backend bk_web
     balance roundrobin
-    redirect scheme https if !{ ssl_fc } #相关配置
+    redirect scheme https if !{ ssl_fc } # 相关配置
     server http-server-01 private_IP1:8080 check inter 10s
     server http-server-02 private_IP2:8080 check inter 10s
 </code></pre>
 
 <hr />
-<p>#DDOS</p>
+
+<h1 id="id-ddos">DDOS</h1>
 
 <p>Haproxy 可在一定程度上提高服务端抗击 DDOS 攻击能力，DDOS 主要有 UDP，TCP sync flood，Http slowloris attack 等攻击手段，<a href="http://blog.haproxy.com/2012/02/27/use-a-load-balancer-as-a-first-row-of-defense-against-ddos/">use-a-load-balancer-as-a-first-row-of-defense-against-ddos</a> 详细的阐述了配置过程，主要表现在以下几个方面：</p>
 
@@ -147,7 +148,7 @@ backend bk_web
   <li>Limiting the connection rate per user</li>
 </ul>
 
-<p>##TCP syn flood attacks</p>
+<h2 id="id-tcp-syn-flood-attacks">TCP syn flood attacks</h2>
 
 <p>通过向服务器发送大量的 TCP syn 分组，恶意用户实现了了 TCP syn flood 攻击，幸运的是，简单的配置内核网络参数即可防止这种攻击。</p>
 
@@ -159,17 +160,16 @@ net.ipv4.tcp_max_syn_backlog = 1024
 sysctl -p
 </code></pre>
 
-<hr />
-<p>##Slowloris like attacks</p>
+<h2 id="id-slowloris-like-attacks">Slowloris like attacks</h2>
 
 <p>一个 HTTP 请求通常包括头部、url、methods 等，服务器需要接收整个请求后才能做出响应。如果恶意用户发送缓慢的请求，比如一个字节一个字节的发送头部，服务器将一直处于 waiting 状态，耗费服务器的资源。通过配置 timeout http-request 参数，当一个用户的请求时间超过设定值时，haproxy 自动断开该连接。</p>
 
 <pre><code>defaults
   option http-server-close
   mode http
-  timeout connect 10s  #限制链接时间，该参数不宜过大
-  timeout server  15s  #限制链接时间，该参数不宜过大
-  timeout client  15s  #限制链接时间，该参数不宜过大
+  timeout connect 10s  # 限制链接时间，该参数不宜过大
+  timeout server  15s  # 限制链接时间，该参数不宜过大
+  timeout client  15s  # 限制链接时间，该参数不宜过大
 
 frontend ft_web
 	...
@@ -194,9 +194,7 @@ Your browser didn't send a complete request in time.
 Connection closed by foreign host.
 </code></pre>
 
-<hr />
-
-<p>##Limiting the number of connections per users</p>
+<h2 id="id-limiting-the-number-of-connections-per-users">Limiting the number of connections per users</h2>
 
 <p>普通用户访问某个 OpenStack 服务时，如果恶意打开了大量 TCP 链接，会耗费服务器内存资源，影响其它用户的体验，因此我们需要根据实际情况，限制同一个用户的链接并发数。</p>
 
@@ -205,10 +203,10 @@ Connection closed by foreign host.
 
 frontend ft_web
   bind &lt;Virtual IP&gt;:8080
-  # Allow clean known IPs to bypass the filter
-  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst } #白名单
-  # Shut the new connection as long as the client has already 10 opened  #限制单个用户的连接数
-  tcp-request connection reject if { src_conn_cur ge 10 }                #限制单个用户的连接数
+  #  Allow clean known IPs to bypass the filter
+  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst } # 白名单
+  #  Shut the new connection as long as the client has already 10 opened  # 限制单个用户的连接数
+  tcp-request connection reject if { src_conn_cur ge 10 }                # 限制单个用户的连接数
   tcp-request connection track-sc1 src&lt;/span&gt;
 
   default_backend bk_web
@@ -230,9 +228,8 @@ Connected to 127.0.0.1.
 Escape character is '^]'.
 Connection closed by foreign host.
 </code></pre>
-<hr />
 
-<p>##Limiting the connection rate per user</p>
+<h2 id="id-limiting-the-connection-rate-per-user">Limiting the connection rate per user</h2>
 
 <p>仅仅限制单个用户的并发链接数并意味着万事大吉，如果用户在短时间内向服务器不断的发送建立和关闭链接请求，也会耗费服务器资源，影响服务器端的性能，因此需要控制单个用户的访问速率。通常情况下，我们认为普通用户在 3 秒内不应该向某个 openstack api 发送的请求不应该超过 20 次。</p>
 
@@ -241,12 +238,12 @@ Connection closed by foreign host.
 
 frontend ft_web
   bind &lt;Virtual IP&gt;:8080
-  stick-table type ip size 100k expire 30s store conn_cur, conn_rate(3s) # Table definition 
+  stick-table type ip size 100k expire 30s store conn_cur, conn_rate(3s) #  Table definition 
 
-  # Allow clean known IPs to bypass the filter
-  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst } #白名单
-  # Shut the new connection as long as the client has already 10 opened or rate more than 20
-  tcp-request connection reject if { src_conn_cur ge 10 }|| { src_conn_rate ge 20} #限制单个用户链接数和访问速率
+  #  Allow clean known IPs to bypass the filter
+  tcp-request connection accept if { src -f /etc/haproxy/whitelist.lst } # 白名单
+  #  Shut the new connection as long as the client has already 10 opened or rate more than 20
+  tcp-request connection reject if { src_conn_cur ge 10 }|| { src_conn_rate ge 20} # 限制单个用户链接数和访问速率
   tcp-request connection track-sc1 src
 
   default_backend bk_web
@@ -272,7 +269,7 @@ Connection closed by foreign host.
 
 <hr />
 
-<p>#样例 nova-api</p>
+<h1 id="id-nova-api">样例 nova-api</h1>
 
 <p>根据上述内容，以 nova-api 为例，其配置如下：</p>
 
@@ -314,7 +311,6 @@ frontend nova-api-cluster
   server controller1 10.0.0.1:8774 check inter 2000 rise 2 fall 5
   server controller2 10.0.0.2:8774 check inter 2000 rise 2 fall 5
   server controller3 10.0.0.3:8774 check inter 2000 rise 2 fall 5
-
 </code></pre>
 
   </div>

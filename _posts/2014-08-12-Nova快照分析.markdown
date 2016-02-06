@@ -63,7 +63,7 @@ def snapshot(self, context, instance, image_href, update_task_state):
     ......
 ~~~ 
 
-# # Cold Snapshot 流程:
+## Cold Snapshot 流程:
 
 1.卸载 pci 设备，保持虚拟机状态并关机。
 
@@ -88,7 +88,7 @@ $ glance image-update vm_snapshot --file vm_snapshot.qcow2
 $ virsh start vm
 ~~~ 
 
-# # Live Snapshot 流程
+## Live Snapshot 流程
 
 1.暂停所有的 block job：
 
@@ -184,9 +184,7 @@ $ rbd snap rm nova-pool/vm@nova_vm_snap
 
 ![Ceph RBD flow](http://7xp2eu.com1.z0.glb.clouddn.com/cephrbdsnapshotflow.png)
 
-
 ------------
-
 
 # 参考资料：
 1. [https://www.redhat.com/archives/libvirt-users/2012-April/msg00142.html](https://www.redhat.com/archives/libvirt-users/2012-April/msg00142.html)

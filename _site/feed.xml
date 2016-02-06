@@ -6,15 +6,14 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 06 Feb 2016 18:11:08 +0800</pubDate>
-    <lastBuildDate>Sat, 06 Feb 2016 18:11:08 +0800</lastBuildDate>
+    <pubDate>Sat, 06 Feb 2016 20:12:23 +0800</pubDate>
+    <lastBuildDate>Sat, 06 Feb 2016 20:12:23 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
         <title>理解 Deffie-Hellman 密钥交换算法</title>
         <description>&lt;hr /&gt;
-&lt;p&gt;    &lt;br /&gt;
-    &lt;/p&gt;
+&lt;p&gt;    &lt;/p&gt;
 
 &lt;blockquote&gt;
   &lt;p&gt;再拾此书时，怀念 4 年前阳光明媚的午后，我在浙大紫金港图书馆的三楼，梦回了中学奥数的小伙伴，和那时曾想证明哥德巴尔猜想的情怀！&lt;/p&gt;
@@ -338,7 +337,6 @@ $ openstack federation protocol create oidc --identity-provider google_idp --map
 &lt;p&gt;选择 Google Login，输入 Google 账户密码即可登录。&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/keystonegooglegoogleinstance.png&quot; alt=&quot;dashboard&quot; /&gt;&lt;/p&gt;
-
 </description>
         <pubDate>Mon, 01 Feb 2016 00:00:00 +0800</pubDate>
         <link>http://wsfdl.com/openstack/2016/02/01/Keystone-Google-Federation--With-OpenID.html</link>
@@ -739,6 +737,7 @@ credentials with a long-lived access token or refresh token.
       <item>
         <title>Keystone Federation Identity With SAML2</title>
         <description>&lt;hr /&gt;
+
 &lt;p&gt;Keystone federation identity 涉及很多概念，安装配置复杂，官网的文档又不够清晰，下面 4 篇文章在安装配置方面阐述的非常详细。&lt;/p&gt;
 
 &lt;ul&gt;
@@ -749,7 +748,8 @@ credentials with a long-lived access token or refresh token.
 &lt;/ul&gt;
 
 &lt;hr /&gt;
-&lt;p&gt;#1. Federation Identity 简介&lt;/p&gt;
+
+&lt;h1 id=&quot;id-federation-identity-&quot;&gt;Federation Identity 简介&lt;/h1&gt;
 
 &lt;p&gt;关于 &lt;a href=&quot;https://en.wikipedia.org/wiki/Federated_identity&quot;&gt;federation identity&lt;/a&gt;，维基百科的定义如下：&lt;/p&gt;
 
@@ -780,7 +780,8 @@ credentials with a long-lived access token or refresh token.
 &lt;/ul&gt;
 
 &lt;hr /&gt;
-&lt;p&gt;#Keystone Federation 的原理&lt;/p&gt;
+
+&lt;h1 id=&quot;id-keystone-federation-&quot;&gt;Keystone Federation 的原理&lt;/h1&gt;
 
 &lt;p&gt;Federation identity 为 hybrid cloud 在用户管理层面提供了良好的解决方案。Keystone 从 Icehouse 开始逐步增加 federation identity 的功能，Icehouse 支持 Keystone 作为 Service Provider，Juno 版本新增了 Identity Provider，支持 SAML 和 OpenID 两种认证协议。OpenStack 作为云服务的解决方案，对外提供计算、存储和网络等服务，多数场景下 Keystone 常常作为服务端，对接其它的 Identity Provider，所以本节着重阐述 Service Provider 的原理和流程。首先先介绍 3 类重要的 &lt;a href=&quot;https://specs.openstack.org/openstack/keystone-specs/api/v3/identity-api-v3-os-federation-ext.html&quot;&gt;API&lt;/a&gt;。&lt;/p&gt;
 
@@ -807,7 +808,7 @@ credentials with a long-lived access token or refresh token.
 
 &lt;hr /&gt;
 
-&lt;p&gt;#Configure Keystone as a Service Provider&lt;/p&gt;
+&lt;h1 id=&quot;id-configure-keystone-as-a-service-provider&quot;&gt;Configure Keystone as a Service Provider&lt;/h1&gt;
 
 &lt;p&gt;本节开始介绍如何安装配置 Keystone to Keystone Federation，重点参考了 &lt;a href=&quot;http://blog.rodrigods.com/it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo/&quot;&gt;it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo&lt;/a&gt;(原文存在 2 处配置错误，本文已给予纠正)。 我们有两个服务器，分别作为 SP 和 IDP，二者均需按照&lt;a href=&quot;http://docs.openstack.org/kilo/install-guide/install/apt/content/ch_keystone.html&quot;&gt;官网的手册&lt;/a&gt;安装 Keystone。&lt;/p&gt;
 
@@ -886,8 +887,9 @@ Module shib2 already enabled
 
 &lt;hr /&gt;
 
-&lt;p&gt;#Configure Keystone as an Identity Provider&lt;br /&gt;
-安装 xmlsec1 和 pysaml2：&lt;/p&gt;
+&lt;h1 id=&quot;id-configure-keystone-as-an-identity-provider&quot;&gt;Configure Keystone as an Identity Provider&lt;/h1&gt;
+
+&lt;p&gt;安装 xmlsec1 和 pysaml2：&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ apt-get install xmlsec1  
 $ pip install pysaml2
@@ -908,8 +910,10 @@ idp_metadata_path=/etc/keystone/keystone_idp_metadata.xml
 &lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ keystone-manage saml_idp_metadata &amp;gt; /etc/keystone/keystone_idp_metadata.xml
 service apache2 restart
 &lt;/code&gt;&lt;/pre&gt;
+
 &lt;hr /&gt;
-&lt;p&gt;#Test Keystone to Keystone federation&lt;/p&gt;
+
+&lt;h1 id=&quot;id-test-keystone-to-keystone-federation&quot;&gt;Test Keystone to Keystone federation&lt;/h1&gt;
 
 &lt;ul&gt;
   &lt;li&gt;在 Service Provider 端执行以下脚本，创建 domain, group, mapping, idp, protocol 等。其中 idp 指向另外一个作为 Identity Provider 的 Keystone，protocol 采用了 saml2 协议，mapping 的规则为只要 IDP 中名为 bob 或者 acme 的用户都可通过认证，并且映射到 Service 端的 federated_user 用户上。&lt;/li&gt;
@@ -1468,15 +1472,16 @@ P1. 饰品店&lt;/p&gt;
         <title>理解 Keystone 的四种 Token</title>
         <description>&lt;hr /&gt;
 
-&lt;p&gt;#Token 是什么&lt;/p&gt;
+&lt;h1 id=&quot;id-token-&quot;&gt;Token 是什么&lt;/h1&gt;
 
 &lt;p&gt;通俗的讲，token 是用户的一种凭证，需拿正确的用户名/密码向 Keystone 申请才能得到。如果用户每次都采用用户名/密码访问 OpenStack API，容易泄露用户信息，带来安全隐患。所以 OpenStack 要求用户访问其 API 前，必须先获取 token，然后用 token 作为用户凭据访问 OpenStack API。&lt;br /&gt;
 &lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/uuid.png&quot; alt=&quot;P1&quot; /&gt;&lt;/p&gt;
 
 &lt;hr /&gt;
 
-&lt;p&gt;#四种 Token 的由来&lt;br /&gt;
-D 版本时，仅有 UUID 类型的 Token，UUID token 简单易用，却容易给 Keystone 带来性能问题，从图一的步骤 4 可看出，每当 OpenStack API 收到用户请求，都需要向 Keystone 验证该 token 是否有效。随着集群规模的扩大，Keystone 需处理大量验证 token 的请求，在高并发下容易出现性能问题。&lt;/p&gt;
+&lt;h1 id=&quot;id-token--1&quot;&gt;四种 Token 的由来&lt;/h1&gt;
+
+&lt;p&gt;D 版本时，仅有 UUID 类型的 Token，UUID token 简单易用，却容易给 Keystone 带来性能问题，从图一的步骤 4 可看出，每当 OpenStack API 收到用户请求，都需要向 Keystone 验证该 token 是否有效。随着集群规模的扩大，Keystone 需处理大量验证 token 的请求，在高并发下容易出现性能问题。&lt;/p&gt;
 
 &lt;p&gt;于是 PKI(&lt;a href=&quot;https://wiki.openstack.org/wiki/PKI&quot;&gt;Public Key Infrastructrue&lt;/a&gt;) token 在 G 版本运用而生，和 UUID 相比，PKI token 携带更多用户信息的同时还附上了数字签名，以支持本地认证，从而避免了步骤 4。因为 PKI token 携带了更多的信息，这些信息就包括 service catalog，随着 OpenStack 的 Region 数增多，service catalog 携带的 endpoint 数量越多，PKI token 也相应增大，很容易超出 HTTP Server 允许的最大 HTTP Header(默认为 8 KB)，导致 HTTP 请求失败。&lt;/p&gt;
 
@@ -1486,8 +1491,9 @@ D 版本时，仅有 UUID 类型的 Token，UUID token 简单易用，却容易�
 
 &lt;hr /&gt;
 
-&lt;p&gt;#UUID&lt;br /&gt;
-UUID token 是长度固定为 32 Byte 的随机字符串，由 uuid.uuid4().hex 生成。&lt;/p&gt;
+&lt;h1 id=&quot;id-uuid&quot;&gt;UUID&lt;/h1&gt;
+
+&lt;p&gt;UUID token 是长度固定为 32 Byte 的随机字符串，由 uuid.uuid4().hex 生成。&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def _get_token_id(self, token_data):
     return uuid.uuid4().hex
@@ -1502,9 +1508,11 @@ UUID token 是长度固定为 32 Byte 的随机字符串，由 uuid.uuid4().hex 
 
 &lt;hr /&gt;
 
-&lt;p&gt;#PKI&lt;br /&gt;
-&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/pki.png&quot; alt=&quot;P2&quot; /&gt;&lt;br /&gt;
-在阐述 PKI（Public Key Infrastruction） token 前，让我们简单的回顾&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E5%85%AC%E5%BC%80%E5%AF%86%E9%92%A5%E5%8A%A0%E5%AF%86&quot;&gt;公开密钥加密(public-key cryptography)&lt;/a&gt;和&lt;a href=&quot;http://www.youdzone.com/signature.html&quot;&gt;数字签名&lt;/a&gt;。公开密钥加密，也称为非对称加密(asymmetric cryptography，加密密钥和解密密钥不相同)，在这种密码学方法中，需要一对密钥，分别为公钥(Public Key)和私钥(Private Key)，公钥是公开的，私钥是非公开的，需用户妥善保管。如果把加密和解密的流程当做函数 C(x) 和 D(x)，P 和 S 分别代表公钥和私钥，对明文 A 和密文 B 而言，数学的角度上有以下公式：&lt;/p&gt;
+&lt;h1 id=&quot;id-pki&quot;&gt;PKI&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/pki.png&quot; alt=&quot;P2&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;在阐述 PKI（Public Key Infrastruction） token 前，让我们简单的回顾&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E5%85%AC%E5%BC%80%E5%AF%86%E9%92%A5%E5%8A%A0%E5%AF%86&quot;&gt;公开密钥加密(public-key cryptography)&lt;/a&gt;和&lt;a href=&quot;http://www.youdzone.com/signature.html&quot;&gt;数字签名&lt;/a&gt;。公开密钥加密，也称为非对称加密(asymmetric cryptography，加密密钥和解密密钥不相同)，在这种密码学方法中，需要一对密钥，分别为公钥(Public Key)和私钥(Private Key)，公钥是公开的，私钥是非公开的，需用户妥善保管。如果把加密和解密的流程当做函数 C(x) 和 D(x)，P 和 S 分别代表公钥和私钥，对明文 A 和密文 B 而言，数学的角度上有以下公式：&lt;/p&gt;
 
 &lt;blockquote&gt;
   &lt;p&gt;B = C(A, S)  &lt;br /&gt;
@@ -1567,9 +1575,11 @@ rhr0acV3bMKzmqvViHf-fPVnLDMJajOWSuhimqfLZHRdr+ck0WVQosB6+M6iAvrEF7v
 
 &lt;hr /&gt;
 
-&lt;p&gt;#PKIZ&lt;br /&gt;
-&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/pkiz.png&quot; alt=&quot;P3&quot; /&gt;&lt;br /&gt;
-PKIZ 在 PKI 的基础上做了压缩处理，但是压缩的效果极其有限，一般情况下，压缩后的大小为 PKI token 的 90 % 左右，所以 PKIZ 不能友好的解决 token size 太大问题。&lt;/p&gt;
+&lt;h1 id=&quot;id-pkiz&quot;&gt;PKIZ&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/pkiz.png&quot; alt=&quot;P3&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;PKIZ 在 PKI 的基础上做了压缩处理，但是压缩的效果极其有限，一般情况下，压缩后的大小为 PKI token 的 90 % 左右，所以 PKIZ 不能友好的解决 token size 太大问题。&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def _get_token_id(self, token_data):
     try:
@@ -1594,9 +1604,11 @@ W4fRaxrbNtinojheVICXYrEk0oPX6TSnP71IYj2e3nm4MLy7S84PtIPDz4_03IsOb2Q=
 
 &lt;hr /&gt;
 
-&lt;p&gt;#Fernet&lt;br /&gt;
-&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/fernet.png&quot; alt=&quot;P4&quot; /&gt;&lt;br /&gt;
-用户可能会碰上这么一个问题，当集群运行较长一段时间后，访问其 API 会变得奇慢无比，究其原因在于 Keystone 数据库存储了大量的 token 导致性能太差，解决的办法是经常清理 token。为了避免上述问题，社区提出了&lt;a href=&quot;https://github.com/openstack/keystone-specs/blob/master/specs/kilo/klwt.rst&quot;&gt;Fernet token&lt;/a&gt;，它采用 &lt;a href=&quot;http://cryptography.readthedocs.org/en/latest/fernet/&quot;&gt;cryptography&lt;/a&gt; 对称加密库(symmetric cryptography，加密密钥和解密密钥相同) 加密 token，具体由 AES-CBC 加密和散列函数 SHA256 签名。&lt;a href=&quot;http://cryptography.readthedocs.org/en/latest/fernet/&quot;&gt;Fernet&lt;/a&gt;&lt;br /&gt;
+&lt;h1 id=&quot;id-fernet&quot;&gt;Fernet&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/fernet.png&quot; alt=&quot;P4&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;用户可能会碰上这么一个问题，当集群运行较长一段时间后，访问其 API 会变得奇慢无比，究其原因在于 Keystone 数据库存储了大量的 token 导致性能太差，解决的办法是经常清理 token。为了避免上述问题，社区提出了&lt;a href=&quot;https://github.com/openstack/keystone-specs/blob/master/specs/kilo/klwt.rst&quot;&gt;Fernet token&lt;/a&gt;，它采用 &lt;a href=&quot;http://cryptography.readthedocs.org/en/latest/fernet/&quot;&gt;cryptography&lt;/a&gt; 对称加密库(symmetric cryptography，加密密钥和解密密钥相同) 加密 token，具体由 AES-CBC 加密和散列函数 SHA256 签名。&lt;a href=&quot;http://cryptography.readthedocs.org/en/latest/fernet/&quot;&gt;Fernet&lt;/a&gt;&lt;br /&gt;
 是专为 API token 设计的一种轻量级安全消息格式，不需要存储于数据库，减少了磁盘的 IO，带来了一定的&lt;a href=&quot;http://dolphm.com/benchmarking-openstack-keystone-token-formats/&quot;&gt;性能提升&lt;/a&gt;。为了提高安全性，需要采用 &lt;a href=&quot;http://lbragstad.com/fernet-tokens-and-key-rotation/&quot;&gt;Key Rotation&lt;/a&gt; 更换密钥。&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def create_token(self, user_id, expires_at, audit_ids, methods=None,
@@ -1644,7 +1656,7 @@ XBO5UIFvC7wLTh_2klihb6hKuUqB6Sj3i_8
 
 &lt;hr /&gt;
 
-&lt;p&gt;#如何选择 Token&lt;/p&gt;
+&lt;h1 id=&quot;id-token&quot;&gt;如何选择 Token&lt;/h1&gt;
 
 &lt;table&gt;
   &lt;thead&gt;
@@ -1739,8 +1751,8 @@ Token 类型的选择涉及多个因素，包括 Keystone server 的负载、reg
         <title>一次批量重启引发的 Neutron 网络故障</title>
         <description>&lt;hr /&gt;
 
-&lt;p&gt;###现场回顾&lt;br /&gt;
-故事发生于某个下午，采用 salt 更新某集群的 neutron.conf (log 相关配置项) 并批量重启 neutron-openvswitch-agent(以下简称 neutron-ovs-agent)，不久便有人反馈云主机宕机。&lt;/p&gt;
+&lt;h1 id=&quot;id-section&quot;&gt;现场回顾&lt;/h1&gt;
+&lt;p&gt;故事发生于某个下午，采用 salt 更新某集群的 neutron.conf (log 相关配置项) 并批量重启 neutron-openvswitch-agent(以下简称 neutron-ovs-agent)，不久便有人反馈云主机宕机。&lt;/p&gt;
 
 &lt;p&gt;立即排查发现云主机并没有宕机，只是网络不通，大部分计算节点的 ovs 流表空空如也。Nova 和 Neutron 打出 ERROR 级别的日志。&lt;/p&gt;
 
@@ -1779,14 +1791,14 @@ NXST_FLOW repy (xid=0x4)&lt;br /&gt;
 
 &lt;hr /&gt;
 
-&lt;p&gt;###导火索&lt;br /&gt;
-深入剖析之前，先了解该 Icehouse 集群的基本信息：该集群有 102 个计算节点，运行着 nova, neutron, glance，ceilometer 等服务，为了避免单点故障，我们去除了 neutron l3 等相关服务，采用大二层的网络，虚拟机通过物理路由与外界通信。理论上说，无论哪个服务异常，甚至任意节点宕机，最差的结果是 openstack 服务不可用或者少量虚拟机故障，但绝大部分虚拟机依旧能正常运行。&lt;/p&gt;
+&lt;h1 id=&quot;id-section-1&quot;&gt;导火索&lt;/h1&gt;
+&lt;p&gt;深入剖析之前，先了解该 Icehouse 集群的基本信息：该集群有 102 个计算节点，运行着 nova, neutron, glance，ceilometer 等服务，为了避免单点故障，我们去除了 neutron l3 等相关服务，采用大二层的网络，虚拟机通过物理路由与外界通信。理论上说，无论哪个服务异常，甚至任意节点宕机，最差的结果是 openstack 服务不可用或者少量虚拟机故障，但绝大部分虚拟机依旧能正常运行。&lt;/p&gt;
 
 &lt;p&gt;经验告知，采用以上网络模型的多个集群一年多以来从未发生如此规模的故障。由于 log 模块配置项不会影响流表，直觉上推测批量重启可能是触发 ovs 流表被清空的导火索。&lt;/p&gt;
 
 &lt;hr /&gt;
 
-&lt;p&gt;###Neutron 的一个坑&lt;/p&gt;
+&lt;h1 id=&quot;id-neutron-&quot;&gt;Neutron 的一个坑&lt;/h1&gt;
 
 &lt;p&gt;由于流表被清空前仅仅重启了 neutron-openvs-agent，而计算节点，仅仅只有 neutron-ovs-agent 与 ovs 有交互，故按图索骥的浏览 neutron-ovs-agent 重启流程，梳理其逻辑如下：&lt;/p&gt;
 
@@ -1812,7 +1824,7 @@ NXST_FLOW repy (xid=0x4)&lt;br /&gt;
 
 &lt;hr /&gt;
 
-&lt;p&gt;###最大连接数&lt;/p&gt;
+&lt;h1 id=&quot;id-section-2&quot;&gt;最大连接数&lt;/h1&gt;
 
 &lt;p&gt;现在解释为什么批量重启 neutron-ovs-agent 会触发上述隐患，重启过程中，neutron 日志报出如下错误：&lt;/p&gt;
 
@@ -1834,7 +1846,7 @@ max_pool_size =&lt;/p&gt;
 
 &lt;hr /&gt;
 
-&lt;p&gt;###进程的性能问题&lt;/p&gt;
+&lt;h1 id=&quot;id-section-3&quot;&gt;进程的性能问题&lt;/h1&gt;
 
 &lt;p&gt;然而问题并没有完全解决，请注意 nova 的错误日志：&lt;/p&gt;
 
@@ -1856,7 +1868,7 @@ rpc_workers = $workers&lt;/p&gt;
 
 &lt;hr /&gt;
 
-&lt;p&gt;###Python 的并发 &amp;amp; IO&lt;/p&gt;
+&lt;h1 id=&quot;id-python---io&quot;&gt;Python 的并发 &amp;amp; IO&lt;/h1&gt;
 
 &lt;p&gt;值得思考的是，对双路 12 核共 24 线程的服务器来说，数百并发请求真的算高么？neutron-server 进程的 CPU 最大使用率只能到达 100 %，意味着 neutron-server 仅仅利用了服务器的一个线程。这里不得不提协程(crontine)[2]，这种伪并发的“用户态线程” 意味着任意时刻只有一个协程在执行，即任意时刻只能利用服务器 CPU 的一个线程，而 openstack 所有组件的进程里满满都是协程(只有一个主线程)，因而单个进程下，neutron-server 不能充分利用多核的优势以提高处理并发的能力。&lt;/p&gt;
 
@@ -1868,7 +1880,7 @@ rpc_workers = $workers&lt;/p&gt;
 
 &lt;hr /&gt;
 
-&lt;p&gt;###Reference&lt;/p&gt;
+&lt;h1 id=&quot;id-reference&quot;&gt;Reference&lt;/h1&gt;
 
 &lt;ol&gt;
   &lt;li&gt;&lt;a href=&quot;http://docs.sqlalchemy.org/en/rel\_0\_9/core/pooling.html&quot;&gt;http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html&lt;/a&gt;&lt;/li&gt;

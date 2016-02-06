@@ -21,7 +21,7 @@ categories: DevOps
 
 -----------
 
-#  Installation
+# Installation
 
 Gerrit 的[安装](https://gerrit-review.googlesource.com/Documentation/install-quick.html)非常简便，首先安装 java 后，下载安装包：
 
@@ -45,7 +45,7 @@ $ java -jar gerrit-2.11.5.war  init --batch -d ~/gerrit_site
 
 -----------
 
-#  Configuration
+# Configuration
 
 根据需求，重点更新 \<gerrit_site\>/etc/gerrit.config 以下配置项，
 
@@ -68,6 +68,7 @@ $ <gerrit_site>/bin/gerrit.sh restart
 
 
 ----------
+
 # Test
 
 浏览器登录 \<your_host\>:9090，即可见如下页面：

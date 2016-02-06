@@ -69,7 +69,8 @@ http://pypi.regionone.openstack.org
 ~~~ 
 
 ----------
-#  Download & Synchronize
+
+# Download & Synchronize
 
 下载所有 package 至本地：
 

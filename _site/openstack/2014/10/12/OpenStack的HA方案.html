@@ -73,38 +73,38 @@
 
 <hr />
 
-<p>#OpenStack HA 实现</p>
+<h1 id="id-openstack-ha-">OpenStack HA 实现</h1>
 
 <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/HA.png?imageView2/1/w/600/q/100" alt="OpenStack HA" /></p>
 
-<p>##Database(Active/Active):<br />
-官方推荐：<a href="http://docs.OpenStack.org/high-availability-guide/content/ha-aa-db.html">MySQL with Galera</a></p>
+<h2 id="id-databaseactiveactive">Database(Active/Active):</h2>
+<p>官方推荐：<a href="http://docs.OpenStack.org/high-availability-guide/content/ha-aa-db.html">MySQL with Galera</a></p>
 
-<p>##AMQP(Active/Active): <br />
-官方推荐：<a href="https://OpenStack.redhat.com/RabbitMQ">RabbitMQ cluster</a></p>
+<h2 id="id-amqpactiveactive">AMQP(Active/Active):</h2>
+<p>官方推荐：<a href="https://OpenStack.redhat.com/RabbitMQ">RabbitMQ cluster</a></p>
 
-<p>##OpenStack API(Active/Active):</p>
+<h2 id="id-openstack-apiactiveactive">OpenStack API(Active/Active):</h2>
 
 <p>Keystone, Glance-api, Glance-registry, Neutron-server, Ceilometer-api, Dashboard 均为 stateless 服务，通过 Load Balancer + Keepalive 保证 HA，部署于 Apache server 可提高性能，Haproxy(1.5.0)支持 SSL。</p>
 
 <ul>
   <li><a href="http://OpenStack.redhat.com/Load_Balance_OpenStack_API">Loadbalance for OpenStack API</a></li>
   <li><a href="http://www.b2btech.in/implement-ssl-termination-haproxy-ubuntu-14-04">Configuration SSL for haproxy</a></li>
-  <li><a href="http://andy.mc.it/2013/07/apache2-mod_wsgi-OpenStack-pt-2-nova-api-os-compute-nova-api-ec2/#comment-35">Runs OpenStack API in apache</a></li>
+  <li><a href="http://andy.mc.it/2013/07/apache2-mod_wsgi-OpenStack-pt-2-nova-api-os-compute-nova-api-ec2/# comment-35">Runs OpenStack API in apache</a></li>
 </ul>
 
-<p>##OpenStack scheduler(Active/Active):</p>
+<h2 id="id-openstack-scheduleractiveactive">OpenStack scheduler(Active/Active):</h2>
 
 <p>Nova-scheduler, nova-conductor, nova-consoleauth, nova-novncproxy, ceilometer-collector, cinder-scheduler 等均为 stateless 服务，恰当的配置与 AMQP server 连接参数即可，具体详见<a href="http://docs.OpenStack.org/high-availability-guide/content/_run_OpenStack_api_and_schedulers.html">社区文档</a></p>
 
-<p>##Memcached(Active/Active):</p>
+<h2 id="id-memcachedactiveactive">Memcached(Active/Active):</h2>
 
 <ul>
   <li>提高 Dashboard 的性能</li>
   <li>解决 nova-consoleauth 单点问题</li>
 </ul>
 
-<p>##Network:</p>
+<h2 id="id-network">Network:</h2>
 
 <ul>
   <li>neutron DHCP agent(Active/Passive)</li>
@@ -115,7 +115,7 @@
 
 <p><a href="http://docs.OpenStack.org/high-availability-guide/content/ch-network.html">以上三者均由 Pacemaker + Corosync 配置</a>。</p>
 
-<p>##Storage:</p>
+<h2 id="id-storage">Storage:</h2>
 
 <p><a href="http://www.ceph.com/docs/next/rbd/rbd-OpenStack/">Ceph 保证 Image storage, Volume storage, Nova backend 可靠性</a>。</p>
 

@@ -6,7 +6,7 @@ categories: DevOps
 
 ----------------
 
-# 1. 三种代理简介
+# 三种代理简介
 
 VPN、SOCKS 和 PAC 是三种常见的代理方式，本文以 QQ 和访问网站为例，深入浅出图解三者区别，并推荐最优雅的代理方式——PAC。
 
@@ -32,14 +32,14 @@ VPN、SOCKS 和 PAC 是三种常见的代理方式，本文以 QQ 和访问网�
 
 ----------------
 
-# 2. 如何配置 PAC
+# 如何配置 PAC
 
 配置 PAC 主要有两个步骤
 
 - 搭建 SOCKS 服务器
 - 编写 PAC 脚本
 
-## 2.1 搭建 SOCKS 服务器
+## 搭建 SOCKS 服务器
 
 在云计算百花齐放的时代，假设你已有服务器，只需安装 ss5 即可搭建 SOCKS 服务器，步骤非常简单，可参考[此文](http://cstriker1407.info/blog/centos-build-socks5-proxy-using-ss5/)：
 
@@ -70,7 +70,7 @@ permit –    0.0.0.0/0       –       0.0.0.0/0
 service ss5 start
 ~~~ 
 
-## 2.2 编写 PAC 文件
+## 编写 PAC 文件
 
 PAC 的编写更为简单，请参考[此文](http://www.truevue.org/javascript/pac-format)，假设 SOCKS 服务器 IP 和端口为 1.2.3.4:1080，下例代码表示如果网站的域名包含 a.com，则使用 SOCKS 代理，更多样例请参考 github.com。
 
