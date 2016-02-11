@@ -80,7 +80,7 @@ saml2 = keystone.auth.plugins.mapped.Mapped
 
 Apache 新增如下配置：
 
-~~~xml
+~~~ xml
 Listen 5000
 Listen 35357
 
@@ -108,13 +108,13 @@ Listen 35357
 
 安装 Shibboleth：
 
-~~~bash
+~~~ bash
 $ apt-get install libapache2-mod-shib2
 ~~~
 
 更新 /etc/shibboleth/attribute-map.xml 的以下配置项：
 
-~~~xml
+~~~ xml
 <Attribute name="openstack_user" id="openstack_user"/>  
 <Attribute name="openstack_roles" id="openstack_roles"/>  
 <Attribute name="openstack_project" id="openstack_project"/> 
@@ -124,7 +124,7 @@ $ apt-get install libapache2-mod-shib2
 
 更新 /etc/shibboleth/shibboleth2.xml 的以下配置项：
 
-~~~xml
+~~~ xml
 <SSO entityID="http://idp:5000/v3/OS-FEDERATION/saml2/idp">  
     SAML2 SAML1
 </SSO>
@@ -134,13 +134,13 @@ $ apt-get install libapache2-mod-shib2
 
 启动 shibboleth 并重启 apache：
 
-~~~bash
+~~~ bash
 $ shib-keygen  
 $ service apache2 restart
 ~~~
 查看 shibboleth 是否正常运行
 
-~~~bash
+~~~ bash
 $ a2enmod shib2
 Module shib2 already enabled
 ~~~
@@ -151,7 +151,7 @@ Module shib2 already enabled
 
 安装 xmlsec1 和 pysaml2：
 
-~~~bash
+~~~ bash
 $ apt-get install xmlsec1  
 $ pip install pysaml2
 ~~~
@@ -169,7 +169,7 @@ idp_metadata_path=/etc/keystone/keystone_idp_metadata.xml
 
 生成 DIP 的 metadata 并重启 apache HTTPD：
 
-~~~bash
+~~~ bash
 $ keystone-manage saml_idp_metadata > /etc/keystone/keystone_idp_metadata.xml
 service apache2 restart
 ~~~
@@ -180,7 +180,7 @@ service apache2 restart
 
 * 在 Service Provider 端执行以下脚本，创建 domain, group, mapping, idp, protocol 等。其中 idp 指向另外一个作为 Identity Provider 的 Keystone，protocol 采用了 saml2 协议，mapping 的规则为只要 IDP 中名为 bob 或者 acme 的用户都可通过认证，并且映射到 Service 端的 federated_user 用户上。
 
-~~~python
+~~~ python
 import os
 
 from keystoneclient import session as ksc_session
@@ -319,7 +319,7 @@ protocol1 = create_protocol(client, protocol_id='saml2', idp=idp1,
 
 在 IDP 端执行以下脚本，用户 bob 获得一个 unscoped token，可拿该 token 向 SP 获取 scope token 后访问 Service 端的资源。
 
-~~~python
+~~~ python
 import json
 import os
 
