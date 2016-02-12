@@ -6,62 +6,77 @@ categories: OpenStack
 
 ----------------
 
-虽然社区曾有人提议 [USB passthrough](https://wiki.openstack.org/wiki/Nova/proposal_about_usb_passthrough) blueprint，但是因不是常用功能，且会影响其它的 API，所以被社区否决。遂把 USB 知识做较为全面的整理，以供看官们参考。
+虽然社区曾有人提议 [USB passthrough](https://wiki.openstack.org/wiki/Nova/proposal_about_usb_passthrough) blueprint，因不是常用功能，且会影响其它的 API，所以被社区否决。但是对于某些私有云，特别是 ERP  系统，的确有 USB passthrough 需求，遂把 USB 知识做较为全面的整理，以供看官们参考。
 
 -----------------
 
-# USB device
+# USB Device
 
-什么是 USB device, 上图机智的小萌狗就是 USB device，你的鼠标是 USB device, 键盘是 USB device，U 盘更是典型的 USB device。说了这么多例子，还是得用一个专业的名词一语概之，所谓 USB，即是 Universal Serial Bus(通用串行总线)，它是用来连接 USB device 和计算机，从而实现 USB device 和计算机之间的通讯[2]。
+什么是 [USB device](http://www.gentoo.org/doc/zh_cn/usb-guide.xml), 上图机智的小萌狗就是 USB device，你的鼠标是 USB device, 键盘是 USB device，U 盘更是典型的 USB device。说了这么多例子，还是得用一个专业的名词一语概之，所谓 USB，即是 Universal Serial Bus(通用串行总线)，它是用来连接 USB device 和计算机，从而实现 USB device 和计算机之间的通讯。
 
-当把 U 盘插入到计算机的 USB 口时，我们便能在操作系统中找到该 USB device 并使用之，是不是很简单? 可对码农来说，却不简单，简直是复杂...... 下图解释了了 USB device 如何与计算机系统交互。USB device 不能直接和操作系统通信，它需要 USB controller interface 这座桥梁才能在硬件上接入到计算机上。HCD(Host Controller Device)则是则是硬件商向程序员提供的开发接口。
+![USB Device](http://7xp2eu.com1.z0.glb.clouddn.com/USB%20device.jpg)
 
+当把 U 盘插入到计算机的 USB 口时，我们便能在操作系统中找到该 USB device 并使用之。下图解释了 USB device 如何与计算机系统交互，USB device 不能直接和操作系统通信，它需要 USB controller interface 这座桥梁才能在硬件上接入到计算机上。HCD(Host Controller Device)则是则是硬件商向程序员提供的开发接口。
 
-USB device 通过 USB controller 和计算机交互得遵守一套标准，这套标准我们称之为 USB 协议：
+![Usb passthrough](http://7xp2eu.com1.z0.glb.clouddn.com/usb_passthrough.jpg)
 
-USB版本　　	最大传输速率　　	速率称号　　	最大输出电流　 推出时间　　
-USB1.0　　	1.5Mbps(192KB/s)　　	低速(Low-Speed) 500mA　1996年1月　　
-USB1.1　　	12Mbps(1.5MB/s)　　	全速(Full-Speed)　　	500mA　　	1998年9月　　
-USB2.0　　	480Mbps(60MB/s)　　	高速(High-Speed)　　	500mA　　	2000年4月　　
-USB3.0　　	5-10Gbps(640MB/s)　　	超速(Super-Speed)　　	900mA　　	2008年11月
+USB device 通过 USB controller 和计算机交互得遵守一套标准，这套标准我们称之为 USB 协议。常用的 USB 协议为 USB1.1 和 USB 2.0，比如 U 盘一般为 USB 2.0，由于 USB 2.0 是向下兼容的，所以 USB 2.0 的设备，也支持 USB 1.1。
 
-注：部分 USB 2.0 Device 的速率为全速(Full-speed)[3]，比如很多 USBKey 便是全速的 USB2.0 device。
-    常用的 USB 协议为 USB1.1 和 USB 2.0，比如 U 盘一般为 USB 2.0，由于 USB 2.0 是向下兼容的，所以 USB 2.0 的设备，也支持 USB 1.1。
+~~~
++-------------+------------+--------------+
+| USB Version |  Max speed | Speed Version|　
++-------------+------------+--------------+
+|   USB1.0    |  1.5Mbps   |  Low-Speed   |
+|   USB1.1    |  12Mbps    |  Full-Speed  |
+|   USB2.0    |  480Mbps   |  High-Speed  |
+|   USB3.0    |  5-10Gbps  |  Super-Speed |
++-------------+------------+--------------+
+~~~
 
-# USB controller
+注：[部分 USB 2.0 Device](http://support.hp.com/th-en/document/c00022531) 的速率为全速，比如很多 USB Key 便是全速的 USB2.0 device。
+   
+----------------------
 
-不仅 USB device 得遵守 USB 相关协议，USB controller 也必须遵守该协议。也就是说，针对 USB1.1 device，需要有对应的 USB controller (uhci)来支持，对于 USB2.0 device，也需要 USB controller(ehci) 来支持。USB controller 分为以下四种类型[4]：
+# USB Controller
 
-1. OHCI（Open Host Controller Interface），它是开放的支持 USB1.1 和 Firewire(Apple) 的标准。和 UCHI 相比，OHCI 的硬件完成大部分工作，因此硬件设计复杂，而软件驱动设计简单。OHCI的另外一个缺点是它仅支持 32-bit，对于 64-bit 的操作系统，它需要 IOMMU 支持。
-2. UHCI（Universal Host Controller Interface），是Intel主导的对USB1.x 的接口标准，与OHCI不兼容，支持全速和慢速设备。和 OHCI 相反，UHCI 硬件设计简单，因此需要相对复杂的软件驱动。UHCI 同样仅支持 32 bit，对于 64 bit d的操作系统，需要 IOMMU 支持。UHCI的软件驱动的任务重，需要做得比较复杂，但可以使用较便宜、较简单的硬件的USB控制器。Intel和VIA使用UHCI，而其余的硬件提供商使用OHCI。
-3. EHCI（Enhanced Host Controller Interface），是Intel主导的专门用于支持 USB2.0 的高速接口标准，对于 USB 2.0 的全速设备，EHCI 无法支持。因此，一般的 PC 机都带有两个 USB 控制器，EHCI 和 UCHI。
-4. xHCI（eXtensible Host Controller Interface）是最新的专门用于支持USB3.0的接口标准，它在速度，节能和虚拟化方面均有很大的提升，它支持 USB 各种速度标准(USB 3.1 SuperSpeed+, USB 3.0 SuperSpeed, USB 2.0 Low-, Full-, and High-speed, USB 1.1 Low- and Full-speed)。
+不仅 USB device 得遵守 USB 相关协议，USB controller 也必须遵守该协议。也就是说，针对 USB1.1 device，需要有对应的 USB controller (uhci)来支持，对于 USB2.0 device，也需要 USB controller(ehci) 来支持。USB controller 分为以下四种类型：
+
+- OHCI（Open Host Controller Interface），它是开放的支持 USB1.1 和 Firewire(Apple) 的标准。和 UCHI 相比，OHCI 的硬件完成大部分工作，因此硬件设计复杂，而软件驱动设计简单。OHCI的另外一个缺点是它仅支持 32-bit，对于 64-bit 的操作系统，它需要 IOMMU 支持。
+- UHCI（Universal Host Controller Interface），是Intel主导的对USB1.x 的接口标准，与OHCI不兼容，支持全速和慢速设备。和 OHCI 相反，UHCI 硬件设计简单，因此需要相对复杂的软件驱动。UHCI 同样仅支持 32 bit，对于 64 bit d的操作系统，需要 IOMMU 支持。UHCI的软件驱动的任务重，需要做得比较复杂，但可以使用较便宜、较简单的硬件的USB控制器。Intel和VIA使用UHCI，而其余的硬件提供商使用OHCI。
+- EHCI（Enhanced Host Controller Interface），是Intel主导的专门用于支持 USB2.0 的高速接口标准，对于 USB 2.0 的全速设备，EHCI 无法支持。因此，一般的 PC 机都带有两个 USB 控制器，EHCI 和 UCHI。
+- xHCI（eXtensible Host Controller Interface）是最新的专门用于支持USB3.0的接口标准，它在速度，节能和虚拟化方面均有很大的提升，它支持 USB 各种速度标准(USB 3.1 SuperSpeed+, USB 3.0 SuperSpeed, USB 2.0 Low-, Full-, and High-speed, USB 1.1 Low- and Full-speed)。
+
+--------------------------
 
 # Linux 相关命令
 
-1). lsusb 查询所有的 USB device
+1 . lsusb 查询所有的 USB device：
 
-~~~
+~~~ shell
 $ lsusb
 Bus 001 Device 001: ID 1d6b:0001 Linux Foundation 1.1 root hub
 Bus 001 Device 002: ID 0627:0001 Adomax Technology Co., Ltd 
 ~~~
 
-2). lsusb -t 查询所有 USB device 层次信息情，lsusb -v 可查询所有 USB device 详情。
-~~~
+2 . lsusb -t 查询所有 USB device 层次信息情，lsusb -v 可查询所有 USB device 详情。
+
+~~~ shell
 $ lsusb -t 
-Bus# 1 
-`-Dev# 1 Vendor 0x1d6b Product 0x0001 
-`-Dev# 2 Vendor 0x0627 Product 0x0001
+  Bus# 1 
+  +---Dev# 1 Vendor 0x1d6b Product 0x0001 
+  +----Dev# 2 Vendor 0x0627 Product 0x0001
 ~~~
 
-3). lspci |grep USB 查询 USB controller
-[root@test ~]# lspci |grep USB 
+3 . lspci 查询 USB controller。
+
+~~~ bash
+$ lspci |grep USB 
 00:01.2 USB controller: Intel Corporation 82371SB PIIX3 USB [Natoma/Triton II] (rev 01)
-
-4). 更为详细的信息可以通过查询 USB 文件
-
 ~~~
+
+4 . 更为详细的信息可以通过查询 USB 文件。
+
+~~~ bash
 $ cat  /proc/bus/usb/devices
 T:  Bus=02 Lev=00 Prnt=00 Port=00 Cnt=00 Dev#=  1 Spd=12   MxCh= 3
 B:  Alloc=  0/900 us ( 0%), #Int=  0, #Iso=  0
@@ -170,29 +185,32 @@ E:   Ad=xx(s) Atr=xx(ssss) MxPS=dddd Ivl=dddms
 在 pip 中找到两个和 usb 相关 package，分别为 pyUSB, usbid。
 
 - usbid： 实现方式 too young, too simple，仅仅通过读取USB 设备文件来获取 USB device 信息。
-- pyUSB:  通过调用 libusb1.0.so 获取 usb device 设备信息，但是无法获取速度相关信息。查阅 - - - libusb 代码发现 libusb 支持获取速度信息，于是补充了 pyUSB 获取 usb device 速度信息 patch https://github.com/DeliangFan/pyusb。
+- pyUSB:  通过调用 libusb1.0.so 获取 usb device 设备信息，但是无法获取速度相关信息。查阅 - - - libusb 代码发现 libusb 支持获取速度信息，于是补充了 pyUSB 获取 usb device 速度信息 [patch](https://github.com/DeliangFan/pyusb)。
 
 -----------
 
 # Libvirt USB passthrough
 
-1).Libvirt USB Controller
+## Libvirt USB Controller
 
-Libvirt 支持多种 USB controller 设备
-下述xml 描述了两个 USB controller，分别为 ehci 和 uhci。
+Libvirt 支持多种 USB controller 设备，下述xml 描述了两个 USB controller，分别为 ehci 和 uhci。
 
 ~~~ xml
 <controller type='usb' index='0' model='ehci'/>
 <controller type='usb' index='1' model='piix3-uhci'>
 ~~~
 
-2). Attach USB device to vm
+## Attach USB device to vm
 
-virsh attach-device domain_id usb_ehci.xml
 把 USB device attach 到 ehci controler, port 对应 usb controler 的 index。
 
+~~~ bash
+virsh attach-device domain_id usb_ehci.xml
+~~~
+
+usb_echi.xml 内容如下：
+
 ~~~ xml
-cat usb_echi.xml
 <hostdev mode='subsystem' type='usb' managed='yes'>
    <source>
        <vendor id='0x0763'/>
@@ -203,11 +221,15 @@ cat usb_echi.xml
 </hostdev>
 ~~~
 
+把 USB device attach 到 uhci controler：
+
+~~~ bash
 virsh attach-device domain_id usb_uhci.xml
-把 USB device attach 到 uhci controler 的
+~~~
+
+usb_echi.xml 内容如下：
 
 ~~~ xml
-cat usb_uchi.xml
 <hostdev mode='subsystem' type='usb' managed='yes'>
    <source>
        <vendor id='0x0763'/>
@@ -218,5 +240,10 @@ cat usb_uchi.xml
 </hostdev>
 ~~~
 
-3). Detach USB device from vm
+## Detach USB device from vm
+
+卸载 usb device：
+
+~~~ bash
 virsh detach-device domain_id usb_ehci.xml
+~~~
