@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "[行摄] 七彩云南"
+title:  "[行摄] 彩云之南"
 categories: Photos
 ---
 
