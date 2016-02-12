@@ -9,7 +9,12 @@ categories: Algorithm
 # Public-key Cryptography 简介
 
 [Public-key cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography)
-(公开密钥加密) 又称 asymmetric cryptography (非对称加密)，即存在两把不同的密钥，分别称为公钥和私有，
+(公开密钥加密) 又称 asymmetric cryptography (非对称加密)，即存在两把不同的密钥，分别称为公钥 PU 和私钥 PR，公钥通常用来加密明文 M，只有私钥才能解密公钥加密后的密文 C，如果 E 和 D 分别表示加密和解密算法，那么有：
+
+~~~
+C = E(PU, M)
+M = D(PR, C)
+~~~
 
 ~~~
 +----------------+-----------------------+-------------------+--------------+
