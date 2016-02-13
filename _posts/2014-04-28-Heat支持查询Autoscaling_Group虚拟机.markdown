@@ -28,7 +28,7 @@ name.
 
 # Autoscaling 介绍
 
-以 Heat 推荐的 Autoscaling Group 的模板为例子，采用该模板创建 Stack 后，查询该 Stack 包含的 resouce 如下，可知 asg 即为 AutoScalingGroup。
+以 Heat 推荐的 Autoscaling Group 的模板为例子，采用该模板创建 stack 后，查询该 stack 包含的 resouce 如下，可知 asg 即为 AutoScalingGroup。
 
 ~~~ bash
 $ heat resource-list asg_stack
@@ -47,33 +47,89 @@ $ heat resource-list asg_stack
 +------------------+----------------------------+-----------------+---------------+
 ~~~
 
-查询相关虚拟机
+继续查询 asg 详情，发现并无任何和虚拟机相关的信息，而事实上，Autoscaling Group 作为一群虚拟机的集合，用户非常希望能获取 Autoscaling Group 下虚拟机的数量，虚拟机的名称等等。如果 Heat 未提供该 API，那么用户只能通过 Nova API 查询相关的虚拟机，这对用户来说，无疑增加了操作的复杂程度。
+
+~~~ bash
+$ heat resource-show asg_stack asg
++------------------------+---------------------------------------------------------------------+
+| Property               | Value                                                               |
++------------------------+---------------------------------------------------------------------+
+| description            |                                                                     |
+| links                  | http://ip:8004/v1/tenant_id/stacks/asg_stack/stack_id/resources/asg |
+|                        | http://ip:8004/v1/tenant_id/stacks/asg_stack/stack_id               |
+| logical_resource_id    | asg                                                                 |
+| physical_resource_id   | 525954ea-a309-44a7-9e40-d793b7c754a                                 |
+| required_by            | scaleup_policy                                                      |
+|                        | scaledown_policy                                                    |
+| resource_name          | asg                                                                 |
+| resource_status        | CREATE_COMPLETE                                                     |
+| resource_status_reason | state changed                                                       |
+| resource_type          | OS::Heat::AutoScalingGroup                                          |
+| updated_time           | 2014-04-26T09:33:04Z                                                |
++------------------------+---------------------------------------------------------------------+
+~~~
+
+事实上，经 Nova 查询到的虚拟机如下：
 
 ~~~ bash
 $ nova list
-+----------+-------------+--------+------------+
-| ID       | Name        | Status | Task State | 
-+----------+-------------+
-| 22c...0a |
-| 3f0...c8 |
-+----------+
++----------+---------------+--------+------------+-------------+-----+
+| ID       | Name          | Status | Task State | Power State | ... |
++----------+---------------+--------+------------+-------------+-----+
+| 22c...0a | as-47g2...de8 | ACTIVE | -          | Running     | ... |
+| 3f0...c8 | as-47g2...ds3 | ACTIVE | -          | Running     | ... |
++----------+---------------+--------+------------+-------------+-----+
 ~~~
 
 ----------------
 
 # Nested Stack
 
-在讲解 nested_stack 之前，先问读者一个问题：请问刚刚一共创建了多少个 stack？
+在讲解 nested_stack 之前，先问一个问题：请问一共创建了多少个 stack？
 
-一个！明明只有一个嘛！它的名字就叫 fuck ！......
+一个！它的名字就叫 asg_stack ！......
 
-貌似言之有理，再查询数据库看看，奇葩出现了，咋跑出了四个 stack，而且四个 stack 的名字均以 fuck 开头，有着几分相似和某些规律。再看看 owner_id 和 id 的关系，机智的仁兄，你应该发现些嘘头了吧。
-1. stack-list 查询到的 stack, 其 owner_id 均未 NULL
-2. nested_stack 的 owner_id 为父 stack 的 id
+貌似言之有理，再查询数据库看看，奇葩出现了，咋跑出了四个 stack，而且四个 stack 的名字均以 asg_stack 开头，有着几分相似和某些规律，再看看 owner_id 和 id 有如下关系：
 
+- stack-list 查询到的 stack, 其 owner_id 均未 NULL
+- nested_stack 的 owner_id 为父 stack 的 id
 
-看，熟悉的虚拟机现身了。从上不难发现另外一条规律，nested_stack 的 id 和父 stack 的某个 resource id 完全一致。事实上，Heat 有以下资源支持 nested_stack
-OS::Heat::InstanceGroup，OS::Heat::ResourceGroup，OS::Heat::AutoScalingGroup，AWS::AutoScaling::AutoScalingGroup。
+查询数据库发现：
+
+~~~ bash
+mysql> select id,name,owner_id where deleted_at is Null;
++-----------+------------------------------------+-----------+
+| id        | name                               | owner_id  |
++-----------+------------------------------------+-----------+
+| 5259...4a | asg_stack-asg-ll5qfhea47g2         | 8dd9...c3 |
+| 8dd9...c3 | asg_stack                          | NULL      |
+| 9986...04 | asg_stack-asg-ll5qfhea47g2-ue...iu | 5259...4a |
+| cad9...7a | asg_stack-asg-ll5qfhea47g2-4s...cr | 5259...4a |
++-----------+------------------------------------+-----------+
+~~~
+
+4 个 stack 的关系如下图所示：
+
+![Image](http://7xp2eu.com1.z0.glb.clouddn.com/Nested_stack.png?imageView2/1/w/450/h/400/q/100)
+
+继续查询 asg_stack-asg-ll5qfhea47g2-4s...cr 这个 stack 包含的资源：
+ 
+~~~ bash
+$ heat resource-list 99860cfb-1110-4eb6-89be-0dfff14b3a04
++---------------+-------------------------+-----------------+---------------+
+| resource_name | resource_type           | resource_status | updated_time  |
++---------------+-------------------------+-----------------+---------------+
+| server        | OS::Nova::Server        | CREATE_COMPLETE | 2014-04-26... |
+| member        | OS::Neutron::PoolMember | CREATE_COMPLETE | 2014-04-26... |
++---------------+-------------------------+-----------------+---------------+
+~~~
+
+从上不难发现另外一条规律，nested_stack 的 id 和父 stack 的某个 resource_id 完全一致。事实上，Heat 有以下资源支持 nested_stack：
+
+- OS::Heat::InstanceGroup
+- OS::Heat::ResourceGroup
+- OS::Heat::AutoScalingGroup
+- AWS::AutoScaling::AutoScalingGroup
 
 对于初步了解 heat 的同学来说，nested_stack 比较陌生晦涩，更多的资料请移步 [wiki](https://wiki.openstack.org/wiki/Heat/NestedStacks)
 
@@ -82,6 +138,28 @@ OS::Heat::InstanceGroup，OS::Heat::ResourceGroup，OS::Heat::AutoScalingGroup�
 # 解决方案
 
 我们可以按照以上方法查询 Autoscaling Group 下得虚拟机信息，但是频繁的 CLI 查询操作繁琐、效率低下，用户体验极差。最好的方式是查询 Autoscaling Group 资源时，可以返回其旗下的虚拟机列表。如下：
+
+~~~ bash
+$ heat resource-show asg_stack asg
++------------------------+---------------------------------------------------------------------+
+| Property               | Value                                                               |
++------------------------+---------------------------------------------------------------------+
+| description            |                                                                     |
+| instances              | [{'name': 'asg_stack-asg-ll5qfhea47g2...5w', 'uuid': '43de...e3'},  |
+|                        |  {'name': 'asg_stack-asg-ll5qfhea47g2...4d', 'uuid': '43a4...7d'}]  |
+| links                  | http://ip:8004/v1/tenant_id/stacks/asg_stack/stack_id/resources/asg |
+|                        | http://ip:8004/v1/tenant_id/stacks/asg_stack/stack_id               |
+| logical_resource_id    | asg                                                                 |
+| physical_resource_id   | 525954ea-a309-44a7-9e40-d793b7c754a                                 |
+| required_by            | scaleup_policy                                                      |
+|                        | scaledown_policy                                                    |
+| resource_name          | asg                                                                 |
+| resource_status        | CREATE_COMPLETE                                                     |
+| resource_status_reason | state changed                                                       |
+| resource_type          | OS::Heat::AutoScalingGroup                                          |
+| updated_time           | 2014-04-26T09:33:04Z                                                |
++------------------------+---------------------------------------------------------------------+
+~~~
 
 由于代码实现简单，核心代码为如下，详情见该 [commit](https://github.com/DeliangFan/heat/commit/63d35793c47784b4ff0e980a0148eaf96139c853)：
 
