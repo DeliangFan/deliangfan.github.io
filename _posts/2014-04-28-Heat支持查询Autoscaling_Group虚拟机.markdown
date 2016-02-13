@@ -22,13 +22,13 @@ name.
 >
 >Any ideas on how I can do this? Thanks!
 
-上述的大意是如何通过 Heat API 获取 Autoscaling Group 里的虚拟机列表。
+上述的大意是如何获取 [autoscaling group](https://wiki.openstack.org/wiki/Heat/AutoScaling) 里的虚拟机列表。
 
 ---------------
 
-# Autoscaling 介绍
+# Autoscaling Group 介绍
 
-以 Heat 推荐的 Autoscaling Group 的模板为例子，采用该模板创建 stack 后，查询该 stack 包含的 resouce 如下，可知 asg 即为 AutoScalingGroup。
+以 Heat 推荐的 autoscaling group 的[template](https://github.com/openstack/heat-templates/blob/master/hot/autoscaling.yaml)为例，采用该模板创建 stack 后，查询该 stack 包含的 resouce 如下，可知 asg 即为 autoScaling group。
 
 ~~~ bash
 $ heat resource-list asg_stack
@@ -47,7 +47,7 @@ $ heat resource-list asg_stack
 +------------------+----------------------------+-----------------+---------------+
 ~~~
 
-继续查询 asg 详情，发现并无任何和虚拟机相关的信息，而事实上，Autoscaling Group 作为一群虚拟机的集合，用户非常希望能获取 Autoscaling Group 下虚拟机的数量，虚拟机的名称等等。如果 Heat 未提供该 API，那么用户只能通过 Nova API 查询相关的虚拟机，这对用户来说，无疑增加了操作的复杂程度。
+继续查询 asg 详情，发现并无任何和虚拟机相关的信息，而事实上，autoscaling group 作为一群虚拟机的集合，用户非常希望获取其包含的虚拟机信息。如果 Heat 未提供该 API，那么用户只能通过 Nova API 查询相关的虚拟机，这对用户来说，无疑增加了操作的复杂度。
 
 ~~~ bash
 $ heat resource-show asg_stack asg
@@ -89,7 +89,7 @@ $ nova list
 
 一个！它的名字就叫 asg_stack ！......
 
-貌似言之有理，再查询数据库看看，奇葩出现了，咋跑出了四个 stack，而且四个 stack 的名字均以 asg_stack 开头，有着几分相似和某些规律，再看看 owner_id 和 id 有如下关系：
+貌似言之有理，再查询数据库看看，却出现四个 stack，而且四个 stack 的名字均以 asg_stack 开头，有着几分相似和某些规律，再看看 owner_id 和 id 有如下关系：
 
 - stack-list 查询到的 stack, 其 owner_id 均未 NULL
 - nested_stack 的 owner_id 为父 stack 的 id
