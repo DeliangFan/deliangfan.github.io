@@ -28,7 +28,7 @@ name.
 
 # Autoscaling Group 介绍
 
-以 Heat 推荐的 autoscaling group 的[template](https://github.com/openstack/heat-templates/blob/master/hot/autoscaling.yaml)为例，采用该模板创建 stack 后，查询该 stack 包含的 resouce 如下，可知 asg 即为 autoScaling group。
+以 Heat 推荐的 autoscaling group 的 [template](https://github.com/openstack/heat-templates/blob/master/hot/autoscaling.yaml) 为例，采用该模板创建 stack 后，查询该 stack 包含的 resource 如下，可知 asg 即为 autoScaling group。
 
 ~~~ bash
 $ heat resource-list asg_stack
@@ -47,7 +47,7 @@ $ heat resource-list asg_stack
 +------------------+----------------------------+-----------------+---------------+
 ~~~
 
-继续查询 asg 详情，发现并无任何和虚拟机相关的信息，而事实上，autoscaling group 作为一群虚拟机的集合，用户非常希望获取其包含的虚拟机信息。如果 Heat 未提供该 API，那么用户只能通过 Nova API 查询相关的虚拟机，这对用户来说，无疑增加了操作的复杂度。
+继续查询 asg 详情，未发现任何和虚拟机相关的信息，而事实上，autoscaling group 作为一群虚拟机的集合，用户非常希望获取它所包含的虚拟机信息。如果 Heat 未提供该 API，那么用户只能通过 Nova API 查询相关的虚拟机，对用户来说，无疑增加了操作的复杂度。
 
 ~~~ bash
 $ heat resource-show asg_stack asg
@@ -85,16 +85,14 @@ $ nova list
 
 # Nested Stack
 
-在讲解 nested_stack 之前，先问一个问题：请问一共创建了多少个 stack？
+讲解 [nested stack](https://wiki.openstack.org/wiki/Heat/NestedStacks) 之前，先问一个问题：请问一共创建了多少个 stack？
 
 一个！它的名字就叫 asg_stack ！......
 
-貌似言之有理，再查询数据库看看，却出现四个 stack，而且四个 stack 的名字均以 asg_stack 开头，有着几分相似和某些规律，再看看 owner_id 和 id 有如下关系：
+貌似言之有理，再查询数据库看看，却出现四个名字均以 asg_stack 开头的 stack，并且 owner_id 和 id 有如下关系：
 
-- stack-list 查询到的 stack, 其 owner_id 均未 NULL
-- nested_stack 的 owner_id 为父 stack 的 id
-
-查询数据库发现：
+- heat stack-list 查询到的 stack, 其 owner_id 为 NULL
+- nested stack 的 owner_id 和父 stack 的 id 一致
 
 ~~~ bash
 mysql> select id,name,owner_id where deleted_at is Null;
@@ -124,20 +122,18 @@ $ heat resource-list 99860cfb-1110-4eb6-89be-0dfff14b3a04
 +---------------+-------------------------+-----------------+---------------+
 ~~~
 
-从上不难发现另外一条规律，nested_stack 的 id 和父 stack 的某个 resource_id 完全一致。事实上，Heat 有以下资源支持 nested_stack：
+从上不难发现另外一条规律，nested stack 的 id 和父 stack 的某个 resource_id 完全一致。事实上，Heat 的以下资源支持 nested stack：
 
 - OS::Heat::InstanceGroup
 - OS::Heat::ResourceGroup
 - OS::Heat::AutoScalingGroup
-- AWS::AutoScaling::AutoScalingGroup
-
-对于初步了解 heat 的同学来说，nested_stack 比较陌生晦涩，更多的资料请移步 [wiki](https://wiki.openstack.org/wiki/Heat/NestedStacks)
+- AWS::AutoScaling::AutoScalingGroup 
 
 ----------------
 
 # 解决方案
 
-我们可以按照以上方法查询 Autoscaling Group 下得虚拟机信息，但是频繁的 CLI 查询操作繁琐、效率低下，用户体验极差。最好的方式是查询 Autoscaling Group 资源时，可以返回其旗下的虚拟机列表。如下：
+理解了 nested stack，很容易实现查询 Autoscaling Group 资源时返回其旗下的虚拟机列表。如下：
 
 ~~~ bash
 $ heat resource-show asg_stack asg
@@ -161,7 +157,7 @@ $ heat resource-show asg_stack asg
 +------------------------+---------------------------------------------------------------------+
 ~~~
 
-由于代码实现简单，核心代码为如下，详情见该 [commit](https://github.com/DeliangFan/heat/commit/63d35793c47784b4ff0e980a0148eaf96139c853)：
+由于实现简单，详情见该 [commit](https://github.com/DeliangFan/heat/commit/63d35793c47784b4ff0e980a0148eaf96139c853)，核心代码为如下：
 
 ~~~ python
 def _get_scaling_group_instances(self, resource):
