@@ -206,6 +206,9 @@ Libvirt 支持多种 [USB controller](http://libvirt.org/formatdomain.html#eleme
 
 ~~~ bash
 virsh attach-device domain_id usb_ehci.xml
+
+python
+domain.attachDeviceFlags(xml, flags) 
 ~~~
 
 usb_echi.xml 内容如下：
@@ -246,4 +249,7 @@ usb_echi.xml 内容如下：
 
 ~~~ bash
 virsh detach-device domain_id usb_ehci.xml
+
+python
+domain.detachDeviceFlags(xml, flags)
 ~~~
