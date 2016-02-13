@@ -28,7 +28,7 @@ name.
 
 # Autoscaling Group 介绍
 
-以 Heat 推荐的 autoscaling group 的 [template](https://github.com/openstack/heat-templates/blob/master/hot/autoscaling.yaml) 为例，采用该模板创建 stack 后，查询该 stack 包含的 resource 如下，可知 asg 即为 autoScaling group。
+以 Heat 推荐的 autoscaling group 的 [template](https://github.com/openstack/heat-templates/blob/master/hot/autoscaling.yaml) 为例，采用该模板创建 stack 后，查询该 stack 包含的 resource 如下，可知 asg 即为 autoscaling group。
 
 ~~~ bash
 $ heat resource-list asg_stack
@@ -133,7 +133,7 @@ $ heat resource-list 99860cfb-1110-4eb6-89be-0dfff14b3a04
 
 # 解决方案
 
-理解了 nested stack，很容易实现查询 Autoscaling Group 资源时返回其旗下的虚拟机列表。如下：
+理解了 nested stack，很容易实现查询 autoscaling group 资源时返回其旗下的虚拟机列表。如下：
 
 ~~~ bash
 $ heat resource-show asg_stack asg
