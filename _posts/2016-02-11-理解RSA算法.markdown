@@ -9,11 +9,11 @@ categories: Algorithm
 # Public-key Cryptography 简介
 
 [Public-key cryptography](https://en.wikipedia.org/wiki/Public-key_cryptography)
-(公开密钥加密) 又称 asymmetric cryptography (非对称加密)，即存在两把不同的密钥，分别称为公钥 PU 和私钥 PR，公钥通常用来加密明文 M，只有私钥才能解密公钥加密后的密文 C，如果 E 和 D 分别表示加密和解密算法，那么有：
+(公开密钥加密) 又称 asymmetric cryptography (非对称加密)，即存在两把不同的密钥，分别称为公钥 Pu 和私钥 Pr，公钥通常用来加密明文 M，只有私钥才能解密密文 C，如果用 E 和 D 分别表示加密和解密算法，那么有：
 
 ~~~
-C = E(PU, M)
-M = D(PR, C)
+C = E(Pu, M)
+M = D(Pr, C)
 ~~~
 
 下图(摘自维基百科)形象的表述了加密和解密流程：
@@ -26,7 +26,7 @@ M = D(PR, C)
 - Digital Signature：数字签名，发送方用私钥加密消息摘要生成签名，保证消息的完整性和可靠性
 - Key Exchange：安全的交换密钥，通常用于交换对称加密的密钥
 
-公钥加密系统有多种实现算法，其中最有名的的是 [RSA](https://zh.wikipedia.org/wiki/RSA%E5%8A%A0%E5%AF%86%E6%BC%94%E7%AE%97%E6%B3%95) 和 [DH](https://zh.wikipedia.org/wiki/%E8%BF%AA%E8%8F%B2-%E8%B5%AB%E7%88%BE%E6%9B%BC%E5%AF%86%E9%91%B0%E4%BA%A4%E6%8F%9B) 等，如下：
+公钥加密有多种算法，最有名的的是 [RSA](https://zh.wikipedia.org/wiki/RSA%E5%8A%A0%E5%AF%86%E6%BC%94%E7%AE%97%E6%B3%95) 和 [DH](https://zh.wikipedia.org/wiki/%E8%BF%AA%E8%8F%B2-%E8%B5%AB%E7%88%BE%E6%9B%BC%E5%AF%86%E9%91%B0%E4%BA%A4%E6%8F%9B) 等，如下：
 
 ~~~
 +----------------+-----------------------+-------------------+--------------+
@@ -66,8 +66,7 @@ M = D(PR, C)
 
 ~~~
 a^φ(n) mod n = 1
-即：
-a^(φ(n) + 1) mod n = a mod n
+即：a^(φ(n) + 1) mod n = a mod n
 ~~~
 
 ## 模反元素
@@ -76,7 +75,6 @@ a^(φ(n) + 1) mod n = a mod n
 
 ~~~
 a * b mod n = 1
-
 由欧拉定理可知：
 1 = a^φ(n) mod n = a * a^(φ(n) - 1) mod n
 可求得一个 b = a^(φ(n) - 1)，满足 a * b mod n = 1
