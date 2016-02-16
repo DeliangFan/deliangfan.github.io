@@ -65,7 +65,21 @@ M = D(PR, C)
 对于正整数 a 和 n，[欧拉定理](https://zh.wikipedia.org/wiki/%E6%AC%A7%E6%8B%89%E5%AE%9A%E7%90%86_(%E6%95%B0%E8%AE%BA))有：
 
 ~~~
+a^φ(n) mod n = 1
+即：
 a^(φ(n) + 1) mod n = a mod n
+~~~
+
+## 模反元素
+
+当 a, n 互质，一定存在[模仿元素](https://zh.wikipedia.org/zh/%E6%A8%A1%E5%8F%8D%E5%85%83%E7%B4%A0) b，使得：
+
+~~~
+a * b mod n = 1
+
+由欧拉定理可知：
+1 = a^φ(n) mod n = a * a^(φ(n) - 1) mod n
+可求得一个 b = a^(φ(n) - 1)，满足 a * b mod n = 1
 ~~~
 
 -------------
