@@ -95,7 +95,7 @@ RSA 算法于 1977 由 Ron Rivest，Adi Shamir 和 Leonard Adleman 提出，是�
 
 ## RSA 原理
 
-对于明文 M 和 密文 C，其加密和解密过程如下：
+对于明文 M 和 密文 C，且 M < n, C < n，其加密和解密过程如下：
 
 ~~~
 C = M^e mod n
