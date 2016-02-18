@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解 Keystone</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2013/10/20/%E7%90%86%E8%A7%A3Keystone.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解 Keystone</h1>
+    <p class="post-meta"><time datetime="2013-10-20T00:00:00+08:00" itemprop="datePublished">Oct 20, 2013</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <hr />
+
+<p>What is the Identity service?<br />
+The HPE Helion OpenStack Identity service, based on the OpenStack Keystone API, is responsible for providing UserID authentication and access authorization to enable organizations to achieve their access security and compliance objectives and successfully deploy OpenStack. In short, the Identity Service is the gateway to the rest of the OpenStack services.</p>
+
+<p>Authentication<br />
+The authentication function provides the initial login function to OpenStack. Keystone supports multiple sources of authentication, including a native or built-in authentication system. The Keystone native system can be used for all user management functions for proof of concept deployments or small deployments not requiring integration with a corporate authentication system, but it lacks some of the advanced functions usually found in user management systems such as forcing password changes. The focus of the Keystone native authentication system is to be the source of authentication for OpenStack-specific users required for the operation of the various OpenStack services. These users are stored by Keystone in a default domain; the addition of these IDs to an external authentication system is not required.</p>
+
+<p>Keystone is more commonly integrated with external authentication systems such as OpenLDAP or Microsoft Active Directory. These systems are usually centrally deployed by organizations to serve as the single source of user management and authentication for all in-house deployed applications and systems requiring user authentication. In addition to LDAP and Microsoft Active Directory, support for integration with Security Assertion Markup Language (SAML)-based identity providers from companies such as Ping, CA, IBM, Oracle, and others is also nearly “production-ready”.</p>
+
+<p>Keystone also provides architectural support via the underlying Apache deployment for other types of authentication systems such as Multi-Factor Authentication. These types of systems typically require driver support and integration from the respective provider vendors.</p>
+
+<p>Note: While support for Identity Providers and Multi-factor authentication is available in Keystone, it has not yet been certified by the HPE Helion OpenStack engineering team and is an experimental feature in HPE Helion OpenStack.<br />
+LDAP-compatible directories such as OpenLDAP and Microsoft Active Directory are recommended alternatives to using the Keystone local authentication. Both methods are widely used by organizations and are integrated with a variety of other enterprise applications. These directories act as the single source of user information within an organization. Keystone can be configured to authenticate against an LDAP-compatible directory on a per-domain basis.</p>
+
+<p>Domains, explained in the Domains, Projects, Users, Groups, and Roles topic, can be configured so that based on the user ID, a incoming user is automatically mapped to a specific domain. This domain can then be configured to authenticate against a specific LDAP directory. The user credentials provided by the user to Keystone are passed along to the designated LDAP source for authentication. This communication can be optionally configured to be secure via SSL encryption. No special LDAP administrative access is required, and only read-only access is needed for this configuration. Keystone will not add any LDAP information. All user additions, deletions, and modifications are performed by the application’s front end in the LDAP directories. After a user has been successfully authenticated, he is then assigned to the groups, roles, and projects defined by the Keystone domain or project administrators. This information is stored within the Keystone service database.</p>
+
+<p>Another form of external authentication provided by the Keystone service is via integration with SAML-based Identity Providers (IdP) such as Ping Identity, IBM Tivoli, and Microsoft Active Directory Federation Server. A SAML-based identity provider provides authentication that is often called “single sign-on”. The IdP server is configured to authenticate against identity sources such as Active Directory and provides a single authentication API against multiple types of downstream identity sources. This means that an organization could have multiple identity storage sources but a single authentication source. In addition, if a user has logged into one such source during a defined session time frame, they do not need to re-authenticate within the defined session. Instead, the IdP will automatically validate the user to requesting applications and services.</p>
+
+<p>A SAML-based IdP authentication source is configured with Keystone on a per-domain basis similar to the manner in which native LDAP directories are configured. Extra mapping rules are required in the configuration that define which Keystone group an incoming UID is automatically assigned to. This means that groups need to be defined in Keystone first, but it also removes the requirement that a domain or project admin assign user roles and project membership on a per-user basis. Instead, groups are used to define project membership and roles and incoming users are automatically mapped to Keystone groups based on their upstream group membership. This provides a very consistent role-based access control (RBAC) model based on the upstream identity source. The configuration of this option is fairly straightforward. IdP vendors such as Ping and IBM are contributing to the maintenance of this function and have also produced their own integration documentation. HPE is using the Microsoft Active Directory Federation Services (ADFS) for functional testing and future documentation. Horizon support for web single sign-on is also now available in the OpenStack Kilo release but not yet validated for HPE Helion OpenStack.</p>
+
+<p>The third Keystone-supported authentication source is known as Multi-Factor Authentication (MFA). MFA typically requires an external source of authentication beyond a login name and password, and can include options such as SMS text, a temporal token generator, a fingerprint scanner, etc. Each of these types of MFA are usually specific to a particular MFA vendor. The Keystone architecture supports an MFA-based authentication system, but this has not yet been certified or documented for HPE Helion OpenStack.</p>
+
+<p>Authorization<br />
+The second major function provided by the Keystone service is access authorization that determines what resources and actions are available based on the UserID, the role of the user, and the projects that a user is provided access to. All of this information is created, managed, and stored by Keystone. These functions are applied via the Horizon web interface, the OpenStack Command Line Interface (CLI), or the direct Keystone API.</p>
+
+<p>Keystone provides support for organizing users via three entities including:</p>
+
+<p>Domains<br />
+Domains provide the highest level of organization. Domains are intended to be used as high-level containers for multiple projects. A domain can represent different tenants, companies or organizations for an OpenStack cloud deployed for public cloud deployments or represent major business units, functions, or any other type of top-level organization unit in an OpenStack private cloud deployment. Each domain has at least one Domain Admin assigned to it. This Domain Admin can then create multiple projects within the domain and assign the project admin role to specific project owners. Each domain created in an OpenStack deployment is unique and the projects assigned to a domain cannot exist in another domain.<br />
+Projects<br />
+Projects are entities within a domain that represent groups of users, each user role within that project, and how many underlying infrastructure resources can be consumed by members of the project.<br />
+Groups<br />
+Groups are an optional function and provide the means of assigning project roles to multiple users at once.<br />
+Keystone also provides the means to create and assign roles to groups of users or individual users. The role names are created and user assignments are made within Keystone. The actual function of a role is defined currently per each OpenStack service via scripts. When a user requests access to an OpenStack service, his access token contains information about his assigned project membership and role for that project. This role is then matched to the service-specific script and the user is allowed to perform functions within that service defined by the role mapping.</p>
+
+<p>Infrastructure resource quotas are also defined within the OpenStack cloud. Quotas are defined per service but can be assigned via the Horizon user interface in the Projects section; thus, this function is often associated with the Keystone API. Quotas are assigned per each project.</p>
+
+<h1 id="id-keystone-">keystone 基本功能</h1>
+
+<p>Keystone 作为 OpenStack 的 Identity Service，提供了用户信息管理和完成各个模块认证服务。</p>
+
+<ul>
+  <li>用户信息管理：user/tenant基本信息，tenant管理</li>
+  <li>认证服务：登录认证，各个组件API的权限控制</li>
+</ul>
+
+<hr />
+
+<h1 id="id-keystone--1">keystone 的架构</h1>
+
+<p>既然keystone为各个模块提供认证服务，所以各个模块与keystone都有所交互。其中登录认证体现在用户访问各个组件的API时，调用了WSGI框架的authtoken filter，该filter最调用keystoneclient ，最终通过keystone验证token，完成对用户的登录认证。如果认证失败，用户将不能访问该API。</p>
+
+<p>以nova为例，authtoken filter在/etc/paste.ini目录中</p>
+
+<hr />
+
+<h1 id="id-keystone--2">keystone 基本概念介绍</h1>
+
+<ul>
+  <li>User: 可简单的理解为用户，用户携带信物（token）能够访问openstack各个服务和资源。</li>
+  <li>Project，早期版本又称为 tenant，它是各个服务中的一些可以访问的资源集合。比如通过nova创建虚拟机时要指定到某个租户中，在cinder创建卷也要指定到某个租户中。用户访问租户的资源前，必须与该租户关联，并且指定该用户在该租户下的角色。</li>
+  <li>Role: 即角色，可以理解为VIP等级，用户的Role越高，在openstack中能访问的服务和资源就更多。</li>
+  <li>Service: 即服务，如Nova、Glance、Swift、heat、ceilometer等。Nova提供云计算的服务，Glance提供镜像管理服务，Swift提供对象存储服务，heat提供资源编排服务，ceilometer则是提供告警计费服务，cinder提供块存储服务。</li>
+  <li>Endpoint: Service的显得太抽象笼统。Endpoint则具体化Service。Endpoint翻译为“端点”，我们可以理解它是一个服务暴露出来的访问点，如果需要访问一个服务，则必须知道他的endpoint，而endpoint一般为url，我们知道了服务的url，我们就可以访问它。Endpoint 的url具有public、private和admin这三种权限。public url可以被全局访问，private url只能被局域网访问，admin url被从常规的访问中分离。</li>
+  <li>Token:Token即是信物、令牌，用户通过用户名和密码获取在某个租户下的token，通过token，可以实现单点登录。</li>
+  <li>Credentials: 该术语可以简单的理解为用户和密码。</li>
+</ul>
+
+<p>keystone 里面的概念很多，其中最重要的是 User 和 Tenant 。其它的概念是由于安全和权限等因素引入。引用http://www.openstack.org.cn/bbs/forum.php?mod=viewthread&amp;tid=534&amp;extra=page%3D1该文的理解，通俗的说：</p>
+
+<p>如果把宾馆比作为Tenant，住宿的人就是User ，而宾馆就是 Tenant，宾馆可以提供多种诸如住宿、娱乐、饮食等多种服务（Service），具体来说，住宿是一种具体的服务（Endpoint）。就住宿而言，有普通间和总统套房，如果你的VIP等级（Role）高，你可以享受到豪华的总统套房。入住前，我们需要拿身份证开房（Credential），认证身份证不是冒牌货后（Authenticaiton），会给你一个房卡（Token），然后你拿着房卡，就可以进入房间和享受各种服务。</p>
+
+<p>User	住宾馆的人<br />
+Credentials	身份证<br />
+Authentication	认证你的身份证<br />
+Token	房卡<br />
+Tenant	宾馆<br />
+Service	宾馆可以提供的服务类别，比如，饮食类，娱乐类<br />
+Endpoint	具体的一种服务，比如吃烧烤，打羽毛球<br />
+Role	VIP 等级，VIP越高，享有越高的权限</p>
+
+<hr />
+
+<h1 id="id-keystone--3">keystone 的访问流程</h1>
+
+<p>以创建一个虚拟机（server）为例，结合下图简述下keystone在openstack的访问流程。</p>
+
+<ul>
+  <li>用户Alice通过自己的户名和密码向keystone申请token，keystone认证用户名和密码后，返回token1</li>
+  <li>Alice通过token1发送keystone查询他所拥有的租户，keystone验证token1成功后，返回Alice的所有Tenant</li>
+  <li>Alice选择一个租户，通过用户名和密码申请token，keystone认证用户名、密码、tenant后，返回token2。（其实1、2步仅仅是为了查询tenant，如果已经知道tenant，可以忽略1、2步）</li>
+  <li>Alice通过token2发送创建server的请求，keystone验证token2(包括该token是否有效，是否有权限创建虚拟机等)成功后，然后再把请求下发到nova，最终创建虚拟机</li>
+</ul>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

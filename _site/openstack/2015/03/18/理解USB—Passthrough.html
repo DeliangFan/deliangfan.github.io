@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解 USB Passthrough</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2015/03/18/%E7%90%86%E8%A7%A3USB%E2%80%94Passthrough.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解 USB Passthrough</h1>
+    <p class="post-meta"><time datetime="2015-03-18T00:00:00+08:00" itemprop="datePublished">Mar 18, 2015</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <hr />
+
+<p>虽然社区曾有人提议 <a href="https://wiki.openstack.org/wiki/Nova/proposal_about_usb_passthrough">USB passthrough</a> blueprint，因不是常用功能，且会影响其它的 API，所以被社区否决。但是对于某些私有云，特别是 ERP  系统，的确有 USB passthrough 需求，遂把 USB 知识做较为全面的整理，以供看官们参考。</p>
+
+<hr />
+
+<h1 id="id-usb-device">USB Device</h1>
+
+<p>什么是 <a href="http://www.gentoo.org/doc/zh_cn/usb-guide.xml">USB device</a>, 下图机智的小萌狗就是 USB device，你的鼠标是 USB device，键盘是 USB device，U 盘更是典型的 USB device。说了这么多例子，还是得用一个专业的名词一语概之，所谓 USB，即是 Universal Serial Bus(通用串行总线)，它是用来连接 USB device 和计算机，从而实现 USB device 和计算机之间的通讯。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/USB%20device.jpg" alt="USB Device" /></p>
+
+<p>当把 U 盘插入到计算机的 USB 口时，我们便能在操作系统中找到该 USB device 并使用之。下图解释了 USB device 如何与计算机系统交互，USB device 不能直接和操作系统通信，它需要 USB controller interface 这座桥梁才能在硬件上接入到计算机上。HCD(Host Controller Device)则是则是硬件商向程序员提供的开发接口。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/usb_passthrough.jpg" alt="Usb passthrough" /></p>
+
+<p>USB device 通过 USB controller 和计算机交互得遵守一套标准，这套标准我们称之为 USB 协议。常用的协议为 USB 1.1 和 USB 2.0，比如 U 盘一般为 USB 2.0，由于 USB 2.0 是向下兼容的，所以 USB 2.0 的设备也支持 USB 1.1。</p>
+
+<pre><code class="language-bash">+-------------+------------+--------------+
+| USB Version |  Max speed | Speed Version|　
++-------------+------------+--------------+
+|   USB1.0    |  1.5Mbps   |  Low-Speed   |
+|   USB1.1    |  12Mbps    |  Full-Speed  |
+|   USB2.0    |  480Mbps   |  High-Speed  |
+|   USB3.0    |  5-10Gbps  |  Super-Speed |
++-------------+------------+--------------+
+</code></pre>
+
+<p>注：<a href="http://support.hp.com/th-en/document/c00022531">部分 USB 2.0 Device</a> 的速率为全速，比如很多 USB Key 便是全速的 USB 2.0 device。</p>
+
+<hr />
+
+<h1 id="id-usb-controller">USB Controller</h1>
+
+<p>不仅 USB device 得遵守 USB 相关协议，USB controller 也必须遵守该协议。也就是说，针对 USB 1.1 device，需要有对应的 USB controller (uhci) 来支持，对于 USB 2.0 device，也需要 USB controller(ehci) 来支持。USB controller 分为以下四种类型：</p>
+
+<ul>
+  <li>OHCI (Open Host Controller Interface)，它是开放的支持 USB 1.1 和 Firewire(Apple) 的标准。和 UCHI 相比，OHCI 的硬件完成大部分工作，因此硬件设计复杂，而软件驱动设计简单。OHCI的另外一个缺点是它仅支持 32 bit，对于 64 bit 的操作系统，它需要 IOMMU 支持。</li>
+  <li>UHCI (Universal Host Controller Interface)，是 Intel 主导的对 USB 1.x 的接口标准，与OHCI不兼容，支持全速和慢速设备。和 OHCI 相反，UHCI 硬件设计简单，因此需要相对复杂的软件驱动。UHCI 同样仅支持 32 bit，对于 64 bit 的操作系统，需要 IOMMU 支持。UHCI 的软件驱动的任务重，需要做得比较复杂，但可以使用较便宜、较简单的硬件的 USB 控制器。Intel 和 VIA 使用 UHCI，而其余的硬件提供商使用 OHCI。</li>
+  <li>EHCI (Enhanced Host Controller Interface)，是 Intel 主导的专门用于支持 USB 2.0 的高速接口标准，对于 USB 2.0 的全速设备，EHCI 无法支持。因此，一般的 PC 机都带有两个 USB 控制器，EHCI 和 UCHI。</li>
+  <li>xHCI (eXtensible Host Controller Interface) 是最新的专门用于支持 USB 3.0 的接口标准，它在速度，节能和虚拟化方面均有很大的提升，它支持 USB 各种速度标准。</li>
+</ul>
+
+<hr />
+
+<h1 id="id-linux-">Linux 相关命令</h1>
+
+<p>1 . lsusb 查询所有的 USB device：</p>
+
+<pre><code class="language-bash">$ lsusb
+Bus 001 Device 001: ID 1d6b:0001 Linux Foundation 1.1 root hub
+Bus 001 Device 002: ID 0627:0001 Adomax Technology Co., Ltd 
+</code></pre>
+
+<p>2 . lsusb -t 查询所有 USB device 层次信息，lsusb -v 可查询所有 USB device 详情。</p>
+
+<pre><code class="language-bash">$ lsusb -t 
+--Bus# 1 
+  +---Dev# 1 Vendor 0x1d6b Product 0x0001 
+  +----Dev# 2 Vendor 0x0627 Product 0x0001
+</code></pre>
+
+<p>3 . lspci 查询 USB controller。</p>
+
+<pre><code class="language-bash">$ lspci |grep USB 
+00:01.2 USB controller: Intel Corporation 82371SB PIIX3 USB [Natoma/Triton II] (rev 01)
+</code></pre>
+
+<p>4 . 更为详细的信息可以通过<a href="http://blog.csdn.net/gaojinshan/article/details/9787005">查询 USB 文件</a>。</p>
+
+<pre><code class="language-bash">$ cat  /proc/bus/usb/devices
+T:  Bus=02 Lev=00 Prnt=00 Port=00 Cnt=00 Dev#=  1 Spd=12   MxCh= 3
+B:  Alloc=  0/900 us ( 0%), #Int=  0, #Iso=  0
+D:  Ver= 1.10 Cls=09(hub  ) Sub=00 Prot=00 MxPS=64 #Cfgs=  1
+P:  Vendor=1d6b ProdID=0001 Rev= 3.00
+S:  Manufacturer=Linux 3.0.15 ohci_hcd
+S:  Product=s5p OHCI
+S:  SerialNumber=s5p-ohci
+C:* #Ifs= 1 Cfg#= 1 Atr=e0 MxPwr=  0mA
+I:* If#= 0 Alt= 0 #EPs= 1 Cls=09(hub  ) Sub=00 Prot=00 Driver=hub
+E:  Ad=81(I) Atr=03(Int.) MxPS=   2 Ivl=255ms
+
+以上信息的含义如下[5]，参见：kernel\Documentation\usb\proc_usb_info.txt:
+T = 总线拓扑（Topology）结构（Lev, Prnt, Port, Cnt, 等），是指USB设备和主机之间的连接方式
+B = 带宽（Bandwidth）（仅用于USB主控制器）
+D = 设备（Device）描述信息
+P = 产品（Product）标识信息
+S = 字符串（String）描述符
+C = 配置（Config）描述信息 (* 表示活动配置)
+I = 接口（Interface）描述信息
+E = 端点（Endpoint）描述信息
+一般格式：
+d = 十进制数
+x = 十六进制数
+s = 字符串
+
+拓扑信息
+T:  Bus=dd Lev=dd Prnt=dd Port=dd Cnt=dd Dev#=ddd Spd=ddd MxCh=dd
+|   |      |      |       |       |      |        |       |__最大子设备
+|   |      |      |       |       |      |        |__设备速度（Mbps）
+|   |      |      |       |       |      |__设备编号
+|   |      |      |       |       |__这层的设备数
+|   |      |      |       |__此设备的父连接器/端口
+|   |      |      |__父设备号
+|   |      |__此总线在拓扑结构中的层次
+|   |__总线编号
+|__拓扑信息标志
+
+带宽信息
+B:   Alloc=ddd/ddd us (xx%), #Int=ddd, #Iso=ddd
+|    |                       |         |__同步请求编号
+|    |                       |__中断请求号
+|    |__分配给此总线的总带宽
+|__带宽信息标志
+
+设备描述信息和产品标识信息
+
+D:   Ver=x.xx Cls=xx(sssss) Sub=xx Prot=xx MxPS=dd #Cfgs=dd
+|    |        |             |      |       |       |__配置编号
+|    |        |             |      |       |______缺省终端点的最大包尺寸
+|    |        |             |      |__设备协议
+|    |        |             |__设备子类型
+|    |        |__设备类型
+|    |__设备USB版本
+|__设备信息标志编号#1
+
+P:   Vendor=xxxx ProdID=xxxx Rev=xx.xx
+|    |           |           |__产品修订号
+|    |           |__产品标识编码
+|    |__制造商标识编码
+|__设备信息标志编号#2
+
+串描述信息
+S:   Manufacturer=ssss
+|    |__设备上读出的制造商信息
+|__串描述信息
+S:   Product=ssss
+|    |__设备上读出的产品描述信息，对于USB主控制器此字段为"USB *HCI Root Hub"
+|__串描述信息
+S:   SerialNumber=ssss
+|    |__设备上读出的序列号，对于USB主控制器它是一个生成的字符串，表示设备标识
+|__串描述信息
+
+配置描述信息
+C:   #Ifs=dd Cfg#=dd Atr=xx MPwr=dddmA
+|    |       |       |      |__最大电流（mA）
+|    |       |       |__属性
+|    |       |__配置编号
+|    |__接口数
+|__配置信息标志
+
+接口描述信息(可为多个)
+I:   If#=dd Alt=dd #EPs=dd Cls=xx(sssss) Sub=xx Prot=xx Driver=ssss
+|    |      |      |       |             |      |       |__驱动名
+|    |      |      |       |             |      |__接口协议
+|    |      |      |       |             |__接口子类
+|    |      |      |       |__接口类
+|    |      |      |__端点数
+|    |      |__可变设置编号
+|    |__接口编号
+|__接口信息标志
+
+端点描述信息
+E:   Ad=xx(s) Atr=xx(ssss) MxPS=dddd Ivl=dddms
+|    |        |            |         |__间隔
+|    |        |            |__终端点最大包尺寸
+|    |        |__属性(终端点类型)
+|    |__终端点地址(I=In,O=Out)
+|__终端点信息标志
+</code></pre>
+
+<hr />
+
+<h1 id="id-python-">Python 相关库</h1>
+
+<p>在 pip 中找到两个和 usb 相关 package，分别为 pyUSB, usbid。</p>
+
+<ul>
+  <li>usbid: 实现方式 too young, too simple，仅仅通过读取 USB 设备文件来获取 USB device 信息。</li>
+  <li>pyUSB: 通过调用 libusb1.0.so 获取 usb device 设备信息，但是无法获取速度相关信息。查阅 - - - libusb 代码发现 libusb 支持获取速度信息，于是补充了 pyUSB 获取 usb device 速度信息 <a href="https://github.com/DeliangFan/pyusb">patch</a>。</li>
+</ul>
+
+<hr />
+
+<h1 id="id-libvirt-usb-passthrough">Libvirt USB passthrough</h1>
+
+<h2 id="id-libvirt-usb-controller">Libvirt USB Controller</h2>
+
+<p>Libvirt 支持多种 <a href="http://libvirt.org/formatdomain.html#elementsControllers">USB controller</a> 设备，下述xml 描述了两个 USB controller，分别为 ehci 和 uhci。</p>
+
+<pre><code class="language-xml">&lt;controller type='usb' index='0' model='ehci'/&gt;
+&lt;controller type='usb' index='1' model='piix3-uhci'&gt;
+</code></pre>
+
+<h2 id="id-attach-usb-device-to-vm">Attach USB Device to VM</h2>
+
+<p>把 USB device <a href="http://libvirt.org/formatdomain.html#elementsHostDevSubsys">attach</a> 到 ehci controler, port 对应 usb controler 的 index。</p>
+
+<pre><code class="language-bash">virsh attach-device domain_id usb_ehci.xml
+
+python
+domain.attachDeviceFlags(xml, flags) 
+</code></pre>
+
+<p>usb_echi.xml 内容如下：</p>
+
+<pre><code class="language-xml">&lt;hostdev mode='subsystem' type='usb' managed='yes'&gt;
+   &lt;source&gt;
+       &lt;vendor id='0x0763'/&gt;
+       &lt;product id='0x202a'/&gt;
+       &lt;address bus='1' device='3' /&gt;
+   &lt;/source&gt;
+   &lt;address type='usb' bus='0' port='1'/&gt;
+&lt;/hostdev&gt;
+</code></pre>
+
+<p>把 USB device attach 到 uhci controler：</p>
+
+<pre><code class="language-bash">virsh attach-device domain_id usb_uhci.xml
+</code></pre>
+
+<p>usb_echi.xml 内容如下：</p>
+
+<pre><code class="language-xml">&lt;hostdev mode='subsystem' type='usb' managed='yes'&gt;
+   &lt;source&gt;
+       &lt;vendor id='0x0763'/&gt;
+       &lt;product id='0x202a'/&gt;
+       &lt;address bus='1' device='3' /&gt;
+   &lt;/source&gt;
+   &lt;address type='usb' bus='0' port='0'/&gt;
+&lt;/hostdev&gt;
+</code></pre>
+
+<h2 id="id-detach-usb-device-from-vm">Detach USB Device from VM</h2>
+
+<p>卸载 usb device：</p>
+
+<pre><code class="language-bash">virsh detach-device domain_id usb_ehci.xml
+
+python
+domain.detachDeviceFlags(xml, flags)
+</code></pre>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
