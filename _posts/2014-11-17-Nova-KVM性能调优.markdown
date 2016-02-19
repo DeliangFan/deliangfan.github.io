@@ -159,6 +159,8 @@ modprobe vhost-net
   </devices>
 ~~~ 
 
+----------
+
 # 5. 一次调优的悲剧
 
 Libvirt [CPU host passthrough](https://libvirt.org/formatdomain.html# elementsCPU)支持把宿主机的 CPU 指令集透传给虚拟机，如此虚拟机尽可能的利用宿主机的指令集，从而提升效率。事实上，更改后的短短的三天时间里，有多台宿主机莫名其妙的 kernel panic，虽然未能查明具体原因，但是禁止该配置后，宿主机和虚拟机稳定如初。
