@@ -5,15 +5,16 @@ categories: OpenStack
 ---
 
 ----------
+
 # keystone 简介
 
-[Keystone](https://wiki.openstack.org/wiki/Keystone) 作为 OpenStack 的 Identity Service，为用户提供了 Authentication(认证) 和高层次的 Authorization(授权) 的功能，它支持基于 token 的认证和用户服务的授权。随着项目的发展，像 OAuth，SAML 和 OpenID 等更多的认证/授权机制也加入到 Keystone 中。
+[Keystone](https://wiki.openstack.org/wiki/Keystone) 作为 OpenStack 的 Identity Service，为用户提供了 Authentication(认证) 和高层次的 Authorization(授权) 的功能，它支持基于 token 的认证和用户服务的授权。随着项目的发展，像 OAuth，SAML 和 OpenID 等更多的认证/授权机制也加入到该项目中。
 
 按照服务类型，Keystone 的可分为六类基本服务。
 
 - Identity：即用户身份，主要包括 user, group
 - Resource：表示资源的集合，主要包括 project 和 domain，project 在早起的版本又被称为 tenant
-- Assignment：主要包括 role 和 role assignment，就用户在某个 project 或者 domain 的权限
+- Assignment：主要包括 role 和 role assignment，表示用户在某个 project 或者 domain 的权限
 - Catalog：主要包括 endpoint 和 service
 - Token：token 是用户身份的一种凭据
 - Policy：即授权机制，采用基于角色的权限控制(Role Based Access Control)
@@ -41,7 +42,7 @@ categories: OpenStack
 
 # keystone 的架构
 
-既然 Keystone 为各个模块提供认证服务，所以和各个模块都有交互。
+既然 Keystone 为各个模块提供认证服务，所以它和各个模块都有交互。
 
 ![Keystone](http://7xp2eu.com1.z0.glb.clouddn.com/openstack-conceptual-arch-folsom.jpg)
 
@@ -63,11 +64,11 @@ paste.filter_factory = keystoneclient.middleware.auth_token:filter_factory
 
 # keystone 的访问流程
 
-以创建一个虚拟机为例，结合下图简述在 openstack keystone 的访问流程。
+以创建一个虚拟机为例，结合[下图](http://docs.openstack.org/juno/install-guide/install/apt/content/keystone-concepts.html)简述在 OpenStack Keystone 的访问流程。
 
-- 用户 Alice 通过自己的户名和密码向 keystone 申请 token，经认证用户名和密码后，返回 unscope token1
-- Alice 通过 token1 向 keystone 查询他所拥有的租户，keystone 验证 token1 后，返回 Alice 的所有 project。
-- Alice 选择一个租户并申请 token，keystone认证用户名、密码和 project 后，返回 scope token2。（其实 1、2 步是为了查询所拥有的 project，如果已知道 project，可以忽略1、2步）
-- Alice 携带 token2 向 nova 请求创建 server，nova-api 收到请求后，先向 keystone 验证 token2 的真实性，验证成功后再创建虚拟机。
+- 用户 Alice 通过自己的户名和密码向 Keystone 申请 token，经认证用户名和密码后，返回 unscope token1
+- Alice 通过 token1 向 Keystone 查询他所拥有的 project，Keystone 验证 token1 后，返回 Alice 的所有 project。
+- Alice 选择一个租户并申请 token，Keystone认证用户名、密码和 project 后，返回 scope token2。（其实 1、2 步是为了查询所拥有的 project，如果已知道 project，可以忽略1、2步）
+- Alice 携带 token2 向 nova 请求创建 server，nova-api 收到请求后，先向 Keystone 验证 token2 的真实性，验证成功后再创建虚拟机。
 
 ![workflow](http://7xp2eu.com1.z0.glb.clouddn.com/SCH_5002_V00_NUAC-Keystone.png)
