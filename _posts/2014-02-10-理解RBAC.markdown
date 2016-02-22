@@ -140,7 +140,6 @@ def delete(self, context, instance):
     "compute:delete": "",
     "compute_extension:admin_actions:migrate": "rule:admin_api"
 }
-
 ~~~
 
 
