@@ -8,7 +8,7 @@ categories: OpenStack
 
 本文主要讲解 Keystone 的两类基本服务，如下图蓝色部分：
 
-- Assignment：包括 role 和 role assignment，用于描述某个 identity 对某个 resource 下资源拥有的访问权限。
+- Assignment：包括 role 和 role assignment，用于描述某个 identity 对某个 resource 下的资源拥有的访问权限。
 - Policy：定义 OpenStack API 基于 role 的访问权限规则。
 
 ![Role](http://7xp2eu.com1.z0.glb.clouddn.com/roleandpolicyRBAC.png)
@@ -20,7 +20,7 @@ categories: OpenStack
 
 ## Role 
 
-Role 可简单的理解为用户级别，用户的角色等级越高，对 project 里资源拥有的操作权限就越大。Keystone 提供和 role 相关的增删改查 API。
+Role 可简单的理解为用户级别，用户角色的级别越高，对 project 里资源拥有的操作权限就越大。Keystone 提供和 role 相关增删改查的 API。
 
 ~~~shell
 $ keystone role-list
@@ -36,10 +36,10 @@ $ keystone role-list
 
 ## Role Assignment
 
-Role Assignment 定义了某个 identity(user 或者 group) 对某个 resource(project 或者 domain) 下的资源的访问权限。如果用户 Acme 想要访问 Bob project 的资源，就必须通过 role assignment 在 Bob project 赋予 Acme 相关的 role。
+Role Assignment 定义了某个 identity(user 或者 group) 对某个 resource(project 或者 domain) 下的资源拥有的访问权限。如果用户 Acme 想要访问 Bob project 的资源，就必须通过 role assignment 在 Bob project 赋予 Acme 相关的 role。
 
 ~~~shell
-$ keysone user-role-add --user Acme --tenant Bob --role member
+$ keysone user-role-add --user Acme --tenant Bob --role admin
 ~~~
 
 其中 user, group, project 和 domain 具有以下关系。 
@@ -48,13 +48,13 @@ $ keysone user-role-add --user Acme --tenant Bob --role member
 
 - Project 和 domain 均可以赋予 user 或者 group 某种角色(role)。
 - 如果在 Project A 赋予 Group A 角色 admin，那么 Group A 下的 User B 和 User C 在 Project A 下均为 admin 角色。
-- 如果在 Domian A 赋予 User A 角色 admin，那么 User 在 Project B 和 Project C 均为 admin 角色。
+- 如果在 Domian A 赋予 User A 角色 admin，那么 User A 在 Project B 和 Project C 均为 admin 角色。
 
 ----------
 
 # Policy
 
-OpenStack 官网是这么介绍 [policy](http://docs.openstack.org/developer/keystone/architecture.html) 的：
+OpenStack 官网是这么介绍 [policy](http://docs.openstack.org/developer/keystone/architecture.html)：
 
 > The Policy service provides a rule-based authorization engine and the associated rule management interface.
 
@@ -63,13 +63,13 @@ OpenStack 官网是这么介绍 [policy](http://docs.openstack.org/developer/key
 - Policy 是一种基于 rule 的授权机制。
 - Policy 通常用来管理服务的 interface，即 OpenStack 的 API 访问规则。
 
-早起各个组件都有 policy 相关模块，如：
+早期各个组件都有 policy 相关模块，如：
 
 - Keystone: /keystone/openstack/common/policy.py
 - Nova: /nova/openstack/common/policy.py
 - Cinder: /cinder/openstack/common/policy.py
 
-以 Nova 为例，policy 模块根据 /etc/nova/policy.json 所设定的 rule，实现基于 API 粒度授权访问控制功能，详情见下节。
+以 Nova 为例，policy 模块根据 /etc/nova/policy.json 所设定的 rule，定义基于 API 粒度授权访问控制规则，详情见下节。随着项目的迭代发展，policy 以 [olso.policy](http://docs.openstack.org/developer/oslo.policy/) 的形式成为了公共模块。
 
 ----------
 
@@ -78,11 +78,10 @@ OpenStack 官网是这么介绍 [policy](http://docs.openstack.org/developer/key
 在日常应用中，特别在安全领域，有多种访问[访问控制](https://en.wikipedia.org/wiki/Access_control)规则，比如：
 
 - 基于 IP 的访问控制：如 iptables，可以设定哪些 ip 具有访问权限
-- 基于 PIN 码的访问控制：如某些认证系统，可以设定那些 PIN 码具有访问权限
-- 基于 Username 的访问控制：如某些认证系统，以 username 为访问的判断标准
+- 基于 PIN 码的访问控制：如某些认证系统，可以设定哪些 PIN 码具有访问权限
 - 基于 Role 的访问控制：如某些认证系统，根据 Role 来判读是否具有访问权限
 
-OpenStack 采用 [Role-based Access Control (RBAC)](https://en.wikipedia.org/wiki/Role-based_access_control)，所有项目在各个 API 入口处根据各自的 policy.json 设定的规则判读用户的角色是否具有访问权限，关于 policy.json 的语法规则，请参考[此文](http://docs.openstack.org/kilo/config-reference/content/policy-json-file.html)。
+OpenStack 采用 [Role-based Access Control (RBAC)](https://en.wikipedia.org/wiki/Role-based_access_control)，所有的 API 在入口处根据 policy.json 的规则判定用户拥有的 role 是否具有访问权限，policy.json 的语法请参考[此文](http://docs.openstack.org/kilo/config-reference/content/policy-json-file.html)。
 
 在不同的 API 里，其代码表示形式略有不同，以 nova 创建虚拟机为例：
 
@@ -105,7 +104,7 @@ def create(self, context, instance_type,
     Returns a tuple of (instances, reservation_id)
     """
 
-    #下面函数检验了用户是否具有创建虚拟机的权限
+    # 下面函数检验了用户是否具有创建虚拟机的权限
     self._check_create_policies(context, availability_zone,
             requested_networks, block_device_mapping)
     ...
@@ -128,7 +127,7 @@ def delete(self, context, instance):
 
 /etc/nova/policy.json 默认定义各个 API 的访问规则如下：
 
-~~~ json
+~~~
 {
     "context_is_admin":  "role:admin",
     "admin_or_owner":  "is_admin:True or project_id:%(project_id)s",
@@ -151,8 +150,8 @@ def delete(self, context, instance):
 
 同样，如果我们要求必须拥有 admin 角色的 user 才能创建虚拟机，那么上述配置文件可更新为：
 
-~~~ json
-"compute:create": "role:admin",
+~~~
+"compute:create": "role:admin"
 ~~~
 
 此时如果角色为 member 的用户创建虚拟机时，nova 将返回 403，HTTPForbidden 的错误。
