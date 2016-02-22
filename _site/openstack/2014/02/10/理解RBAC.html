@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解 Role, Policy 以及 Role-Based Access Control</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2014/02/10/%E7%90%86%E8%A7%A3RBAC.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解 Role, Policy 以及 Role-Based Access Control</h1>
+    <p class="post-meta"><time datetime="2014-02-10T00:00:00+08:00" itemprop="datePublished">Feb 10, 2014</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <hr />
+
+<p>本文主要讲解 Keystone 中的两类基本服务，如下图：</p>
+
+<ul>
+  <li>Assignment：包括 role 和 role assignment，它们主要用于描述某个 identity 对某个 resource 下的资源的访问权限。</li>
+  <li>Policy：定义了不同 role 对 OpenStack API 访问权限规则。</li>
+</ul>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/roleandpolicyRBAC.png" alt="Role" /></p>
+
+<hr />
+
+<h1 id="id-assigment-">Assigment 简介</h1>
+
+<h2 id="id-role">Role</h2>
+
+<p>在 Keystone 的概念里，role 通常用于表示某个 user(或者 group) 在某个 project(或者 domain) 中的角色，用户的角色等级越高，就拥有对 project 里资源越大的操作权限。</p>
+
+<p>Keystone 提供和 role 相关的增删改查 API。</p>
+
+<pre><code class="language-shell">$ keystone role-list
++----------------------------------+-------------------------------------+
+|                id                |                 name                |
++----------------------------------+-------------------------------------+
+| 507bface531e4ac2b7019a1684df3370 |             cloud_admin             |
+| 9fe2ff9ee4384b1894a90878d3e92bab |             limited_user            |
+| e00e9406b536470dbde2689ce1edb683 |                 user                |
+| aa60501f1e664ddab72b0a9f27f96d2c |             project_admin           |
+| a082d27b033b4fdea37ebb2a5dc1a07b |                 owner               |
++----------------------------------+-------------------------------------+
+</code></pre>
+
+<h2 id="id-role-assignment">Role Assignment</h2>
+
+<p>Role Assignment 定义了某个 identity(user 或者 group) 对某个 resource(project 或者 domain) 下的资源的访问权限。如果用户 Acme 想要访问 Bob project 的资源，就必须通过 role assignment 在 Bob project 赋予 Acme 相关的 role。</p>
+
+<pre><code class="language-shell">$ keysone role-add --user Acme --tenant Bob --role member
+</code></pre>
+
+<p>其中 user, group, project 和 domain 具有以下关系。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/roleassignment.png" alt="role assignment" /></p>
+
+<ul>
+  <li>Project 和 domain 均可以赋予 user 或者 group 某种角色(role)。</li>
+  <li>如果在 Project A 赋予 Group A 角色 admin，那么 Group A 下的 User B 和 User C 在 Project A 下均有 admin 角色。</li>
+  <li>如果在 Domian A 赋予 User A 角色 admin，那么 User 在 Project B 和 Project C 均拥有 admin 角色。</li>
+</ul>
+
+<hr />
+
+<h1 id="id-policy-">Policy 简介</h1>
+
+<p>Policy 定义了</p>
+
+<hr />
+
+<h1 id="id-role-based-access-control">Role-based Access Control</h1>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

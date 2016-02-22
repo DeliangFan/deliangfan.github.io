@@ -68,24 +68,87 @@
 
 <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/EcosystemandProduct.png" alt="" /></p>
 
-<p>36008<br />
-people</p>
+<h2 id="id-openstack">OpenStack</h2>
 
-<p>20M+<br />
-lines of code</p>
+<p>确切的说，OpenStack 更像一个生态系统，从硬件、软件到服务，覆盖了计算、存储、网络和安全等领域，截止到 2016 Feb，OpenStack Community 共有：</p>
 
-<p>177<br />
-countries</p>
+<ul>
+  <li>36008 people</li>
+  <li>20M+ lines of code</li>
+  <li>177 countries</li>
+  <li>563 supporting companies</li>
+  <li>600+ project</li>
+</ul>
 
-<p>563<br />
-supporting<br />
-companies</p>
+<p>虽然 OpenStack 提供了丰富的功能，但是很多项目的成熟度和稳定性还有待商榷，并且其安装和运维也并非易事。</p>
+
+<h2 id="id-helion">Helion</h2>
+
+<p>Helion OpenStack 基于 OpenStack 并对其修枝裁叶，为企业提供自助服务平台和简化管理，并帮助开发人员快速交付应用。</p>
+
+<ul>
+  <li>对运维而言，简化管理，更易部署和运维</li>
+  <li>对开发人员，提供丰富的自助服务，支持快速获取资源</li>
+  <li>对业务而言，更为稳定，安全可靠</li>
+  <li>对企业而言，提高资源利用率，节省成本，提高效率</li>
+</ul>
 
 <hr />
 
 <h1 id="id-openstack-">浅谈 OpenStack 的产品化</h1>
 
+<p>下图从 Security, High availability, Extend service, Operation 和 HPE 的角度分析 Helion 在产品化 OpenStack 所做的工作。</p>
+
 <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/Helion1.png" alt="Helion1" /></p>
+
+<h2 id="id-security">Security</h2>
+
+<ul>
+  <li>SSL：所有的 Public Endpoint 必须支持 HTTPS，以保证 HTTP 通信的安全。</li>
+  <li>Keystone：</li>
+  <li>Network：默认采用 VLAN 某型，</li>
+  <li>AppArmor：增强宿主机系统的安全</li>
+  <li>ArcSight：日志监控与告警</li>
+  <li>Data Encryption：敏感数据加密，诸如涉及密码的配置文件</li>
+</ul>
+
+<h2 id="id-hpe-">HPE 差异化</h2>
+
+<ul>
+  <li>Hardware：HPE 的 x86 服务器，网络设备等</li>
+  <li>Hlinux：HPE Linux</li>
+  <li>Storm &amp; Vertica：HPE 大数据分析和存储软件</li>
+  <li>VSA &amp; 3PAR：HPE 分布式存储</li>
+  <li>Sherpa：HPE 云生态</li>
+  <li>HPE Portal</li>
+</ul>
+
+<h2 id="id-high-availability">High Availability</h2>
+
+<ul>
+  <li>Controller HA：采用 Haproxy 和 IP Cluster 保证控制节点高可靠性</li>
+  <li>Database HA：采用 Galera Cluster 保证数据库高可靠性</li>
+  <li>RabbitMQ HA：采用 RabbitMQ Cluster 保证消息中间件的可靠性</li>
+  <li>Network HA：采用 Neutron DVR 避免网络节点的单点故障</li>
+  <li>Storage HA：采用 Ceph，VSA 等分布式存储软件保证存储的高可靠性</li>
+  <li>Freezer：支持备份宿主机的文件系统</li>
+  <li>AZ &amp; Region：多区域，多机房部署</li>
+</ul>
+
+<h2 id="id-extend-service">Extend Service</h2>
+
+<ul>
+  <li>ELK：提供日志的搜集、存储和检索</li>
+  <li>Mail Alarm：提供邮件通知服务</li>
+</ul>
+
+<h2 id="id-operation">Operation</h2>
+
+<ul>
+  <li>Package：维护上百个安装包</li>
+  <li>Deployment：提供自动化快速部署功能</li>
+  <li>Automation：简化运维工作</li>
+</ul>
 
 <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/Helion2.png" alt="Helion2" /></p>
 

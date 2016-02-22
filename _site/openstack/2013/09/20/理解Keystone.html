@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解 Keystone</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2013/09/20/%E7%90%86%E8%A7%A3Keystone.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解 Keystone</h1>
+    <p class="post-meta"><time datetime="2013-09-20T00:00:00+08:00" itemprop="datePublished">Sep 20, 2013</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <hr />
+
+<h1 id="id-keystone-">keystone 简介</h1>
+
+<p><a href="https://wiki.openstack.org/wiki/Keystone">Keystone</a> 作为 OpenStack 的 Identity Service，为用户提供了 Authentication(认证) 和高层次的 Authorization(授权) 的功能，它支持基于 token 的认证和用户服务的授权。随着项目的发展，像 OAuth，SAML 和 OpenID 等更多的认证/授权机制也加入到该项目中。</p>
+
+<p>按照服务类型，Keystone 的可分为六类基本服务。</p>
+
+<ul>
+  <li>Identity：即用户身份，主要包括 user, group</li>
+  <li>Resource：表示资源的集合，主要包括 project 和 domain，project 在早起的版本又被称为 tenant</li>
+  <li>Assignment：主要包括 role 和 role assignment，表示用户在某个 project 或者 domain 的权限</li>
+  <li>Catalog：主要包括 endpoint 和 service</li>
+  <li>Token：token 是用户身份的一种凭据</li>
+  <li>Policy：即授权机制，采用基于角色的权限控制(Role Based Access Control)</li>
+</ul>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/keystone%20service%20and%20backend%20catalog.png" alt="Service" /></p>
+
+<p><a href="http://www.openstack.org.cn/bbs/forum.php?mod=viewthread&amp;tid=534&amp;extra=page%3D1">此文</a>用生动的例子阐述上述概念，如果把宾馆比作为 project，住宿的客人就是 user，宾馆提供诸如住宿、娱乐、饮食等多种服务(service)，不同服务可能设在不同的地方，它们都有访问的入口(endpoint)。入住前，我们需要拿身份证(identity)开房，前台认证(autenticate)身份证的真实性后，会给你一个房卡(token)，然后你拿着房卡，即可享受宾馆的各类服务，但是不同的服务权限(policy)要求不同，如果你的等级(role)高，就能享用更多的服务。</p>
+
+<pre><code>+-----------+----------------------------------------+
+| user      | 客人                                    |
+| project   | 宾馆                                    |
+| role      | 等级，等级越高，享受更多服务                |
+| token     | 房卡                                    |
+| service   | 宾馆可以提供的服务类别,诸如饮食,住宿         |
+| endpoint  | 具体的一种服务，比如吃烧烤，打羽毛球         |
++-----------+----------------------------------------+
+</code></pre>
+
+<p>随着版本不断的迭代，越来越多的功能加入到 Keystone 中。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/keystone%20history.png" alt="keystone history" /></p>
+
+<hr />
+
+<h1 id="id-keystone--1">keystone 的架构</h1>
+
+<p>既然 Keystone 为各个模块提供认证服务，所以它和各个模块都有交互。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/openstack-conceptual-arch-folsom.jpg" alt="Keystone" /></p>
+
+<p>其中 token 的认证体现在用户访问各个组件的 API 时，WSGI 框架的 middleware 调用了 authtoken filter，该 filter 调用 keystoneclient，最终向 Keystone 验证 token 的有效性，如果认证失败，用户将不能访问该 API，即为下图的步骤 3-5：</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/uuid.png" alt="Auth token" /></p>
+
+<p>以 nova 为例，authtoken filter 在 /etc/paste.ini 中</p>
+
+<pre><code class="language-ini">[composite:openstack_compute_api_v2]
+keystone = faultwrap sizelimit authtoken keystonecontext ratelimit osapi_compute_app_v2
+
+[filter:authtoken]
+paste.filter_factory = keystoneclient.middleware.auth_token:filter_factory
+</code></pre>
+
+<hr />
+
+<h1 id="id-keystone--2">keystone 的访问流程</h1>
+
+<p>以创建一个虚拟机为例，结合<a href="http://docs.openstack.org/juno/install-guide/install/apt/content/keystone-concepts.html">下图</a>简述在 OpenStack Keystone 的访问流程。</p>
+
+<ul>
+  <li>用户 Alice 通过自己的户名和密码向 Keystone 申请 token，经认证用户名和密码后，返回 unscope token1</li>
+  <li>Alice 通过 token1 向 Keystone 查询他所拥有的 project，Keystone 验证 token1 后，返回 Alice 的所有 project。</li>
+  <li>Alice 选择一个租户并申请 token，Keystone认证用户名、密码和 project 后，返回 scope token2。（其实 1、2 步是为了查询所拥有的 project，如果已知道 project，可以忽略1、2步）</li>
+  <li>Alice 携带 token2 向 nova 请求创建 server，nova-api 收到请求后，先向 Keystone 验证 token2 的真实性，验证成功后再创建虚拟机。</li>
+</ul>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/SCH_5002_V00_NUAC-Keystone.png" alt="workflow" /></p>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

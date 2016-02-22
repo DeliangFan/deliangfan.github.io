@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 17 Feb 2016 22:15:37 +0800</pubDate>
-    <lastBuildDate>Wed, 17 Feb 2016 22:15:37 +0800</lastBuildDate>
+    <pubDate>Sun, 21 Feb 2016 23:37:19 +0800</pubDate>
+    <lastBuildDate>Sun, 21 Feb 2016 23:37:19 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -18,24 +18,87 @@
 
 &lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/EcosystemandProduct.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
 
-&lt;p&gt;36008&lt;br /&gt;
-people&lt;/p&gt;
+&lt;h2 id=&quot;id-openstack&quot;&gt;OpenStack&lt;/h2&gt;
 
-&lt;p&gt;20M+&lt;br /&gt;
-lines of code&lt;/p&gt;
+&lt;p&gt;确切的说，OpenStack 更像一个生态系统，从硬件、软件到服务，覆盖了计算、存储、网络和安全等领域，截止到 2016 Feb，OpenStack Community 共有：&lt;/p&gt;
 
-&lt;p&gt;177&lt;br /&gt;
-countries&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;36008 people&lt;/li&gt;
+  &lt;li&gt;20M+ lines of code&lt;/li&gt;
+  &lt;li&gt;177 countries&lt;/li&gt;
+  &lt;li&gt;563 supporting companies&lt;/li&gt;
+  &lt;li&gt;600+ project&lt;/li&gt;
+&lt;/ul&gt;
 
-&lt;p&gt;563&lt;br /&gt;
-supporting&lt;br /&gt;
-companies&lt;/p&gt;
+&lt;p&gt;虽然 OpenStack 提供了丰富的功能，但是很多项目的成熟度和稳定性还有待商榷，并且其安装和运维也并非易事。&lt;/p&gt;
+
+&lt;h2 id=&quot;id-helion&quot;&gt;Helion&lt;/h2&gt;
+
+&lt;p&gt;Helion OpenStack 基于 OpenStack 并对其修枝裁叶，为企业提供自助服务平台和简化管理，并帮助开发人员快速交付应用。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;对运维而言，简化管理，更易部署和运维&lt;/li&gt;
+  &lt;li&gt;对开发人员，提供丰富的自助服务，支持快速获取资源&lt;/li&gt;
+  &lt;li&gt;对业务而言，更为稳定，安全可靠&lt;/li&gt;
+  &lt;li&gt;对企业而言，提高资源利用率，节省成本，提高效率&lt;/li&gt;
+&lt;/ul&gt;
 
 &lt;hr /&gt;
 
 &lt;h1 id=&quot;id-openstack-&quot;&gt;浅谈 OpenStack 的产品化&lt;/h1&gt;
 
+&lt;p&gt;下图从 Security, High availability, Extend service, Operation 和 HPE 的角度分析 Helion 在产品化 OpenStack 所做的工作。&lt;/p&gt;
+
 &lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/Helion1.png&quot; alt=&quot;Helion1&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;id-security&quot;&gt;Security&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;SSL：所有的 Public Endpoint 必须支持 HTTPS，以保证 HTTP 通信的安全。&lt;/li&gt;
+  &lt;li&gt;Keystone：&lt;/li&gt;
+  &lt;li&gt;Network：默认采用 VLAN 某型，&lt;/li&gt;
+  &lt;li&gt;AppArmor：增强宿主机系统的安全&lt;/li&gt;
+  &lt;li&gt;ArcSight：日志监控与告警&lt;/li&gt;
+  &lt;li&gt;Data Encryption：敏感数据加密，诸如涉及密码的配置文件&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;id-hpe-&quot;&gt;HPE 差异化&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Hardware：HPE 的 x86 服务器，网络设备等&lt;/li&gt;
+  &lt;li&gt;Hlinux：HPE Linux&lt;/li&gt;
+  &lt;li&gt;Storm &amp;amp; Vertica：HPE 大数据分析和存储软件&lt;/li&gt;
+  &lt;li&gt;VSA &amp;amp; 3PAR：HPE 分布式存储&lt;/li&gt;
+  &lt;li&gt;Sherpa：HPE 云生态&lt;/li&gt;
+  &lt;li&gt;HPE Portal&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;id-high-availability&quot;&gt;High Availability&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Controller HA：采用 Haproxy 和 IP Cluster 保证控制节点高可靠性&lt;/li&gt;
+  &lt;li&gt;Database HA：采用 Galera Cluster 保证数据库高可靠性&lt;/li&gt;
+  &lt;li&gt;RabbitMQ HA：采用 RabbitMQ Cluster 保证消息中间件的可靠性&lt;/li&gt;
+  &lt;li&gt;Network HA：采用 Neutron DVR 避免网络节点的单点故障&lt;/li&gt;
+  &lt;li&gt;Storage HA：采用 Ceph，VSA 等分布式存储软件保证存储的高可靠性&lt;/li&gt;
+  &lt;li&gt;Freezer：支持备份宿主机的文件系统&lt;/li&gt;
+  &lt;li&gt;AZ &amp;amp; Region：多区域，多机房部署&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;id-extend-service&quot;&gt;Extend Service&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;ELK：提供日志的搜集、存储和检索&lt;/li&gt;
+  &lt;li&gt;Mail Alarm：提供邮件通知服务&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;id-operation&quot;&gt;Operation&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Package：维护上百个安装包&lt;/li&gt;
+  &lt;li&gt;Deployment：提供自动化快速部署功能&lt;/li&gt;
+  &lt;li&gt;Automation：简化运维工作&lt;/li&gt;
+&lt;/ul&gt;
 
 &lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/Helion2.png&quot; alt=&quot;Helion2&quot; /&gt;&lt;/p&gt;
 </description>

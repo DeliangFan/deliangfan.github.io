@@ -139,7 +139,7 @@ service ss5 start
 
 function FindProxyForURL(url, host) {
    if (shExpMatch(url,"*.a.com*")) {
-     return "PROXY 192.168.1.1:3128";
+     return SOCKS5;
    }
 
    return "DIRECT"; 
