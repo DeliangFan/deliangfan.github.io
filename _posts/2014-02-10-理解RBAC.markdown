@@ -139,8 +139,9 @@ def delete(self, context, instance):
     "compute:create": "",
     "compute:delete": "",
     "compute_extension:admin_actions:migrate": "rule:admin_api"
-}   
-~~~
+}
+
+~~~
 
 
 以上配置文件具有以下含义：
@@ -151,9 +152,10 @@ def delete(self, context, instance):
 
 同样，如果我们要求必须拥有 admin 角色的 user 才能创建虚拟机，那么上述配置文件可更新为：
 
-
 ~~~
+
 "compute:create": "role:admin"
+
 ~~~
 
 
