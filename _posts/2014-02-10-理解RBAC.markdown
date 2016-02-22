@@ -6,10 +6,10 @@ categories: OpenStack
 
 ----------
 
-本文主要讲解 Keystone 中的两类基本服务，如下图：
+本文主要讲解 Keystone 的两类基本服务，如下图蓝色部分：
 
-- Assignment：包括 role 和 role assignment，它们主要用于描述某个 identity 对某个 resource 下的资源的访问权限。
-- Policy：定义了不同 role 对 OpenStack API 访问权限规则。
+- Assignment：包括 role 和 role assignment，用于描述某个 identity 对某个 resource 下资源拥有的访问权限。
+- Policy：定义 OpenStack API 基于 role 的访问权限规则。
 
 ![Role](http://7xp2eu.com1.z0.glb.clouddn.com/roleandpolicyRBAC.png)
 
@@ -20,9 +20,7 @@ categories: OpenStack
 
 ## Role 
 
-在 Keystone 的概念里，role 通常用于表示某个 user(或者 group) 在某个 project(或者 domain) 中的角色，用户的角色等级越高，就拥有对 project 里资源越大的操作权限。
-
-Keystone 提供和 role 相关的增删改查 API。
+Role 可简单的理解为用户级别，用户的角色等级越高，对 project 里资源拥有的操作权限就越大。Keystone 提供和 role 相关的增删改查 API。
 
 ~~~shell
 $ keystone role-list
@@ -32,8 +30,7 @@ $ keystone role-list
 | 507bface531e4ac2b7019a1684df3370 |             cloud_admin             |
 | 9fe2ff9ee4384b1894a90878d3e92bab |             limited_user            |
 | e00e9406b536470dbde2689ce1edb683 |                 user                |
-| aa60501f1e664ddab72b0a9f27f96d2c |             project_admin           |
-| a082d27b033b4fdea37ebb2a5dc1a07b |                 owner               |
+| aa60501f1e664ddab72b0a9f27f96d2c |             domain_admin            |
 +----------------------------------+-------------------------------------+
 ~~~
 
@@ -50,8 +47,8 @@ $ keysone user-role-add --user Acme --tenant Bob --role member
 ![role assignment](http://7xp2eu.com1.z0.glb.clouddn.com/roleassignment.png)
 
 - Project 和 domain 均可以赋予 user 或者 group 某种角色(role)。
-- 如果在 Project A 赋予 Group A 角色 admin，那么 Group A 下的 User B 和 User C 在 Project A 下均有 admin 角色。
-- 如果在 Domian A 赋予 User A 角色 admin，那么 User 在 Project B 和 Project C 均拥有 admin 角色。
+- 如果在 Project A 赋予 Group A 角色 admin，那么 Group A 下的 User B 和 User C 在 Project A 下均为 admin 角色。
+- 如果在 Domian A 赋予 User A 角色 admin，那么 User 在 Project B 和 Project C 均为 admin 角色。
 
 ----------
 
@@ -61,10 +58,10 @@ OpenStack 官网是这么介绍 [policy](http://docs.openstack.org/developer/key
 
 > The Policy service provides a rule-based authorization engine and the associated rule management interface.
 
-上句话可以理解成以下几点：
+上句话可以理解成以下两点：
 
-- Policy 是一种基于 rule 的授权机制
-- Policy 通常用来管理服务的 interface，即 OpenStack 的 API。
+- Policy 是一种基于 rule 的授权机制。
+- Policy 通常用来管理服务的 interface，即 OpenStack 的 API 访问规则。
 
 早起各个组件都有 policy 相关模块，如：
 
@@ -90,45 +87,43 @@ OpenStack 采用 [Role-based Access Control (RBAC)](https://en.wikipedia.org/wik
 在不同的 API 里，其代码表示形式略有不同，以 nova 创建虚拟机为例：
 
 ~~~ python
-    @hooks.add_hook("create_instance")
-    def create(self, context, instance_type,
-               image_href, kernel_id=None, ramdisk_id=None,
-               min_count=None, max_count=None,
-               display_name=None, display_description=None,
-               key_name=None, key_data=None, security_group=None,
-               availability_zone=None, user_data=None, metadata=None,
-               injected_files=None, admin_password=None,
-               block_device_mapping=None, access_ip_v4=None,
-               access_ip_v6=None, requested_networks=None, config_drive=None,
-               auto_disk_config=None, scheduler_hints=None, legacy_bdm=True):
-        """Provision instances, sending instance information to the
-        scheduler.  The scheduler will determine where the instance(s)
-        go and will handle creating the DB entries.
+@hooks.add_hook("create_instance")
+def create(self, context, instance_type,
+           image_href, kernel_id=None, ramdisk_id=None,
+           min_count=None, max_count=None,
+           display_name=None, display_description=None,
+           key_name=None, key_data=None, security_group=None,
+           availability_zone=None, user_data=None, metadata=None,
+           injected_files=None, admin_password=None,
+           block_device_mapping=None, access_ip_v4=None,
+           access_ip_v6=None, requested_networks=None, config_drive=None,
+           auto_disk_config=None, scheduler_hints=None, legacy_bdm=True):
+    """Provision instances, sending instance information to the
+    scheduler.  The scheduler will determine where the instance(s)
+    go and will handle creating the DB entries.
 
-        Returns a tuple of (instances, reservation_id)
-        """
+    Returns a tuple of (instances, reservation_id)
+    """
 
-        #下面函数检验了用户是否具有创建虚拟机的权限
-        self._check_create_policies(context, availability_zone,
-                requested_networks, block_device_mapping)
-        ...
-        
+    #下面函数检验了用户是否具有创建虚拟机的权限
+    self._check_create_policies(context, availability_zone,
+            requested_networks, block_device_mapping)
+    ...
 ~~~
 
 以 nova 删除虚拟机为例:
 
 ~~~ python
-
-    # 装饰器 @wrap_check_policy 检验了用户是否具有删除虚拟机的权限
-    @wrap_check_policy
-    @check_instance_lock
-    @check_instance_cell
-    @check_instance_state(vm_state=None, task_state=None,
-                          must_have_launched=False)
-    def delete(self, context, instance):
-        """Terminate an instance."""
-        LOG.debug(_("Going to try to terminate instance"), instance=instance)
-        self._delete_instance(context, instance)
+# 装饰器 @wrap_check_policy 检验了用户是否具有删除虚拟机的权限
+@wrap_check_policy
+@check_instance_lock
+@check_instance_cell
+@check_instance_state(vm_state=None, task_state=None,
+                      must_have_launched=False)
+def delete(self, context, instance):
+    """Terminate an instance."""
+    LOG.debug(_("Going to try to terminate instance"), instance=instance)
+    self._delete_instance(context, instance)
 ~~~
 
 /etc/nova/policy.json 默认定义各个 API 的访问规则如下：
