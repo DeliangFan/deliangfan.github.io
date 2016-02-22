@@ -167,7 +167,7 @@ def delete(self, context, instance):
 >cloud_admin > domain_admin > user > limited_user
 
 - cloud_admin：即全局超级管理员，对所有 project 都有 CRUD 权限。
-- domain_admin：即某个 domian 的超级用户，对 domain 下的 project 都有 CURD 权限，但是不能创建 domain，也不能授权用户超出 domain_admin 的角色。
+- domain_admin：即某个 domian 的超级管理员，对 domain 下的 project 都有 CURD 权限，但是不能创建 domain，也不能授权用户超出 domain_admin 的角色。
 - user：相当于某个 project 的管理员，对项目资源有 CRUD 权限，但是不能管理者账户。
 - limited_user：可理解为欠费用户，对项目资源只有只读权限。
 
