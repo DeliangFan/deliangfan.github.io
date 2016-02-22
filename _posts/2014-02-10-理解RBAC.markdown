@@ -127,6 +127,7 @@ def delete(self, context, instance):
 
 /etc/nova/policy.json 默认定义各个 API 的访问规则如下：
 
+
 ~~~
 {
     "context_is_admin":  "role:admin",
@@ -137,10 +138,10 @@ def delete(self, context, instance):
 
     "compute:create": "",
     "compute:delete": "",
-    "compute_extension:admin_actions:migrate": "rule:admin_api",
-    ...
+    "compute_extension:admin_actions:migrate": "rule:admin_api"
 }   
 ~~~
+
 
 以上配置文件具有以下含义：
 
@@ -150,9 +151,11 @@ def delete(self, context, instance):
 
 同样，如果我们要求必须拥有 admin 角色的 user 才能创建虚拟机，那么上述配置文件可更新为：
 
+
 ~~~
 "compute:create": "role:admin"
 ~~~
+
 
 此时如果角色为 member 的用户创建虚拟机时，nova 将返回 403，HTTPForbidden 的错误。
 
@@ -176,4 +179,4 @@ def delete(self, context, instance):
 事实上，OpenStack 在权限设计上存在以下缺点。
 
 - Keystone V2 API 用户角色被写死在代码中，仅支持 admin 和 member 两种角色。
-- Nova 针对数据库的操作添加了权限校验，增加权限设计的负载性。在 L 版本时，[数据库的权限校验被移除](https://blueprints.launchpad.net/nova/+spec/nova-api-policy-final-part)。
+- Nova 针对数据库的操作添加了权限校验，增加权限设计的复杂性。在 L 版本时，[数据库的权限校验被移除](https://blueprints.launchpad.net/nova/+spec/nova-api-policy-final-part)。
