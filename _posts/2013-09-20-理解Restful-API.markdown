@@ -1,74 +1,11 @@
 ---
 layout: post
-title:  "理解 Keystone"
+title:  "理解 Restful API"
 categories: OpenStack
 ---
 
-----------
+**R****E**presentational **S**tate **T**ransfer ([REST](https://en.wikipedia.org/wiki/Representational_state_transfer)) 于 2000 年由 Roy Fielding 在其博士论文 [Architectural Styles and the Design of Network-based Software Architectures](https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm) 提出。
 
-# keystone 简介
+![](http://7xp2eu.com1.z0.glb.clouddn.com/restresourceaction.png)
 
-[Keystone](https://wiki.openstack.org/wiki/Keystone) 作为 OpenStack 的 Identity Service，为用户提供了 Authentication(认证) 和高层次的 Authorization(授权) 的功能，它支持基于 token 的认证和用户服务的授权。随着项目的发展，像 OAuth，SAML 和 OpenID 等更多的认证/授权机制也加入到该项目中。
-
-按照服务类型，Keystone 的可分为六类基本服务。
-
-- Identity：即用户身份，主要包括 user, group
-- Resource：表示资源的集合，主要包括 project 和 domain，project 在早起的版本又被称为 tenant
-- Assignment：主要包括 role 和 role assignment，表示用户在某个 project 或者 domain 的权限
-- Catalog：主要包括 endpoint 和 service
-- Token：token 是用户身份的一种凭据
-- Policy：即授权机制，采用基于角色的权限控制(Role Based Access Control)
-
-![Service](http://7xp2eu.com1.z0.glb.clouddn.com/keystone%20service%20and%20backend%20catalog.png)
-
-[此文](http://www.openstack.org.cn/bbs/forum.php?mod=viewthread&tid=534&extra=page%3D1)用生动的例子阐述上述概念，如果把宾馆比作为 project，住宿的客人就是 user，宾馆提供诸如住宿、娱乐、饮食等多种服务(service)，不同服务可能设在不同的地方，它们都有访问的入口(endpoint)。入住前，我们需要拿身份证(identity)开房，前台认证(autenticate)身份证的真实性后，会给你一个房卡(token)，然后你拿着房卡，即可享受宾馆的各类服务，但是不同的服务权限(policy)要求不同，如果你的等级(role)高，就能享用更多的服务。
-
-~~~
-+-----------+----------------------------------------+
-| user      | 客人                                    |
-| project   | 宾馆                                    |
-| role      | 等级，等级越高，享受更多服务                |
-| token     | 房卡                                    |
-| service   | 宾馆可以提供的服务类别,诸如饮食,住宿         |
-| endpoint  | 具体的一种服务，比如吃烧烤，打羽毛球         |
-+-----------+----------------------------------------+
-~~~
-
-随着版本不断的迭代，越来越多的功能加入到 Keystone 中。
-
-![keystone history](http://7xp2eu.com1.z0.glb.clouddn.com/keystone%20history.png)
-
-----------
-
-# keystone 的架构
-
-既然 Keystone 为各个模块提供认证服务，所以它和各个模块都有交互。
-
-![Keystone](http://7xp2eu.com1.z0.glb.clouddn.com/openstack-conceptual-arch-folsom.jpg)
-
-其中 token 的认证体现在用户访问各个组件的 API 时，WSGI 框架的 middleware 调用了 authtoken filter，该 filter 调用 keystoneclient，最终向 Keystone 验证 token 的有效性，如果认证失败，用户将不能访问该 API，即为下图的步骤 3-5：
-
-![Auth token](http://7xp2eu.com1.z0.glb.clouddn.com/uuid.png)
-
-以 nova 为例，authtoken filter 在 /etc/paste.ini 中
-
-~~~ ini
-[composite:openstack_compute_api_v2]
-keystone = faultwrap sizelimit authtoken keystonecontext ratelimit osapi_compute_app_v2
-
-[filter:authtoken]
-paste.filter_factory = keystoneclient.middleware.auth_token:filter_factory
-~~~
-
----------------
-
-# keystone 的访问流程
-
-以创建一个虚拟机为例，结合[下图](http://docs.openstack.org/juno/install-guide/install/apt/content/keystone-concepts.html)简述在 OpenStack Keystone 的访问流程。
-
-- 用户 Alice 通过自己的户名和密码向 Keystone 申请 token，经认证用户名和密码后，返回 unscope token1
-- Alice 通过 token1 向 Keystone 查询他所拥有的 project，Keystone 验证 token1 后，返回 Alice 的所有 project。
-- Alice 选择一个租户并申请 token，Keystone认证用户名、密码和 project 后，返回 scope token2。（其实 1、2 步是为了查询所拥有的 project，如果已知道 project，可以忽略1、2步）
-- Alice 携带 token2 向 nova 请求创建 server，nova-api 收到请求后，先向 Keystone 验证 token2 的真实性，验证成功后再创建虚拟机。
-
-![workflow](http://7xp2eu.com1.z0.glb.clouddn.com/SCH_5002_V00_NUAC-Keystone.png)
+![](http://7xp2eu.com1.z0.glb.clouddn.com/resturimethod.png)
