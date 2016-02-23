@@ -4,16 +4,18 @@ title:  "调试 OpenStack"
 categories: OpenStack
 ---
 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![ruishijundao](http://7xp2eu.com1.z0.glb.clouddn.com/ruishijundao.jpg)
+
 由于 OpenStack 的所有项目都是采用 Python 开发，所以调试 OpenStack 的本质就是调试 Python，Python 的调试通常有以下两种。
 
 - Log：方便简单，适用简单的调试
-- Pdb：类似 C 语言的 gdb，提供交互调试源码功能，功能强大
+- Pdb：类似 C 语言的 gdb，支持交互调试源码，功能强大
 
 ----------
 
 # Log
 
-[OpenStack logging](http://specs.openstack.org/openstack/openstack-specs/specs/log-guidelines.html) 模块是在 [python logging](https://docs.python.org/2/library/logging.html) 基础之上做了封装，它的使用非常简单，以 nova 为例，首先需要导入相关代码文件，获取日志句柄后，即可往该句柄写入日志信息。
+[OpenStack logging](http://specs.openstack.org/openstack/openstack-specs/specs/log-guidelines.html) 模块是在 [python logging](https://docs.python.org/2/library/logging.html) 基础之上做了封装，使用简单，以 nova 为例，首先需要导入相关代码文件，获取日志句柄后，即可往该句柄写入日志信息。
 
 ~~~ python
 from nova.openstack.common import log as logging
@@ -23,15 +25,15 @@ LOG = logging.getLogger(__name__)
 LOG.debug("Print log.")
 ~~~
 
-如果文件中已经导入日志模块并获取日志句柄，直接使用该句柄即可。
+如果文件中已经导入日志模块和获取日志句柄，直接使用该句柄即可。
 
-OpenStack logging 模块提供了丰富的和日志相关的配置项，详情请见 [logging config options](http://docs.openstack.org/icehouse/config-reference/content/list-of-compute-config-options.html#config_table_nova_logging)
+OpenStack logging 模块提供了丰富的和日志相关的配置项，详情请见 [logging config options](http://docs.openstack.org/icehouse/config-reference/content/list-of-compute-config-options.html#config_table_nova_logging)。
 
 ----------
 
 # PDB
 
-[Pdb](https://docs.python.org/2/library/pdb.html) 模块是 python 自带的库，它支持设置断点、单步调试源码、查看代码、查看 stack 片段和动态修改变量的值等功能。Pdb 使用非常简单，常用命令如下：
+[Pdb](https://docs.python.org/2/library/pdb.html) 是 python 自带的库，它支持设置断点、单步调试源码、查看当前代码、查看 stack 片段和动态修改变量的值等功能，常用命令如下：
 
 ~~~ bash
 +----------+--------------+
