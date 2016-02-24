@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Wepy--终端天气预报小工具</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/python/2015/07/05/Python%E5%A4%A9%E6%B0%94%E9%A2%84%E6%8A%A5%E5%B0%8F%E5%B7%A5%E5%85%B7.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">Wepy--终端天气预报小工具</h1>
+    <p class="post-meta"><time datetime="2015-07-05T00:00:00+08:00" itemprop="datePublished">Jul 5, 2015</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/weatherimage.png" alt="weatherimage" /></p>
+
+<p>   </p>
+
+<p>Github 有位叫 <a href="https://github.com/schachmat">schachmat</a> 的用户用 go 写了一个天气预报小工具 <a href="https://github.com/schachmat/wego">wego</a>，效果非常棒，于是抱着好玩的心态用 Python 山寨一个类似工具 <a href="https://github.com/DeliangFan/wepy">wepy</a>。实现不难，主要注意两点：</p>
+
+<ul>
+  <li>Weather API：选择非常多，个人推荐 <a href="http://openweathermap.org/">openweathermap.org</a>。</li>
+  <li>Terminal color：参考了原作者的配色方案，以绿黄为主。</li>
+</ul>
+
+<p>   </p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/weathershanghai.png" alt="shanghai" /></p>
+
+<p>   </p>
+
+<p>源码如下：</p>
+
+<pre><code class="language-python">#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import httplib
+import json
+
+import copy
+import sys
+import time
+
+
+OK_STATUS = (200, 201, 202, 204)
+
+WIND_ICON = {
+    "N":   "\033[1m↓\033[0m",
+    "NE":  "\033[1m↙\033[0m",
+    "E":   "\033[1m←\033[0m",
+    "SE":  "\033[1m↖\033[0m",
+    "S":   "\033[1m↑\033[0m",
+    "SW":  "\033[1m↗\033[0m",
+    "W":   "\033[1m→\033[0m",
+    "NW":  "\033[1m↘\033[0m"
+}
+
+WEATHER_ICON = {
+    "unknown": (
+        "    .-.      ",
+        "     __)     ",
+        "    (        ",
+        "     `-’     ",
+        "      •      "),
+    "sunny": (
+        "\033[38;5;226m    \\   /    \033[0m",
+        "\033[38;5;226m     .-.     \033[0m",
+        "\033[38;5;226m  ― (   ) ―  \033[0m",
+        "\033[38;5;226m     `-’     \033[0m",
+        "\033[38;5;226m    /   \\    \033[0m"),
+    "partlyCloudy": (
+        "\033[38;5;226m   \\  /\033[0m      ",
+        "\033[38;5;226m _ /\"\"\033[38;5;250m.-.    \033[0m",
+        "\033[38;5;226m   \\_\033[38;5;250m(   ).  \033[0m",
+        "\033[38;5;226m   /\033[38;5;250m(___(__) \033[0m",
+        "             "),
+    "cloudy": (
+        "             ",
+        "\033[38;5;250m     .--.    \033[0m",
+        "\033[38;5;250m  .-(    ).  \033[0m",
+        "\033[38;5;250m (___.__)__) \033[0m",
+        "             "),
+    "veryCloudy": (
+        "             ",
+        "\033[38;5;240;1m     .--.    \033[0m",
+        "\033[38;5;240;1m  .-(    ).  \033[0m",
+        "\033[38;5;240;1m (___.__)__) \033[0m",
+        "             "),
+    "lightShowers": (
+        "\033[38;5;226m _`/\"\"\033[38;5;250m.-.    \033[0m",
+        "\033[38;5;226m  ,\\_\033[38;5;250m(   ).  \033[0m",
+        "\033[38;5;226m   /\033[38;5;250m(___(__) \033[0m",
+        "\033[38;5;111m     ‘ ‘ ‘ ‘ \033[0m",
+        "\033[38;5;111m    ‘ ‘ ‘ ‘  \033[0m"),
+    "heavyShowers": (
+        "\033[38;5;226m _`/\"\"\033[38;5;240;1m.-.    \033[0m",
+        "\033[38;5;226m  ,\\_\033[38;5;240;1m(   ).  \033[0m",
+        "\033[38;5;226m   /\033[38;5;240;1m(___(__) \033[0m",
+        "\033[38;5;21;1m   ‚‘‚‘‚‘‚‘  \033[0m",
+        "\033[38;5;21;1m   ‚’‚’‚’‚’  \033[0m"),
+    "lightSnowShowers": (
+        "\033[38;5;226m _`/\"\"\033[38;5;250m.-.    \033[0m",
+        "\033[38;5;226m  ,\\_\033[38;5;250m(   ).  \033[0m",
+        "\033[38;5;226m   /\033[38;5;250m(___(__) \033[0m",
+        "\033[38;5;255m     *  *  * \033[0m",
+        "\033[38;5;255m    *  *  *  \033[0m"),
+    "heavySnowShowers": (
+        "\033[38;5;226m _`/\"\"\033[38;5;240;1m.-.    \033[0m",
+        "\033[38;5;226m  ,\\_\033[38;5;240;1m(   ).  \033[0m",
+        "\033[38;5;226m   /\033[38;5;240;1m(___(__) \033[0m",
+        "\033[38;5;255;1m    * * * *  \033[0m",
+        "\033[38;5;255;1m   * * * *   \033[0m"),
+    "lightSleetShowers": (
+        "\033[38;5;226m _`/\"\"\033[38;5;250m.-.    \033[0m",
+        "\033[38;5;226m  ,\\_\033[38;5;250m(   ).  \033[0m",
+        "\033[38;5;226m   /\033[38;5;250m(___(__) \033[0m",
+        "\033[38;5;111m     ‘ \033[38;5;255m*\033[38;5;111m ‘ \033[38;5;255m* \033[0m",
+        "\033[38;5;255m    *\033[38;5;111m ‘ \033[38;5;255m*\033[38;5;111m ‘  \033[0m"),
+    "thunderyShowers": (
+        "\033[38;5;226m _`/\"\"\033[38;5;250m.-.    \033[0m",
+        "\033[38;5;226m  ,\\_\033[38;5;250m(   ).  \033[0m",
+        "\033[38;5;226m   /\033[38;5;250m(___(__) \033[0m",
+        "\033[38;5;228;5m    ⚡\033[38;5;111;25m‘ ‘\033[38;5;228;5m⚡\033[38;5;111;25m‘ ‘ \033[0m",
+        "\033[38;5;111m    ‘ ‘ ‘ ‘  \033[0m"),
+    "thunderyHeavyRain": (
+        "\033[38;5;240;1m     .-.     \033[0m",
+        "\033[38;5;240;1m    (   ).   \033[0m",
+        "\033[38;5;240;1m   (___(__)  \033[0m",
+        "\033[38;5;21;1m  ‚‘\033[38;5;228;5m⚡\033[38;5;21;25m‘‚\033[38;5;228;5m⚡\033[38;5;21;25m‚‘   \033[0m",
+        "\033[38;5;21;1m  ‚’‚’\033[38;5;228;5m⚡\033[38;5;21;25m’‚’   \033[0m"),
+    "thunderySnowShowers": (
+        "\033[38;5;226m _`/\"\"\033[38;5;250m.-.    \033[0m",
+        "\033[38;5;226m  ,\\_\033[38;5;250m(   ).  \033[0m",
+        "\033[38;5;226m   /\033[38;5;250m(___(__) \033[0m",
+        "\033[38;5;255m     *\033[38;5;228;5m⚡\033[38;5;255;25m *\033[38;5;228;5m⚡\033[38;5;255;25m * \033[0m",
+        "\033[38;5;255m    *  *  *  \033[0m"),
+    "lightRain": (
+        "\033[38;5;250m     .-.     \033[0m",
+        "\033[38;5;250m    (   ).   \033[0m",
+        "\033[38;5;250m   (___(__)  \033[0m",
+        "\033[38;5;111m    ‘ ‘ ‘ ‘  \033[0m",
+        "\033[38;5;111m   ‘ ‘ ‘ ‘   \033[0m"),
+    "heavyRain": (
+        "\033[38;5;240;1m     .-.     \033[0m",
+        "\033[38;5;240;1m    (   ).   \033[0m",
+        "\033[38;5;240;1m   (___(__)  \033[0m",
+        "\033[38;5;21;1m  ‚‘‚‘‚‘‚‘   \033[0m",
+        "\033[38;5;21;1m  ‚’‚’‚’‚’   \033[0m"),
+    "lightSnow": (
+        "\033[38;5;250m     .-.     \033[0m",
+        "\033[38;5;250m    (   ).   \033[0m",
+        "\033[38;5;250m   (___(__)  \033[0m",
+        "\033[38;5;255m    *  *  *  \033[0m",
+        "\033[38;5;255m   *  *  *   \033[0m"),
+    "heavySnow": (
+        "\033[38;5;240;1m     .-.     \033[0m",
+        "\033[38;5;240;1m    (   ).   \033[0m",
+        "\033[38;5;240;1m   (___(__)  \033[0m",
+        "\033[38;5;255;1m   * * * *   \033[0m",
+        "\033[38;5;255;1m  * * * *    \033[0m"),
+    "lightSleet": (
+        "\033[38;5;250m     .-.     \033[0m",
+        "\033[38;5;250m    (   ).   \033[0m",
+        "\033[38;5;250m   (___(__)  \033[0m",
+        "\033[38;5;111m    ‘ \033[38;5;255m*\033[38;5;111m ‘ \033[38;5;255m*  \033[0m",
+        "\033[38;5;255m   *\033[38;5;111m ‘ \033[38;5;255m*\033[38;5;111m ‘   \033[0m"),
+    "fog": (
+        "             ",
+        "\033[38;5;251m _ - _ - _ - \033[0m",
+        "\033[38;5;251m  _ - _ - _  \033[0m",
+        "\033[38;5;251m _ - _ - _ - \033[0m",
+        "             ")
+}
+
+WEATHER_MAPE = {
+    800: 'sunny',
+    801: 'partlyCloudy',
+    802: 'cloudy',
+    803: 'veryCloudy',
+    804: 'veryCloudy',
+    620: 'lightSnowShowers',
+    621: 'lightSnowShowers',
+    622: 'heavySnowShowers',
+    612: 'lightSleetShowers',
+    211: 'thunderyShowers',
+    201: 'thunderyHeavyRain',
+    202: 'thunderyHeavyRain',
+    500: 'lightRain',
+    501: 'lightRain',
+    521: 'lightRain',
+    502: 'heavyRain',
+    503: 'heavyRain',
+    504: 'heavyRain',
+    522: 'heavyRain',
+    600: 'lightSnow',
+    601: 'lightSnow',
+    602: 'heavySnow',
+    611: 'lightSleet',
+    200: 'fog',
+}
+
+TEMP_COLOR = {
+    0: '27',
+    1: '39',
+    2: '51',
+    3: '49',
+    4: '47',
+    5: '82',
+    6: '190',
+    7: '154',
+    8: '214',
+    9: '220',
+}
+
+WIND_COLOR = {
+    0: '82',
+    1: '118',
+    2: '154',
+    3: '190',
+    4: '226',
+    5: '220',
+    6: '214',
+    7: '208',
+    8: '202',
+}
+
+
+class WeatherFormat(object):
+    def __init__(self, data):
+        weather = data['weather'][0]
+        self.id = weather['id']
+        self.main = weather['main']
+
+        if len(weather['description']) &gt;= 16:
+            self.description = weather['description'][0:16]
+        else:
+            self.description = weather['description']
+
+        if self.id in WEATHER_MAPE:
+            self.weather_icon = copy.deepcopy(WEATHER_ICON[WEATHER_MAPE[self.id]])
+        else:
+            self.weather_icon = copy.deepcopy(WEATHER_ICON['unknown'])
+
+        self.dt = data['dt']
+        self.date = time.asctime(time.localtime(self.dt))[0:10]
+        self.data = data
+
+    def get_wind_icon(self):
+
+        if self.wind_deg &gt;= 337.5 or self.wind_deg &lt; 22.5:
+            wind_icon = WIND_ICON['N']
+        elif self.wind_deg &gt;= 22.5 and self.wind_deg &lt; 67.5:
+            wind_icon = WIND_ICON['NE']
+        elif self.wind_deg &gt;= 67.5 and self.wind_deg &lt; 112.5:
+            wind_icon = WIND_ICON['E']
+        elif self.wind_deg &gt;= 112.5 and self.wind_deg &lt; 157.5:
+            wind_icon = WIND_ICON['SE']
+        elif self.wind_deg &gt;= 157.5 and self.wind_deg &lt; 202.5:
+            wind_icon = WIND_ICON['S']
+        elif self.wind_deg &gt;= 202.5 and self.wind_deg &lt; 247.5:
+            wind_icon = WIND_ICON['SW']
+        elif self.wind_deg &gt;= 247.5 and self.wind_deg &lt; 292.5:
+            wind_icon = WIND_ICON['W']
+        elif self.wind_deg &gt;= 292.5 and self.wind_deg &lt; 337.5:
+            wind_icon = WIND_ICON['NW']
+
+        return wind_icon
+
+    def color_wind(self, wind_speed):
+        if int(wind_speed * 1.2) &gt;= 8:
+            color = WIND_COLOR[8]
+        else:
+            color = WIND_COLOR[int(wind_speed * 1.2)]
+
+        return "\033[38;5;" + color + "m" + str(wind_speed) + "\033[0m"
+
+    def color_temp(self, temp):
+        temp += 15
+        if temp &lt; 0:
+            color = TEMP_COLOR[0]
+        elif temp &gt; 56:
+            color = TEMP_COLOR[9]
+        else:
+            color = TEMP_COLOR[int(temp / 7)]
+
+        return "\033[38;5;" + color + "m" + str(temp - 15) + "\033[0m"
+
+    def color_date(self, date):
+        return "\033[38;5;202m" + date + "\033[0m"
+
+    def color_main(self, main):
+        return "\033[1;5;32m" + main + "\033[0m"
+
+    def format_daily(self):
+
+        temp = self.data['temp']
+        self.temp_min = temp['min']
+        self.temp_max = temp['max']
+        self.pressure = self.data['pressure']
+        self.humidity = self.data['humidity']
+        self.wind_deg = self.data['deg']
+        self.wind_speed = self.data['speed']
+        self.wind_icon = self.get_wind_icon()
+
+        wind_ret = self.wind_icon + "  " + self.color_wind(self.wind_speed) + " m/s"
+        temp_ret = self.color_temp(self.temp_min) + " - " + self.color_temp(self.temp_max) + ' °C'
+
+        ret = list(self.weather_icon)
+        ret[0] += self.color_main(self.main)
+        ret[1] += self.description
+        ret[2] += wind_ret
+        ret[3] += temp_ret
+        ret[4] += 'Humidity: ' + str(self.humidity)
+        ret.append(self.color_date(self.date))
+
+        length = [len(self.main) + 17,
+                  len(self.description) + 17,
+                  len('  ' + str(self.wind_speed) + ' m/s') + 18,
+                  len(str(self.temp_min) + " - " + str(self.temp_max) + ' °C') + 16,
+                  len('Humidity: ' + str(self.humidity)) + 17]
+
+        ret.append(length)
+
+        return ret
+
+
+class OpenWeatherMap(object):
+    def __init__(self, q=None):
+        # City name.
+        self.q = q or 'beijing'
+        self.city = None
+        self.country = None
+        self.APPID = None
+        self.host = 'api.openweathermap.org'
+        self.today_path = '/data/2.5/forecast/daily?units=metric&amp;cnt=15&amp;q=' + self.q
+
+    def http_request(self, path):
+        try:
+            conn = httplib.HTTPConnection(self.host)
+            conn.request('GET', path)
+        except Exception as ex:
+            print_exit_error(ex)
+
+        res = conn.getresponse()
+        if res.status in OK_STATUS:
+            body = res.read()
+        else:
+            msg = "Network Problem: please try again later ^_^."
+            print_exit_error(msg)
+
+        conn.close()
+
+        return body
+
+    def get_weather_data(self):
+        resp = self.http_request(self.today_path)
+
+        if not resp:
+            print_exit_error("Response data is None.")
+
+        data = json.loads(resp)
+
+        if data['cod'] == "404":
+            print_exit_error("Sorry, the city is not found.")
+
+        self.city = data['city']['name']
+        self.country = data['city']['country']
+        data = data['list']
+
+        return data
+
+
+class PrintWeather(object):
+    def __init__(self, data):
+        self.data = data
+        self.lines = [
+            "┌──────────────────────────────┬──────────────────────────────┬──────────────────────────────┬──────────────────────────────┐",
+            "│                              │                              |                              │                              │",
+            "├──────────────────────────────┼──────────────────────────────┼──────────────────────────────┼──────────────────────────────┤",
+            "|                              |                              |                              |                              |",
+            "|                              |                              |                              |                              |",
+            "|                              |                              |                              |                              |",
+            "|                              |                              |                              |                              |",
+            "|                              |                              |                              |                              |",
+            "└──────────────────────────────┴──────────────────────────────┴──────────────────────────────┴──────────────────────────────┘"]
+
+    def prepare_date(self):
+        d_line = ""
+        for i in range(4):
+            d_line += "│          " + self.data[i][5] + "          "
+        d_line += "|"
+        self.lines[1] = d_line
+
+    def prepare_weather(self):
+        for i in range(5):
+            w_line = ""
+            for j in range(4):
+                if self.data[j][6][i] &lt;= 34:
+                    w_line += "|" + self.data[j][i] + \
+                        " " * (34 - self.data[j][6][i])
+                else:
+                    w_line += "|" + self.data[j][i][0:34]
+            w_line += "|"
+            self.lines[i + 3] = w_line
+
+    def prepare_all(self):
+        self.prepare_date()
+        self.prepare_weather()
+
+
+def print_city_info(city, country):
+    city_info = "\n\033[38;5;202mWeather for City: \033[0m"
+    city_info += "\033[1;5;32m" + city + " " + country + "\033[0m\n"
+    print(city_info)
+
+
+def print_exit_error(msg):
+    msg = "\033[31m" + msg + "\033[0m"
+    print(msg)
+    exit(-1)
+
+
+if '__main__' == __name__:
+    if len(sys.argv) == 1:
+        weather = OpenWeatherMap()
+    else:
+        weather = OpenWeatherMap(sys.argv[1])
+
+    format_data = []
+    data = weather.get_weather_data()
+    #(Note) we only print 12 days weather.
+    for d in data[0:12]:
+        daily_data = WeatherFormat(d)
+        format_data.append(daily_data.format_daily())
+
+    print_city_info(weather.city, weather.country)
+    for i in range(3):
+        print_weather = PrintWeather(format_data[4*i: 4*i + 4])
+        print_weather.prepare_all()
+        for j in range(9):
+            print(print_weather.lines[j])
+</code></pre>
+
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
