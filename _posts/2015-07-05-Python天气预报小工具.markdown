@@ -433,9 +433,3 @@ if '__main__' == __name__:
         for j in range(9):
             print(print_weather.lines[j])
 ~~~
-
-
-
-
-
-
