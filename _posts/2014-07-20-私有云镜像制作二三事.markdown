@@ -1,0 +1,54 @@
+---
+layout: post
+title:  "私有云镜像制作二三事"
+categories: OpenStack
+---
+
+------------
+
+> Note: 本文参考由文剑编写的镜像制作步骤。
+
+# 简介
+
+多数企业通常会维护的自己的 Linux 操作系统，当企业构建私有云时，需要把该操作系统制作成 OpenStack 的 Image，本文主要介绍私有云场景下镜像制作的方法和注意事项。[OpenStack Virtual Machine Image Guide](http://docs.openstack.org/image-guide/) 也给出了详细镜像制作流程。
+
+建议安装的软件：
+
+- [cloud-init](https://cloudinit.readthedocs.org/en/latest/): 支持虚拟机在初始化时安装软件、执行脚本和设置某些配置(与 Metadata，userdata 有关)，云平台部署 PaaS 组件时，cloud-init 不可或缺。
+- [qemu-guest-agent](http://wiki.qemu.org/Features/QAPI/GuestAgent): 支持 ceilometer 采集虚拟机真实的内存使用量。
+
+建议的配置：
+
+- DNS: /etc/resolv.conf 设置为企业的 DNS server
+- NTP: /etc/ntp.conf 设置为企业的 NTP server 
+- Repository: 设置为企业的 repository
+
+-------------
+
+# 制作步骤
+
+1.启动虚拟机
+
+~~~ bash
+virt-install --virt-type kvm --name build_image --ram 2048 \--disk /home/wsfdllo/your_image.qcow2,format=qcow2 --network network=default \ --graphics vnc,listen=0.0.0.0 --noautoconsole --os-type=linux --os-variant=rhel6 --import
+~~~
+
+2.安装 cloud-init, qemu-guest-agent
+
+~~~ bash
+$ yum install -y qemu-guest-agent cloud-init
+# 启用root账户$ sed -i 's/disable_root: 1/disable_root: 0/' /etc/cloud/cloud.cfg# 允许ssh客户端使用密码登陆$ sed -i 's/ssh_pwauth: 0/ssh_pwauth: 1/' /etc/cloud/cloud.cfg# 更新 /etc/sudoers Defaults requiretty 为
+Defaults:centos !requiretty
+~~~
+
+3.关机并清除使用痕迹
+
+~~~ bash
+$ virt-sysprep -d letvos-1.5.0
+[ 0.0] Examining the guest ...[ 3.0] Performing "abrt-data" ...[ 3.0] Performing "bash-history" .........[ 3.0] Performing "customize" ...[ 3.0] Setting a random seed
+~~~
+
+
+
+
+
