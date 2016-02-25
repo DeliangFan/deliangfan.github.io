@@ -9,10 +9,10 @@ categories: Python
 芬兰一位数学家号称设计出全球"最难"的"数独游戏"，并刊登在报纸上，让大家去挑战。这位数学家说，他所设计的数独游戏难度等级是十一，是所有数独游戏中难度最高的等级。
 
 
-![sudo](http://7xp2eu.com1.z0.glb.clouddn.com/puzzlesudu.jpg)
+![sudo](http://7xp2eu.com1.z0.glb.clouddn.com/puzzlesudu.jpg?imageView2/1/w/300/h/300/q/100)
 
 
-编程求解的方法有两种：
+数独编程求解的方法有两种：
 
 - 穷举法：穷举法算法简单，但运行时所花费的时间量大，这里主要讨论回溯法。
 - 回溯法：按照深度搜索的方式进行。即在第一层选定一个满足约束条件的解，然后以该可能解为出发点，搜索第二层的一个可能解(试探)。如果搜索到第二层的一个可能解，则继续搜索第三层的一个可能解。依次类推，直到所有层的可能解都被找到，则得到了该问题的一个完整解。如果第二层所有的可能解都不满足约束条件，则返回第一层，放弃原有的可能解，使用第一层的下一个可能解(回溯)。以此类推，寻找第二层的一个可能解。
@@ -81,7 +81,7 @@ class Suduko(object):
                     return True
         return False #如果该点遍历1-9都不符合要求，则表示上游选值不当，回溯 
 
-    def start_point(self)“
+    def start_point(self):
         for i in range(9):
             for j in range(9):
                 if not self.s[i][j]:
