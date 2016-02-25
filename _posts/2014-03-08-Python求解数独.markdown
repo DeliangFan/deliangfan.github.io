@@ -9,7 +9,7 @@ categories: Python
 芬兰一位数学家号称设计出全球"最难"的"数独游戏"，并刊登在报纸上，让大家去挑战。这位数学家说，他所设计的数独游戏难度等级是十一，是所有数独游戏中难度最高的等级。
 
 
-![sudo](http://7xp2eu.com1.z0.glb.clouddn.com/puzzlesudu.jpg?imageView2/1/w/300/h/320/q/100)
+![sudo](http://7xp2eu.com1.z0.glb.clouddn.com/puzzlesudu.jpg?imageView2/1/w/300/h/334/q/100)
 
 
 数独编程求解的方法有两种：
