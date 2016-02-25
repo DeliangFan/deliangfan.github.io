@@ -6,11 +6,11 @@ categories: Linux
 
 ----------
 
-Brendan D. Gregg 专注 Linux performance & tuning 许多年，其博客 [brendangregg.com](http://www.brendangregg.com/index.html) 有关于分析和调优的优秀文章琳琅满目。其中一篇名为 [Linux Performance](http://www.brendangregg.com/linuxperf.html) 文章详细的归纳整理了常用的工具，覆盖了硬件、存储、网络乃至应用，如下图：
+Brendan D. Gregg 专注 Linux performance & tuning 许多年，其博客 [brendangregg.com](http://www.brendangregg.com/index.html) 里关于分析和调优的干货琳琅满目。一篇名为 [Linux Performance](http://www.brendangregg.com/linuxperf.html) 文章全面而详细的整理了常用工具，覆盖了硬件、存储、网络乃至应用，如下图：
 
 ![Linux performance](http://7xp2eu.com1.z0.glb.clouddn.com/linux_observability_tools.png)
 
-能掌握上图的十八般武艺固然最好，从定位分析的角度来说，本人认为常用、使用的三个比较高级的命令是 strace, lsof, tcpdump。
+能掌握上图的十八般武艺固然最好，从定位分析的角度来说，我认为三个高级而常用的命令是 strace, lsof 和 tcpdump。
 
 ---------
 
@@ -18,20 +18,20 @@ Brendan D. Gregg 专注 Linux performance & tuning 许多年，其博客 [brenda
 
 > strace - trace system calls and signals
 
-据说，对一个经验丰富的 Linux C/C++ 工程师，通过 [strace](http://man7.org/linux/man-pages/man1/strace.1.html) 即可大致分析出多数软件的实现方式。Linux 进程空间可分为用户空间和内核空间，程序通常运行在用户态，当其要访问内核态时，多数情况下是通过 [系统调用](https://en.wikipedia.org/wiki/System_call) 访问内核空间。系统调用的重要性不言而喻，涉及到进程、文件管理、设备管理和通信等操作都必须依赖系统调用完成，如下：
+据说，对一个经验丰富的 Linux C/C++ 工程师，他通过 [strace](http://man7.org/linux/man-pages/man1/strace.1.html) 即可分析多数软件的大致实现方式。Linux 进程空间可分为用户空间和内核空间，程序通常运行在用户态，它需要通过 [系统调用](https://en.wikipedia.org/wiki/System_call) 访问内核空间。系统调用的重要性不言而喻，凡是涉及到进程、文件管理、设备管理和通信等的操作都必须依赖系统调用完成，如下：
 
-- Process Control：load/execute/end/abort/create/terminate process, get/set process attributes, wait for time/event/signal, allocate/free memory
-- File management：create/delete/open/read/write/reposition file, get/set file attributes
-- Device Management：request/release/attach/detach device，read/write/reposition, get/set device attributes
+- Process Control: load/execute/end/abort/create/terminate process, get/set process attributes, wait for time/event/signal, allocate/free memory
+- File management: create/delete/open/read/write/reposition file, get/set file attributes
+- Device Management: request/release/attach/detach device，read/write/reposition, get/set device attributes
 - Communication: create/delete connection, send/receive messages, transfer status information
 
-Strace 追踪一个进程产生的所有系统调用，包括参数、返回值和执行消耗的时间，因为很多特别是涉及到系统和资源层面的操作都需要系统调用完成，所以 strace 在诊断以下场景非常有效：
+strace 追踪进程产生的所有系统调用，包括参数、返回值和执行消耗的时间，很多是涉及到内核和资源层面的操作都需要系统调用完成，所以 strace 在诊断以下场景非常有效：
 
 - 程序意外退出
 - 程序运行缓慢
-- 信号量
+- 进程阻塞
 
-Strace 通常的使用方式如下：
+strace 的通常使用方式如下：
 
 ~~~ bash
 strace -f -F -T -tt -o output.txt straced_cmd
@@ -39,7 +39,7 @@ strace -f -F -T -tt -o output.txt straced_cmd
 -f  跟踪 fork 产生的子进程
 -F  跟踪 vfork 产生的子进程
 -tt 在输出中的每一行前加上时间信息,微秒级
--T  显示每一调用所耗的时间
+-T  显示每一个调用所耗的时间
 -o  输出到指定文件 output.txt
 ~~~
 
@@ -55,7 +55,7 @@ $ strace -T -tt -f -F ls
 14:17:18.101519 open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3 <0.000131>
 ~~~
 
-对于守护进程，strace 的使用方式为
+对于守护进程，strace 的使用为：
 
 ~~~ bash
 strace -T -tt -e trace=all -o output.txt -p daemon_pid
@@ -121,7 +121,7 @@ nova-api 2255 nova    3w   REG  252,0  2086779 133272 /var/log/nova/nova-api.log
 
 # tcpdump
 
-[tcpdump](https://en.wikipedia.org/wiki/Tcpdump) 和 [wireshark](https://www.wireshark.org/) 类似，都是抓包工具，windows 用户多用 wireshark，linux 用户多用 tcpdump。tcpdump 允许用户拦截和显示发送或收到过网络连接到该计算机的TCP/IP和其他数据包，从数据链路层、网络层、传输层乃至应用层，覆盖了多种常用协议，并提供了丰富的过滤功能。它的使用如下：
+[tcpdump](https://en.wikipedia.org/wiki/Tcpdump) 和 [wireshark](https://www.wireshark.org/) 类似，都是抓包工具，windows 用户多用 wireshark，linux 用户多用 tcpdump。tcpdump 允许用户拦截和显示发送或收到过网络连接到该计算机的TCP/IP和其他数据包，从数据链路层、网络层、传输层乃至应用层，覆盖了多种常用协议，并提供了丰富的过滤功能，使用如下：
 
 过滤网卡：
 
