@@ -33,7 +33,8 @@ categories: OpenStack
 1.启动虚拟机
 
 ~~~ bash
-virt-install --virt-type kvm --name build_image --ram 2048 \--disk /home/wsfdllo/your_image.qcow2,format=qcow2 --network network=default \ --graphics vnc,listen=0.0.0.0 --noautoconsole --os-type=linux --os-variant=rhel6 --import
+# ISO 镜像请参考 OpenStack Virtual Machine Image Guide
+virt-install --virt-type kvm --name build_image --ram 2048 \--disk /home/name/your_image.qcow2,format=qcow2 --network network=default \ --graphics vnc,listen=0.0.0.0 --noautoconsole --os-type=linux --os-variant=rhel6 --import
 ~~~
 
 2.安装 cloud-init, qemu-guest-agent
@@ -47,7 +48,7 @@ Defaults:centos !requiretty
 3.关机并清除使用痕迹
 
 ~~~ bash
-$ virt-sysprep -d letvos-1.5.0
+$ virt-sysprep -d build_image
 [ 0.0] Examining the guest ...[ 3.0] Performing "abrt-data" ...[ 3.0] Performing "bash-history" .........[ 3.0] Performing "customize" ...[ 3.0] Setting a random seed
 ~~~
 
