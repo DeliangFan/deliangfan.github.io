@@ -11,7 +11,7 @@ categories: Architectrue
 >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\------PEP 0333
 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![wsgi](http://7xp2eu.com1.z0.glb.clouddn.com/Python-Visual.jpg)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![wsgi](http://7xp2eu.com1.z0.glb.clouddn.com/Python-Visual.jpg)
 
 ------------------
 
@@ -66,15 +66,41 @@ class ApplicationClass(object):
 
 # The Server/Gateway Side
 
-一个Web服务器网关接口（WSGI）服务器为运行Python web应用实现了服务器端的WSGI接口。 WSGI适合各种规模并且可以在多线程或多进程环境下工作，我们同样可以使用WSGI编写中间件。中间件对于会话处理，授权和其他很多任务都非常有用。你可以在 Armin的博客里面学到如何编写你自己的WSGI实现。这个链接给出了不同WSGI实现的比较
+。WSGI 框架中下的 server/gateway 主要专注 HTTP 层面的业务，重点是接收 HTTP 请求。每当收到 HTTP 请求，server/gateway 必须调用 callable object：
 
-- WSGI application are callable python objects (functions or classes with a __call__ method that are passed two arguments: a WSGI environment as first argument and a function that starts the response.
-- the application has to start a response using the function provided and return an iterable where each yielded item means writing and flushing.
-- The WSGI environment is like a CGI environment just with some additional keys that are either provided by the server or a middleware.
-- you can add middlewares to your application by wrapping it.
+- 接收 HTTP 请求，但是不关心 HTTP url, HTTP Method，url 的 mapping 由 application/framework 端完成
+- 调用 callable object
 
+我们直接使用支持 wsgi 框架的 wsgiref 库，编写一个完整的例子：
+
+~~~ python
+# application/framework side
+def application(environ, start_response):
+    start_response('200 OK', [('Content-Type', 'text/plain')])
+    return ['This is a python application!']
+
+# server/gateway side
+if __name__ == '__main__':
+    from wsgiref.simple_server import make_server
+    server = make_server('0.0.0.0', 8080, application)
+    server.serve_forever()
+~~~ 
+
+运行后，对于任意的 url 和 method，本例的返回值均为 'This is a python application!'：
+
+~~~ bash
+$curl 127.0.0.1:8080
+This is a python application!                                                                                                                                                                                                                                                  
+
+$ curl 127.0.0.1:8080/test
+This is a python application!
+~~~
+
+------------------------
 
 # Middleware: Components that Play Both Sides
+
+
 
 Note that a single object may play the role of a server with respect to some application(s), while also acting as an application with respect to some server(s). Such "middleware" components can perform such functions as:
 
