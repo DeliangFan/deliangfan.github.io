@@ -17,9 +17,9 @@ categories: Architectrue
 
 # An Introduction to WSGI
 
-Java web 开发者可能知道：所有支持 servlet API 的 java application/framework 都可以运行在支持 servlet API 的 web server(http server) 上。随着 web 不断的发展，python 的应用/框架也如雨后春笋般涌出，如：Zope, Webware, Skunkweb 等等。但是它们接口存在差异，导致难以跨 web server 运行，所以 python 社区定义了一种标准通用的接口---WSGI。
+Java web 开发者可能知道：所有支持 servlet API 的 java application/framework 都可以运行在支持 servlet API 的 web server(http server) 上。随着 web 不断的发展，python 的应用/框架也如雨后春笋般涌出，如：Zope, Webware, Skunkweb 等等。但是它们接口存在差异，导致难以跨 web server 运行，所以 python 社区定义了一种犹如 servlet API 标准通用的接口---WSGI。
 
-[PEP 0333 -- Python Web Server Gateway Interface](https://www.python.org/dev/peps/pep-0333) 是一种 [web server](https://en.wikipedia.org/wiki/Web_server)(or gateway) 和 python [web application](https://en.wikipedia.org/wiki/Application_server)(or framework) 之间简单通用的接口，符合这种接口标准的 application 可运行在多种同样符合该标准的 server 上。通俗的讲，WSGI 规范了一种简单的接口，解耦了 server 和 application，使得双方的开发者更加专注自身特性的开发。首先解释 web server 和 python web application。
+[PEP 0333 -- Python Web Server Gateway Interface](https://www.python.org/dev/peps/pep-0333) 是一种 [web server](https://en.wikipedia.org/wiki/Web_server)(or gateway) 和 python [web application](https://en.wikipedia.org/wiki/Application_server)(or framework) 之间简单通用的接口，符合这种接口标准的 application 可运行在多种同样符合该标准的 server 上。通俗的讲，WSGI 规范了一种简单的接口，解耦了 server 和 application，使得双方的开发者更加专注自身特性的开发。
 
 - Web server/gateway: 即 HTTP Server，接受用户 HTTP 请求，处理 HTTP 协议和提供并发，调用 web application 处理逻辑业务。通常采用 C/C++ 编写，代表：apache, nginx 和 IIS。
 - Python Web application/framework: 专注逻辑业务的 python 应用或者框架。
@@ -163,13 +163,11 @@ Forbidden
 ~~~
 
 
-
-
 ---------------------------
 
 # Path Dispatching
 
-至此样例存在一个不足之处，那就是对于任意的 url 和 method，程序的返回值均为 'This is a python application!'，所以我们需要增加 path dispatch 功能。由于 WSGI 框架下的 server/gateway 不处理 url 和 method，所以 url mapping 需由 application/framework 端完成。注意到参数 [environ](https://www.python.org/dev/peps/pep-0333/#environ-variables)，它包含以下变量：
+至此样的一个不足之处是对于任意的 url 和 method，程序的返回值均为 'This is a python application!'，所以我们需要增加 path dispatch 功能。由于 WSGI 框架下的 server/gateway 不处理 url 和 method，所以 url mapping 需由 application/framework 端完成。注意到参数 [environ](https://www.python.org/dev/peps/pep-0333/#environ-variables)，它包含以下变量：
 
 - REQUEST_METHOD: 即 HTTP Method
 - PATH_INFO: 即 HTTP url
