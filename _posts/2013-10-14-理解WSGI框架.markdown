@@ -158,7 +158,12 @@ $ curl 127.0.0.1:8080/test
 This is a python application!
 
 # 从其它主机测测试                                                                                                                                                                                                 
-$ curl 10.10.10.2:8080/test                                                                                                                                                                                                                                    Forbidden                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ~~~
+$ curl 10.10.10.2:8080/test                                                                                                                                                                                                                                    
+Forbidden                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+~~~
+
+
+
 
 ---------------------------
 
