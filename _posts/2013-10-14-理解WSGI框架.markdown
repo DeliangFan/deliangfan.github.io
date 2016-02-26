@@ -12,17 +12,18 @@ categories: Architectrue
 
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![wsgi](http://7xp2eu.com1.z0.glb.clouddn.com/Python-Visual.jpg)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;图片源自 [A Primer On WSGI](http://www.opensourceforu.efytimes.com/wp-content/uploads/2013/12/Python-Visual.jpg)
 
 ------------------
 
 # An Introduction to WSGI
 
-Java web 开发者可能知道：所有支持 servlet API 的 java application/framework 都可以运行在支持 servlet API 的 web server(http server) 上。随着 web 不断的发展，python 的应用/框架也如雨后春笋般涌出，如：Zope, Webware, Skunkweb 等等。但是它们接口存在差异，导致难以跨 web server 运行，所以 python 社区定义了一种犹如 servlet API 标准通用的接口---WSGI。
+在 java web 领域，支持 [servlet API](http://docs.oracle.com/javaee/6/api/?javax/servlet/package-summary.html) 的 java application 都可运行在同样支持 servlet API 的 web server(http server) 上。随着 web 不断发展，python application/framework 也如雨后春笋般涌出，如：Zope, Webware, Skunkweb 等等。但是它们接口存在差异，导致难以跨 web server 运行，所以 python 社区定义了一种如 servlet API 般标准通用的接口\-\-\-WSGI。
 
-[PEP 0333 -- Python Web Server Gateway Interface](https://www.python.org/dev/peps/pep-0333) 是一种 [web server](https://en.wikipedia.org/wiki/Web_server)(or gateway) 和 python [web application](https://en.wikipedia.org/wiki/Application_server)(or framework) 之间简单通用的接口，符合这种接口标准的 application 可运行在多种同样符合该标准的 server 上。通俗的讲，WSGI 规范了一种简单的接口，解耦了 server 和 application，使得双方的开发者更加专注自身特性的开发。
+[PEP 0333 -- Python Web Server Gateway Interface](https://www.python.org/dev/peps/pep-0333) 是一种 [web server or gateway](https://en.wikipedia.org/wiki/Web_server) 和 python [web application or framework](https://en.wikipedia.org/wiki/Application_server) 之间简单通用的接口，符合这种接口的 application 可运行在所有符合该接口的 server 上。通俗的讲，WSGI 规范了一种简单的接口，解耦了 server 和 application，使得双方的开发者更加专注自身特性的开发。
 
-- Web server/gateway: 即 HTTP Server，接受用户 HTTP 请求，处理 HTTP 协议和提供并发，调用 web application 处理逻辑业务。通常采用 C/C++ 编写，代表：apache, nginx 和 IIS。
-- Python Web application/framework: 专注逻辑业务的 python 应用或者框架。
+- Web server/gateway: 即 HTTP Server，处理 HTTP 协议，接受用户 HTTP 请求和提供并发，调用 web application 处理业务逻辑。通常采用 C/C++ 编写，代表：apache, nginx 和 IIS。
+- Python Web application/framework: 专注业务逻辑的 python 应用或者框架。
 
 ![wsgi framework](http://7xp2eu.com1.z0.glb.clouddn.com/wsgiframework.png)
 
@@ -30,7 +31,7 @@ Java web 开发者可能知道：所有支持 servlet API 的 java application/f
 
 # The Application/Framework Side
 
-Application/framework 必须定义一个 callable object，callable object 可以是以下三者之一：
+Application/framework 端必须定义一个 callable object，callable object 可以是以下三者之一：
 
 - function, method
 - class
@@ -38,7 +39,7 @@ Application/framework 必须定义一个 callable object，callable object 可�
 
 Callable object 必须满足以下两个条件：
 
-- 接受两个参数：字典(通常是 environ)，回调函数(通常是 start_response，返回 HTTP status，headers 给 http server)
+- 接受两个参数：字典(environ)，回调函数(start_response，返回 HTTP status，headers 给 web server)
 - 返回一个可迭代的值
 
 基于 callable function 的 application/framework 例子如下：
@@ -66,13 +67,13 @@ class ApplicationClass(object):
 
 # The Server/Gateway Side
 
-。WSGI 框架中下的 server/gateway 主要专注 HTTP 层面的业务，重点是接收 HTTP 请求。每当收到 HTTP 请求，server/gateway 必须调用 callable object：
+Server/gateway 端主要专注 HTTP 层面的业务，重点是接收 HTTP 请求和提供并发。每当收到 HTTP 请求，server/gateway 必须调用 callable object：
 
-- 接收 HTTP 请求，但是不关心 HTTP url, HTTP Method，url 的 mapping 由 application/framework 端完成
-- 为 []environ 准备必要的数字，实现一个回调函数 [start_response](https://www.python.org/dev/peps/pep-0333/#id21)，传给 callable object
+- 接收 HTTP 请求，但是不关心 HTTP url, HTTP method 等
+- 为 [environ](https://www.python.org/dev/peps/pep-0333/#environ-variables) 提供必要的参数，实现一个回调函数 [start_response](https://www.python.org/dev/peps/pep-0333/#id21)，传给 callable object
 - 调用 callable object
 
-我们直接使用支持 wsgi 框架的 wsgiref 库，编写一个完整的例子：
+我们直接使用支持 WSGI 框架的 [wsgiref](https://docs.python.org/2/library/wsgiref.html) 库，编写一个样例：
 
 ~~~ python
 # application/framework side
@@ -105,9 +106,9 @@ This is a python application!
 
 ![wsgi framework middleware](http://7xp2eu.com1.z0.glb.clouddn.com/wsgiframeworkmiddleware.png)
 
-Middleware 处于 server/gateway 和 application/framework 之间，对服务器程序来说，它相当于应用程序；对应用程序来说，它相当于服务器程序。每个middleware 实现不同的功能，我们通常根据需求选择的 middleware 组合起来，实现所需的功能。比如，可在 middleware 中实现以下功能：
+Middleware 处于 server/gateway 和 application/framework 之间，对 server/gateway 来说，它相当于 application/framework；对 application/framework 来说，它相当于 server/gateway。每个 middleware 实现不同的功能，我们通常根据需求选择相应的 middleware 并组合起来，实现所需的功能。比如，可在 middleware 中实现以下功能：
 
-- 根据 URL 把用户请求调度到不同的 application 中。
+- 根据 url 把用户请求调度到不同的 application 中。
 - 负载均衡，转发用户请求
 - 预处理 XSL 等相关数据
 - 限制请求速率，设置白名单
@@ -167,9 +168,9 @@ Forbidden
 
 # Path Dispatching
 
-至此样的一个不足之处是对于任意的 url 和 method，程序的返回值均为 'This is a python application!'，所以我们需要增加 path dispatch 功能。由于 WSGI 框架下的 server/gateway 不处理 url 和 method，所以 url mapping 需由 application/framework 端完成。注意到参数 [environ](https://www.python.org/dev/peps/pep-0333/#environ-variables)，它包含以下变量：
+至此样例的一个不足之处是对于任意的 url 和 method，程序的返回值均为 'This is a python application!'，所以我们需要增加 path dispatch 功能。由于 WSGI 框架下的 server/gateway 不处理 url 和 method，所以 url mapping 需由 application/framework 端完成。注意到参数 [environ](https://www.python.org/dev/peps/pep-0333/#environ-variables)，它包含以下变量：
 
-- REQUEST_METHOD: 即 HTTP Method
+- REQUEST_METHOD: 即 HTTP method
 - PATH_INFO: 即 HTTP url
 
 所以 application/framework 可以根据 environ 的 REQUEST_METHOD 和 PATH_INFO 实现 path dispatch，样例如下：
