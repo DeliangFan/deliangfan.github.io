@@ -1,75 +1,67 @@
 ---
 layout: post
 title:  "理解 WSGI 框架"
-categories: OpenStack
+categories: Architectrue
 ---
 
 --------------------
 
-> This document specifies a proposed standard interface between web servers and Python web applications or frameworks, to promote web application portability across a variety of web servers.
+# WSGI 简介
 
+&nbsp;&nbsp;&nbsp;
+
+> This document specifies a proposed standard interface between web servers and Python web applications or frameworks, to promote web application portability across a variety of web servers.
 >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\------PEP 0333
 
-[PEP 0333 -- Python Web Server Gateway Interface](https://www.python.org/dev/peps/pep-0333) 是一种 [web server](https://en.wikipedia.org/wiki/Web_server) 和 python [web application](https://en.wikipedia.org/wiki/Application_server)(or framework) 之间简单而通用的接口，符合这种接口标准的 application 可运行在多种同样符合该标准的 server 上。通俗的讲，WSGI 规范了一种简单的接口，解耦了 server 和 application，使得双方的开发者更加专注自身特性的开发。首先解释 web server 和 web application。
 
-- Web server: 即 HTTP Server，接受用户 HTTP 请求，处理 HTTP 协议和提供并发，调用 web application 处理逻辑业务。通常采用 C/C++ 编写，代表：apache, nginx 和 IIS。
-- Web application: 专注逻辑业务，可由多种语言实现，常见的有 Java。
+Java web 开发者可能知道：所有支持 servlet API 的 java application/framework 都可以运行在支持 servlet API 的 web server(http server) 上。随着 web 不断的发展，python 的应用/框架也如雨后春笋般涌出，如：Zope, Webware, Skunkweb 等等。但是它们接口存在差异，导致难以跨 web server 运行，所以 python 社区定义了一种标准通用的接口---WSGI。
 
+[PEP 0333 -- Python Web Server Gateway Interface](https://www.python.org/dev/peps/pep-0333) 是一种 [web server](https://en.wikipedia.org/wiki/Web_server)(or gateway) 和 python [web application](https://en.wikipedia.org/wiki/Application_server)(or framework) 之间简单通用的接口，符合这种接口标准的 application 可运行在多种同样符合该标准的 server 上。通俗的讲，WSGI 规范了一种简单的接口，解耦了 server 和 application，使得双方的开发者更加专注自身特性的开发。首先解释 web server 和 python web application。
 
+- Web server/gateway: 即 HTTP Server，接受用户 HTTP 请求，处理 HTTP 协议和提供并发，调用 web application 处理逻辑业务。通常采用 C/C++ 编写，代表：apache, nginx 和 IIS。
+- Python Web application/framework: 专注逻辑业务的 python 应用或者框架。
 
-nginx
-apache
-IIS
+![wsgi framework](http://7xp2eu.com1.z0.glb.clouddn.com/wsgiframework.png)
 
 ---------------------
 
-# Application Server 
+# The Application/Framework Side
 
-大多数的HTTP服务器是由C或C++写成的，所以它们不能直接执行Python脚本——在服务器和程序之间，需要一个桥梁。这个桥梁，或者说是接口，定义了程序应该如何和服务器进行交互。这就是应用服务器。动态生成的urls从网站服务器传递到应用服务器。应用服务器对url进行匹配并执行该路由对应的脚本。然后它（应用服务器）把响应返回给网站服务器，网站服务器生成一个HTTP响应，并将其返回给客户端。
+Application/framework 必须定义一个 callable object，callable object 可以是以下三者之一：
 
-Python[edit]
-CherryPy
-Django-cms - By Divio AG
-Google App Engine
-Gunicorn
-mod_python
-mod_wsgi
-Phusion Passenger
-Paste
-Tornado
-Twisted
-Web.py[10]
-Web2py
-uWSGI[1]
-WSGId[11]
-Zope - By Zope, Inc.
-
-------------------------
-
-# WSGI
-
-![](http://lucumr.pocoo.org/2007/5/21/getting-started-with-wsgi/)
-
-Python currently boasts a wide variety of web application frameworks, such as Zope, Quixote, Webware, SkunkWeb, PSO, and Twisted Web -- to name just a few [1] . This wide variety of choices can be a problem for new Python users, because generally speaking, their choice of web framework will limit their choice of usable web servers, and vice versa.
-
-By contrast, although Java has just as many web application frameworks available, Java's "servlet" API makes it possible for applications written with any Java web application framework to run in any web server that supports the servlet API.
-
-The availability and widespread use of such an API in web servers for Python -- whether those servers are written in Python (e.g. Medusa), embed Python (e.g. mod_python), or invoke Python via a gateway protocol (e.g. CGI, FastCGI, etc.) -- would separate choice of framework from choice of web server, freeing users to choose a pairing that suits them, while freeing framework and server developers to focus on their preferred area of specialization.
-
-
-The WSGI interface has two sides: the "server" or "gateway" side, and the "application" or "framework" side. The server side invokes a callable object that is provided by the application side. The specifics of how that object is provided are up to the server or gateway. It is assumed that some servers or gateways will require an application's deployer to write a short script to create an instance of the server or gateway, and supply it with the application object. Other servers and gateways may use configuration files or other mechanisms to specify where an application object should be imported from, or otherwise obtained.
-
-In addition to "pure" servers/gateways and applications/frameworks, it is also possible to create "middleware" components that implement both sides of this specification. Such components act as an application to their containing server, and as a server to a contained application, and can be used to provide extended APIs, content transformation, navigation, and other useful functions.
-
-Throughout this specification, we will use the term "a callable" to mean "a function, method, class, or an instance with a __call__ method". It is up to the server, gateway, or application implementing the callable to choose the appropriate implementation technique for their needs. Conversely, a server, gateway, or application that is invoking a callable must not have any dependency on what kind of callable was provided to it. Callables are only to be called, not introspected upon.
-
-
-callable
-
-- function
+- function, method
 - class
 - instance with a \_\_call\_\_ method
 
+Callable object 必须满足一下条件：
+
+- 接受两个参数：字典(通常是 environ)，回调函数(通常是 start_response，返回 HTTP status，headers 给 http server)
+- 返回一个可迭代的值
+
+基于 callable function 的 application/framework 例子如下：
+
+~~~ python
+def application(environ, start_response):
+    start_response('200 OK', [('Content-Type', 'text/plain')])
+    return ['This is a python application!']
+~~~
+
+基于 callable class 的 application/framework 例子如下：
+
+~~~ python
+class ApplicationClass(object):
+    def __init__(self, environ, start_response):
+        self.environ = environ
+        self.start_response = start_response
+
+    def __iter__(self):
+        self.start_response('200 OK', [('Content-type', 'text/plain')])
+        yield "Hello world!\n"
+~~~
+
+------------------------
+
+# The Server/Gateway Side
 
 一个Web服务器网关接口（WSGI）服务器为运行Python web应用实现了服务器端的WSGI接口。 WSGI适合各种规模并且可以在多线程或多进程环境下工作，我们同样可以使用WSGI编写中间件。中间件对于会话处理，授权和其他很多任务都非常有用。你可以在 Armin的博客里面学到如何编写你自己的WSGI实现。这个链接给出了不同WSGI实现的比较
 
@@ -78,11 +70,8 @@ callable
 - The WSGI environment is like a CGI environment just with some additional keys that are either provided by the server or a middleware.
 - you can add middlewares to your application by wrapping it.
 
-## Application Side
 
-The server or gateway invokes the application callable once for each request it receives from an HTTP client, that is directed at the application. To illustrate, here is a simple CGI gateway, implemented as a function taking an application object. Note that this simple example has limited error handling, because by default an uncaught exception will be dumped to sys.stderr and logged by the web server.
-
-## Middleware
+# Middleware: Components that Play Both Sides
 
 Note that a single object may play the role of a server with respect to some application(s), while also acting as an application with respect to some server(s). Such "middleware" components can perform such functions as:
 
