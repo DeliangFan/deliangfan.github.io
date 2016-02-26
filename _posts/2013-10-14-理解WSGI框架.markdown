@@ -69,6 +69,7 @@ class ApplicationClass(object):
 。WSGI 框架中下的 server/gateway 主要专注 HTTP 层面的业务，重点是接收 HTTP 请求。每当收到 HTTP 请求，server/gateway 必须调用 callable object：
 
 - 接收 HTTP 请求，但是不关心 HTTP url, HTTP Method，url 的 mapping 由 application/framework 端完成
+- 为 []environ 准备必要的数字，实现一个回调函数 [start_response](https://www.python.org/dev/peps/pep-0333/#id21)，传给 callable object
 - 调用 callable object
 
 我们直接使用支持 wsgi 框架的 wsgiref 库，编写一个完整的例子：
@@ -100,7 +101,7 @@ This is a python application!
 
 # Middleware: Components that Play Both Sides
 
-
+> Unix philosophy: do one thing and do it well.
 
 Note that a single object may play the role of a server with respect to some application(s), while also acting as an application with respect to some server(s). Such "middleware" components can perform such functions as:
 
@@ -109,4 +110,115 @@ Note that a single object may play the role of a server with respect to some app
 - Load balancing and remote processing, by forwarding requests and responses over a network
 - Perform content postprocessing, such as applying XSL stylesheets
 
+~~~ python
+class IPAuditMiddleware(object):
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        ip_addr = environ.get('HTTP_HOST').split(':')[0]
+        if ip_addr not in ('127.0.0.1'):
+            return forbidden(start_response)
+
+        return self.app(environ, start_response)
+
+
+def forbidden(start_response):
+    start_response('403 Forbidden', [('Content-Type', 'text/plain')])
+    return ['Forbidden']
+
+
+def application(environ, start_response):
+    start_response('200 OK', [('Content-Type', 'text/plain')])
+    return ['This is a python application!']
+
+
+if __name__ == '__main__':
+    from wsgiref.simple_server import make_server
+    application = IPAuditMiddleware(application)
+    server = make_server('0.0.0.0', 8080, application)
+    server.serve_forever()
+~~~
+
+测试如下：
+
+~~~ bash
+# 从本机测试
+$ curl 127.0.0.1:8080/test
+This is a python application!
+
+# 从其它主机测测试                                                                                                                                                                                                 
+$ curl 10.10.10.2:8080/test                                                                                                                                                                                                                                    Forbidden                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ~~~
+
+---------------------------
+
+# Path Dispatching
+
+至此样例存在一个不足之处，那就是对于任意的 url 和 method，程序的返回值均为 'This is a python application!'，所以我们需要增加 path dispatch 功能。由于 WSGI 框架下的 server/gateway 不处理 url 和 method，所以 url mapping 需由 application/framework 端完成。注意到参数 [environ](https://www.python.org/dev/peps/pep-0333/#environ-variables)，它包含以下变量：
+
+- REQUEST_METHOD: 即 HTTP Method
+- PATH_INFO: 即 HTTP url
+
+所以 application/framework 可以根据 environ 的 REQUEST_METHOD 和 PATH_INFO 实现 path dispatch，样例如下：
+
+~~~ python
+class IPAuditMiddleware(object):
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        ip_addr = environ.get('HTTP_HOST').split(':')[0]
+        if ip_addr not in ('127.0.0.1'):
+            return forbidden(start_response)
+
+        return self.app(environ, start_response)
+
+
+def dog(start_response):
+    start_response('200 OK', [('Content-Type', 'text/plain')])
+    return ['This is dog!']
+
+
+def cat(start_response):
+    start_response('200 OK', [('Content-Type', 'text/plain')])
+    return ['This is cat!']
+
+
+def not_found(start_response):
+    start_response('404 NOT FOUND', [('Content-Type', 'text/plain')])
+    return ['Not Found']
+
+
+def forbidden(start_response):
+    start_response('403 Forbidden', [('Content-Type', 'text/plain')])
+    return ['Forbidden']
+
+
+def application(environ, start_response):
+    path = environ.get('PATH_INFO', '').lstrip('/')
+    mapping = {'dog': dog, 'cat': cat}
+
+    call_back = mapping[path] if path in mapping else not_found
+    return call_back(start_response)
+
+
+if __name__ == '__main__':
+    from wsgiref.simple_server import make_server
+    application = IPAuditMiddleware(application)
+    server = make_server('0.0.0.0', 8080, application)
+    server.serve_forever()
+~~~
+
+测试如下：
+
+~~~ bash
+$ curl 127.0.0.1:8080/dog
+This is dog!                                                                                                                                                                                                                                                                   
+
+$ curl 127.0.0.1:8080/cat
+This is cat!                                                                                                                                                                                                                                                                   
+
+$ curl 127.0.0.1:8080/monkey
+Not Found
+~~~
 
