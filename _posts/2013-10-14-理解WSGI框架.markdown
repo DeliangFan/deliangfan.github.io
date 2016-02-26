@@ -5,14 +5,14 @@ categories: Architectrue
 ---
 
 --------------------
-
-# WSGI 简介
-
 &nbsp;&nbsp;&nbsp;
 
 > This document specifies a proposed standard interface between web servers and Python web applications or frameworks, to promote web application portability across a variety of web servers.
 >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\------PEP 0333
 
+------------------
+
+# WSGI 简介
 
 Java web 开发者可能知道：所有支持 servlet API 的 java application/framework 都可以运行在支持 servlet API 的 web server(http server) 上。随着 web 不断的发展，python 的应用/框架也如雨后春笋般涌出，如：Zope, Webware, Skunkweb 等等。但是它们接口存在差异，导致难以跨 web server 运行，所以 python 社区定义了一种标准通用的接口---WSGI。
 
@@ -33,7 +33,7 @@ Application/framework 必须定义一个 callable object，callable object 可�
 - class
 - instance with a \_\_call\_\_ method
 
-Callable object 必须满足一下条件：
+Callable object 必须满足以下两个条件：
 
 - 接受两个参数：字典(通常是 environ)，回调函数(通常是 start_response，返回 HTTP status，headers 给 http server)
 - 返回一个可迭代的值
