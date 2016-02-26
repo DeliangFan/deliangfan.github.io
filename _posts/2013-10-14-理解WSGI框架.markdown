@@ -18,9 +18,9 @@ categories: Architectrue
 
 # An Introduction to WSGI
 
-在 java web 领域，支持 [servlet API](http://docs.oracle.com/javaee/6/api/?javax/servlet/package-summary.html) 的 java application 都可运行在同样支持 servlet API 的 web server(http server) 上。随着 web 不断发展，python application/framework 也如雨后春笋般涌出，如：Zope, Webware, Skunkweb 等等。但是它们接口存在差异，导致难以跨 web server 运行，所以 python 社区定义了一种如 servlet API 般标准通用的接口\-\-\-WSGI。
+在 java web 领域，支持 [servlet API](http://docs.oracle.com/javaee/6/api/?javax/servlet/package-summary.html) 的 java application 都可运行在支持 servlet API 的 web server (http server) 上。随着 web 不断发展，python application/framework 也如雨后春笋般涌出，如：zope, webware, skunkweb 等等。但是它们的接口存在差异，导致难以跨 web server 运行，所以 python 社区定义了一种如 servlet API 般标准通用的接口\-\-\-\-\-\-WSGI。
 
-[PEP 0333 -- Python Web Server Gateway Interface](https://www.python.org/dev/peps/pep-0333) 是一种 [web server or gateway](https://en.wikipedia.org/wiki/Web_server) 和 python [web application or framework](https://en.wikipedia.org/wiki/Application_server) 之间简单通用的接口，符合这种接口的 application 可运行在所有符合该接口的 server 上。通俗的讲，WSGI 规范了一种简单的接口，解耦了 server 和 application，使得双方的开发者更加专注自身特性的开发。
+[PEP 0333 -- Python Web Server Gateway Interface](https://www.python.org/dev/peps/pep-0333) 是一种 [web server or gateway](https://en.wikipedia.org/wiki/Web_server) 和 python [web application or framework](https://en.wikipedia.org/wiki/Application_server) 之间简单通用的接口，符合这种接口的 application 可运行在所有符合该接口的 server 上。通俗的讲，WSGI 规范了一种简单的接口，解耦了 server 和 application，使得双边的开发者更加专注自身特性的开发。
 
 - Web server/gateway: 即 HTTP Server，处理 HTTP 协议，接受用户 HTTP 请求和提供并发，调用 web application 处理业务逻辑。通常采用 C/C++ 编写，代表：apache, nginx 和 IIS。
 - Python Web application/framework: 专注业务逻辑的 python 应用或者框架。
@@ -42,7 +42,7 @@ Callable object 必须满足以下两个条件：
 - 接受两个参数：字典(environ)，回调函数(start_response，返回 HTTP status，headers 给 web server)
 - 返回一个可迭代的值
 
-基于 callable function 的 application/framework 例子如下：
+基于 callable function 的 application/framework 样例如下：
 
 ~~~ python
 def application(environ, start_response):
@@ -50,7 +50,7 @@ def application(environ, start_response):
     return ['This is a python application!']
 ~~~
 
-基于 callable class 的 application/framework 例子如下：
+基于 callable class 的 application/framework 样例如下：
 
 ~~~ python
 class ApplicationClass(object):
@@ -70,7 +70,7 @@ class ApplicationClass(object):
 Server/gateway 端主要专注 HTTP 层面的业务，重点是接收 HTTP 请求和提供并发。每当收到 HTTP 请求，server/gateway 必须调用 callable object：
 
 - 接收 HTTP 请求，但是不关心 HTTP url, HTTP method 等
-- 为 [environ](https://www.python.org/dev/peps/pep-0333/#environ-variables) 提供必要的参数，实现一个回调函数 [start_response](https://www.python.org/dev/peps/pep-0333/#id21)，传给 callable object
+- 为 [environ](https://www.python.org/dev/peps/pep-0333/#environ-variables) 提供必要的参数，实现一个回调函数 [start_response](https://www.python.org/dev/peps/pep-0333/#id21)，并传给 callable object
 - 调用 callable object
 
 我们直接使用支持 WSGI 框架的 [wsgiref](https://docs.python.org/2/library/wsgiref.html) 库，编写一个样例：
@@ -115,7 +115,7 @@ Middleware 处于 server/gateway 和 application/framework 之间，对 server/g
 
 ![middleware](http://7xp2eu.com1.z0.glb.clouddn.com/wsgi-middleware.png)
 
-WSGI 的 middleware 体现了 unix 的哲学之一：do one thing and do it well。事实上，在定义 WSGI 框架的时候，设计者就要求 server/gateway 和 application/framework 双方尽可能的简单，同时也要求 middleware 设计的简单而健壮，PEP 333 提到：
+WSGI 的 middleware 体现了 unix 的哲学之一：do one thing and do it well。事实上，在定义 WSGI 框架的时候，设计者就要求 server/gateway 和 application/framework 双方尽可能的简单，同时也要求 middleware 设计的简单而专一，PEP 333 提到：
 
 >If middleware can be both simple and robust, and WSGI is widely available in servers and frameworks, it allows for the possibility of an entirely new kind of Python web application framework: one consisting of loosely-coupled WSGI middleware components. 
 
