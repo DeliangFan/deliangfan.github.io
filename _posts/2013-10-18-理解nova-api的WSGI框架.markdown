@@ -238,8 +238,8 @@ class Server(object):
 
         self._socket = eventlet.listen(bind_addr, family, backlog=backlog)
 
-	def start(self):
-	    """Start serving a WSGI application.
+    def start(self):
+        """Start serving a WSGI application.
 
         :returns: None
         """
