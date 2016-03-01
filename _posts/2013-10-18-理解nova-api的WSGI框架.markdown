@@ -4,7 +4,7 @@ title:  "深入理解 nova-api 的 WSGI"
 categories: Architectrue
 ---
 
-本文是 [理解 WSGI 框架](http://wsfdl.com/architectrue/2013/10/14/%E7%90%86%E8%A7%A3WSGI%E6%A1%86%E6%9E%B6.html) 的下篇，重点介绍 WSGI 框架下一些常用的 Python module，最后分析 [nova](https://wiki.openstack.org/wiki/Nova) 是如何使用这些 module 构建其 WSGI 框架。
+本文是 [理解 WSGI 框架](http://wsfdl.com/architectrue/2013/10/14/%E7%90%86%E8%A7%A3WSGI%E6%A1%86%E6%9E%B6.html) 的下篇，重点介绍 WSGI 框架下一些常用的 python module，并使用这些 module 编写一个类似 nova-api 所用的 WSGI 框架的简单例子，最后分析 [nova](https://wiki.openstack.org/wiki/Nova) 是如何使用这些 module 构建其 WSGI 框架。
 
 - [eventlet](http://eventlet.net/): python 的高并发网络库
 - [paste.deploy](http://pythonpaste.org/deploy/): 用于发现和配置 WSGI application 和 server 的库
@@ -203,15 +203,15 @@ Current features:
 
 -------------------
 
-# Nova-api WSGI
+# WSGI In Nova-api
 
 ## WSGI Server
+
+Nova-api(nova/cmd/api.py) 服务启动时，初始化 nova/wsgi.py 中的类 Server，建立了 socket 监听 IP 和端口，再由 eventlet.spawn 和 eventlet.wsgi.server 创建 WSGI server： 
 
 ~~~ python
 class Server(object):
     """Server class to manage a WSGI server, serving a WSGI application."""
-
-    default_pool_size = 1000
 
     def __init__(self, name, app, host='0.0.0.0', port=0, pool_size=None,
                        protocol=eventlet.wsgi.HttpProtocol, backlog=128,
@@ -231,6 +231,7 @@ class Server(object):
 
         bind_addr = (host, port)
 
+		# 建立 socket，监听 IP 和端口
         self._socket = eventlet.listen(bind_addr, family, backlog=backlog)
 
     def start(self):
@@ -238,6 +239,8 @@ class Server(object):
 
         :returns: None
         """
+
+        # 构建所需参数
         wsgi_kwargs = {
             'func': eventlet.wsgi.server,
             'sock': self._socket,
@@ -251,12 +254,16 @@ class Server(object):
         if self._max_url_len:
             wsgi_kwargs['url_length_limit'] = self._max_url_len
 
+        # 由 eventlet.sawn 启动 server
         self._server = eventlet.spawn(**wsgi_kwargs)
 ~~~
 
-## Application Side
+## Application Side & Middleware
 
-~~~ python
+Application 的加载由 nova/wsgi.py 的类 Loader 完成，Loader 的 load_app 方法调用了 paste.deploy.loadapp 加载了 WSGI 的配置文件 /etc/nova/api-paste.ini： 
+
+~~~ python               
+
 class Loader(object):
     """Used to load WSGI applications from paste configurations."""
 
@@ -282,7 +289,7 @@ class Loader(object):
         return paste.deploy.loadapp("config:%s" % self.config_path, name=name)
 ~~~
 
-## Paste Deployment
+配置文件 api-paste.ini 如下所示，我们通常使用 v2 API，即 composite:openstack_compute_api_v2，也通常使用 keystone 做认证，即 keystone = faultwrap sizelimit authtoken keystonecontext ratelimit osapi_compute_app_v2，从 fautlwrap 到 ratelimit 均是 middleware，我们也可根据需求增加某些 middleware。
 
 ~~~ ini
 [composite:osapi_compute]
@@ -311,3 +318,5 @@ paste.app_factory = nova.api.openstack.compute:APIRouter.factory
 [app:osapi_compute_app_v3]
 paste.app_factory = nova.api.openstack.compute:APIRouterV3.factory
 ~~~
+
+## Routes
