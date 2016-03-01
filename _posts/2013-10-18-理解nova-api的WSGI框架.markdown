@@ -4,21 +4,44 @@ title:  "深入理解 nova-api 的 WSGI"
 categories: Architectrue
 ---
 
+本文是 [理解 WSGI 框架](http://wsfdl.com/architectrue/2013/10/14/%E7%90%86%E8%A7%A3WSGI%E6%A1%86%E6%9E%B6.html) 的下篇，重点介绍 WSGI 框架下一些常用的 Python module，最后分析 [nova](https://wiki.openstack.org/wiki/Nova) 是如何使用这些 module 构建其 WSGI 框架。
+
+- [eventlet](http://eventlet.net/): python 的高并发网络库
+- [paste.deploy](http://pythonpaste.org/deploy/): 用于发现和配置 WSGI application 和 server 的库
+- [routes](https://routes.readthedocs.org/en/latest/): 处理 url mapping 的库
+
 --------------------
 
 # Eventlet
 
+[Eventlet](http://eventlet.net/) 是一个基于协程的 Python 高并发网络库，和上篇文章所用的 [wsgiref](https://docs.python.org/2/library/wsgiref.html) 相比，它具有更强大的功能和更好的性能，openstack 就大量使用 eventlet 以提供并发能力。它具有以下特点：
 
-[Eventlet](http://eventlet.net/) is a concurrent networking library for Python that allows you to change how you run your code, not how you write it.
+- 使用 epoll、kqueue 或 libevent 等 I/O 复用机制，对于非阻塞 I/O 具有良好的性能
+- 基于[协程(Coroutines)](https://en.wikipedia.org/wiki/Coroutine)，和进程、线程相比，其切换开销更小，具有更高的性能
+- 简单易用，特别是支持采用同步的方式编写异步的代码
 
-- It uses epoll or kqueue or libevent for highly scalable non-blocking I/O.
-- Coroutines ensure that the developer uses a blocking style of programming that is similar to threading, but provide the benefits of non-blocking I/O.
-- The event dispatch is implicit, which means you can easily use Eventlet from the Python interpreter, or as a small part of a larger application.
-- It's easy to get started using Eventlet, and easy to convert existing applications to use it. Start off by looking at examples, common design patterns, and the list of the basic API primitives.
 
 ## Eventlet.wsgi
 
-![Eventlet WSGI](http://eventlet.net/doc/modules/wsgi.html)
+[Eventlet WSGI](http://eventlet.net/doc/modules/wsgi.html) 简单易用，数行代码即可实现一个基于事件驱动的 WSGI server。本例主要使用了 eventlet.wsgi.server 函数：
+
+~~~ python
+eventlet.wsgi.server(sock, site, log=None, environ=None,
+                     max_size=None, max_http_version='HTTP/1.1',
+                     protocol=eventlet.wsgi.HttpProtocol, server_event=None,
+                     minimum_chunk_size=None, log_x_forwarded_for=True,
+                     custom_pool=None, keepalive=True,
+                     log_output=True, log_format='%(client_ip)s...', 
+                     url_length_limit=8192, debug=True,
+                     socket_timeout=None, capitalize_response_headers=True)
+~~~
+
+该函数具有众多的参数，重点介绍以下 2 个参数：
+
+- sock: 即 TCP Socket，通常由 eventlet.listen('IP', PORT) 实现
+- site: WSGI 的 application
+
+回顾上篇文章内容，本例采用 callable 的 instance 实现一个 WSGI application，采用 eventlet.server 构建 WSGI server，如下：
 
 ~~~ python
 import eventlet
@@ -39,29 +62,15 @@ if '__main__' == __name__:
     wsgi.server(eventlet.listen(('', 8080)), application)
 ~~~
 
-~~~ python
-eventlet.wsgi.server(sock, site, log=None, environ=None,
-                     max_size=None, max_http_version='HTTP/1.1',
-                     protocol=eventlet.wsgi.HttpProtocol, server_event=None,
-                     minimum_chunk_size=None, log_x_forwarded_for=True,
-                     custom_pool=None, keepalive=True,
-                     log_output=True, log_format='%(client_ip)s...', 
-                     url_length_limit=8192, debug=True,
-                     socket_timeout=None, capitalize_response_headers=True)
-~~~
-
-	
-- sock – Server socket, must be already bound to a port and listening.
-- site – WSGI application function.
-- log – File-like object that logs should be written to. If not specified, sys.stderr is used.
-- environ – Additional parameters that go into the environ dictionary of every request.
-
 ## Eventlet.spawn
+
+[Eventlet.spawn](http://eventlet.net/doc/basic_usage.html) 基于 greenthread，它通过创建一个协程来执行函数，从而提供并发。
 
 ~~~ python
 eventlet.spawn(func, *args, **kw)
-This launches a greenthread to call func. Spawning off multiple greenthreads gets work done in parallel. The return value from spawn is a greenthread.GreenThread object, which can be used to retrieve the return value of func. See spawn for more details.
 ~~~
+
+加入该函数后，样例如下：
 
 ~~~ python
 import eventlet
