@@ -97,6 +97,10 @@ if '__main__' == __name__:
 
 # Paste.deploy
 
+[Paste.deploy](http://pythonpaste.org/deploy/) 是一个用户发现和配置 WSGI server 和 application 的 python 库，它定义简洁的 loadapp 函数，用于从配置文件或者 python egg 中加载 WSGI 应用，它仅关注 application 的入口，不关心 application 的内部细节。
+
+Paste.deploy 通常要求 application 实现一个 factory 的类方法，如下：
+
 ~~~ python
 import eventlet
 from eventlet import wsgi
@@ -118,9 +122,12 @@ class AnimalApplication(object):
 
 if '__main__' == __name__:
     application = loadapp('config:/path/to/animal.ini')
-    server = eventlet.spawn(wsgi.server, eventlet.listen(('', 8080)), application)
+    server = eventlet.spawn(wsgi.server,
+                            eventlet.listen(('', 8080)), application)
     server.wait()
 ~~~
+
+配置文件的规则请参考[官网介绍](http://pythonpaste.org/deploy/)，相应的配置文件如下，其中 app:animal 给出了 application 的入口，pipeline:animal_pipeline 用于配置 WSGI middleware。
 
 ~~~ ini
 [composite:main]
@@ -134,27 +141,9 @@ pipeline = animal
 paste.app_factory = animal:AnimalApplication.factory
 ~~~
 
-## Middleware
+现在我们新增一个 IPBlackMiddleware，用于限制某些 IP：
 
 ~~~ python
-import eventlet
-from eventlet import wsgi
-from paste.deploy import loadapp
-
-
-class AnimalApplication(object):
-    def __init__(self):
-        pass
-
-    def __call__(self, environ, start_response):
-        start_response('200 OK', [('Content-Type', 'text/plain')])
-        return ['This is a animal applicaltion!\r\n']
-
-    @classmethod
-    def factory(cls, global_conf, **local_conf):
-        return cls()
-
-
 class IPBlacklistMiddleware(object):
     def __init__(self, application):
         self.application = application
@@ -172,13 +161,9 @@ class IPBlacklistMiddleware(object):
         def _factory(application):
             return cls(application)
         return _factory
-
-
-if '__main__' == __name__:
-    application = loadapp('config:/path/to/animal.ini')
-    server = eventlet.spawn(wsgi.server, eventlet.listen(('', 8080)), application)
-    server.wait()
 ~~~
+
+相关的配置文件为：
 
 ~~~ ini
 [composite:main]
