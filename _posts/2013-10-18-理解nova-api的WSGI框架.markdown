@@ -292,8 +292,6 @@ class Loader(object):
 ~~~ ini
 [composite:osapi_compute]
 use = call:nova.api.openstack.urlmap:urlmap_factory
-/: oscomputeversions
-/v1.1: openstack_compute_api_v2
 /v2: openstack_compute_api_v2
 /v3: openstack_compute_api_v3
 
@@ -304,28 +302,7 @@ keystone = faultwrap sizelimit authtoken keystonecontext ratelimit osapi_compute
 keystone_nolimit = faultwrap sizelimit authtoken keystonecontext osapi_compute_app_v2
 
 [composite:openstack_compute_api_v3]
-use = call:nova.api.auth:pipeline_factory
-noauth = faultwrap sizelimit noauth_v3 ratelimit_v3 osapi_compute_app_v3
-keystone = faultwrap sizelimit authtoken keystonecontext ratelimit_v3 osapi_compute_app_v3
-keystone_nolimit = faultwrap sizelimit authtoken keystonecontext osapi_compute_app_v3
-
-[filter:faultwrap]
-paste.filter_factory = nova.api.openstack:FaultWrapper.factory
-
-[filter:noauth]
-paste.filter_factory = nova.api.openstack.auth:NoAuthMiddleware.factory
-
-[filter:noauth_v3]
-paste.filter_factory = nova.api.openstack.auth:NoAuthMiddlewareV3.factory
-
-[filter:ratelimit]
-paste.filter_factory = nova.api.openstack.compute.limits:RateLimitingMiddleware.factory
-
-[filter:ratelimit_v3]
-paste.filter_factory = nova.api.openstack.compute.plugins.v3.limits:RateLimitingMiddleware.factory
-
-[filter:sizelimit]
-paste.filter_factory = nova.api.sizelimit:RequestBodySizeLimiter.factory
+...
 
 [filter:keystonecontext]
 paste.filter_factory = nova.api.auth:NovaKeystoneContext.factory
@@ -338,10 +315,4 @@ paste.app_factory = nova.api.openstack.compute:APIRouter.factory
 
 [app:osapi_compute_app_v3]
 paste.app_factory = nova.api.openstack.compute:APIRouterV3.factory
-
-[pipeline:oscomputeversions]
-pipeline = faultwrap oscomputeversionapp
-
-[app:oscomputeversionapp]
-paste.app_factory = nova.api.openstack.compute.versions:Versions.factory
 ~~~
