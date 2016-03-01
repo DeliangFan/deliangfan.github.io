@@ -88,7 +88,8 @@ class AnimalApplication(object):
 
 if '__main__' == __name__:
     application = AnimalApplication()
-    server = eventlet.spawn(wsgi.server, eventlet.listen(('', 8080)), application)
+    server = eventlet.spawn(wsgi.server,
+                            eventlet.listen(('', 8080)), application)
     server.wait()
 ~~~
 
