@@ -40,11 +40,14 @@ if '__main__' == __name__:
 ~~~
 
 ~~~ python
-eventlet.wsgi.server(sock, site, log=None, environ=None, max_size=None, max_http_version='HTTP/1.1',
-                     protocol=<class 'eventlet.wsgi.HttpProtocol'>, server_event=None,
-                     minimum_chunk_size=None, log_x_forwarded_for=True, custom_pool=None, keepalive=True,
-                     log_output=True, log_format='%(client_ip)s - - [%(date_time)s] "%(request_line)s" %(status_code)s.6f', 
-                     url_length_limit=8192, debug=True, socket_timeout=None, capitalize_response_headers=True)
+eventlet.wsgi.server(sock, site, log=None, environ=None,
+                     max_size=None, max_http_version='HTTP/1.1',
+                     protocol=eventlet.wsgi.HttpProtocol, server_event=None,
+                     minimum_chunk_size=None, log_x_forwarded_for=True,
+                     custom_pool=None, keepalive=True,
+                     log_output=True, log_format='%(client_ip)s...', 
+                     url_length_limit=8192, debug=True,
+                     socket_timeout=None, capitalize_response_headers=True)
 ~~~
 
 	
@@ -52,9 +55,6 @@ eventlet.wsgi.server(sock, site, log=None, environ=None, max_size=None, max_http
 - site – WSGI application function.
 - log – File-like object that logs should be written to. If not specified, sys.stderr is used.
 - environ – Additional parameters that go into the environ dictionary of every request.
-- protocol – Protocol class. Deprecated.
-- custom_pool – A custom GreenPool instance which is used to spawn client green threads. If this is supplied, max_size is ignored.
-- log_format – A python format string that is used as the template to generate log lines. The following values can be formatted into it: client_ip, date_time, request_line, status_code, body_length, wall_seconds. The default is a good example of how to use it.
 
 ## Eventlet.spawn
 
