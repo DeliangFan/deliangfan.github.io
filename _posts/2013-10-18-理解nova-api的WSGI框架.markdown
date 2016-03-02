@@ -163,7 +163,7 @@ class IPBlacklistMiddleware(object):
         return _factory
 ~~~
 
-相关的配置文件为：
+相关配置文件：
 
 ~~~ ini
 [composite:main]
@@ -184,22 +184,125 @@ paste.app_factory = animal:AnimalApplication.factory
 
 # Route
 
-[Routes](https://routes.readthedocs.org/en/latest/)
+[Routes](https://routes.readthedocs.org/en/latest/) 是基于 [ruby on rails](http://rubyonrails.org/) 的 [routes system](http://guides.rubyonrails.org/routing.html) 开发的 python 库，它根据 http url 把请求映射到具体的方法中，routes 简单易用，可很方便的构建 Restful 风格的 url。
 
-Routes is a Python re-implementation of the Rails routes system for mapping URLs to application actions, and conversely to generate URLs. Routes makes it easy to create pretty and concise URLs that are RESTful with little effort.
+本例增加 CatController 和 DogController，对于 url_path 为 cats 的 HTTP 请求，由 CatController 处理，对于 url_path 为 dogs 的 HTTP 请求，由 DogController 处理，最终样例如下：
 
-Routes allows conditional matching based on domain, cookies, HTTP method, or a custom function. Sub-domain support is built in. Routes comes with an extensive unit test suite.
+~~~ python
+import eventlet
+from eventlet import wsgi
+from paste.deploy import loadapp
+import routes
+import routes.middleware as middleware
+import webob.dec
+import webob.exc
 
-Current features:
 
-- Sophisticated route lookup and URL generation
-- Named routes
-- Redirect routes
-- Wildcard paths before and after static parts
-- Sub-domain support built-in
-- Conditional matching based on domain, cookies, HTTP method (RESTful), and more
-- Easily extensible utilizing custom condition functions and route generation functions
-- Extensive unit tests
+class Resource(object):
+    def __init__(self, controller):
+        self.controller = controller()
+
+    @webob.dec.wsgify
+    def __call__(self, req):
+        match = req.environ['wsgiorg.routing_args'][1]
+        action = match['action']
+        if hasattr(self.controller, action):
+            method = getattr(self.controller, action)
+            return method(req)
+        return webob.exc.HTTPNotFound()
+
+
+class CatController(object):
+
+    def index(self, req):
+        return 'List cats.'
+
+    def create(self, req):
+        return 'create cat.'
+
+    def delete(self, req):
+        return 'delete cat.'
+
+    def update(self, req):
+        return 'update cat.'
+
+
+class DogController(object):
+
+    def index(self, req):
+        return 'List dogs.'
+
+    def create(self, req):
+        return 'create dog.'
+
+    def delete(self, req):
+        return 'delete dog.'
+
+    def update(self, req):
+        return 'update dog.'
+
+
+class AnimalApplication(object):
+    def __init__(self):
+        self.mapper = routes.Mapper()
+        self.mapper.resource('cat', 'cats', controller=Resource(CatController))
+        self.mapper.resource('dog', 'dogs', controller=Resource(DogController))
+        self.router = middleware.RoutesMiddleware(self.dispatch, self.mapper)
+
+    @webob.dec.wsgify
+    def __call__(self, req):
+        return self.router
+
+    @classmethod
+    def factory(cls, global_conf, **local_conf):
+        return cls()
+
+    @staticmethod
+    @webob.dec.wsgify
+    def dispatch(req):
+        match = req.environ['wsgiorg.routing_args'][1]
+        return match['controller'] if match else  webob.exc.HTTPNotFound()
+
+
+class IPBlacklistMiddleware(object):
+    def __init__(self, application):
+        self.application = application
+
+    def __call__(self, environ, start_response):
+        ip_addr = environ.get('HTTP_HOST').split(':')[0]
+        if ip_addr not in ('127.0.0.1'):
+            start_response('403 Forbidden', [('Content-Type', 'text/plain')])
+            return ['Forbidden']
+
+        return self.application(environ, start_response)
+
+    @classmethod
+    def factory(cls, global_conf, **local_conf):
+        def _factory(application):
+            return cls(application)
+        return _factory
+
+
+if '__main__' == __name__:
+    application = loadapp('config:/path/to/animal.ini')
+    server = eventlet.spawn(wsgi.server,
+                            eventlet.listen(('', 8080)), application)
+    server.wait()
+~~~
+
+测试如下：
+
+~~~ bash
+$ curl 127.0.0.1:8080/test
+The resource could not be found.
+$ curl 127.0.0.1:8080/cats
+List cats.                                                                                                                            $ curl -X POST 127.0.0.1:8080/cats
+create cat.                                                                                                                            $ curl -X PUT 127.0.0.1:8080/cats/kitty
+update cat.                                                                                                                           $ curl -X DELETE 127.0.0.1:8080/cats/kitty
+delete cat.                                                                                                                           $ curl 127.0.0.1:8080/dogs
+List dogs.                                                                                                                            $ curl -X DELETE 127.0.0.1:8080/dogs/wangcai
+delete dog.
+~~~
 
 -------------------
 
@@ -231,7 +334,7 @@ class Server(object):
 
         bind_addr = (host, port)
 
-		# 建立 socket，监听 IP 和端口
+        # 建立 socket，监听 IP 和端口
         self._socket = eventlet.listen(bind_addr, family, backlog=backlog)
 
     def start(self):
@@ -268,24 +371,13 @@ class Loader(object):
     """Used to load WSGI applications from paste configurations."""
 
     def __init__(self, config_path=None):
-        """Initialize the loader, and attempt to find the config.
 
-        :param config_path: Full or relative path to the paste config.
-        :returns: None
-
-        """
-
+        # 获取 WSGI 配置文件的路径
         self.config_path = config_path or CONF.api_paste_config
 
     def load_app(self, name):
-        """Return the paste URLMap wrapped WSGI application.
 
-        :param name: Name of the application to load.
-        :returns: Paste URLMap object wrapping the requested application.
-        :raises: `nova.exception.PasteAppNotFound`
-
-        """
-
+        # paste.deploy 读取配置文件并加载该配置
         return paste.deploy.loadapp("config:%s" % self.config_path, name=name)
 ~~~
 
@@ -320,3 +412,39 @@ paste.app_factory = nova.api.openstack.compute:APIRouterV3.factory
 ~~~
 
 ## Routes
+
+在 nova/api/openstack/compute/\_\_init\_\_.py 定义了类 APIRouter，它定义了各种 url 和 controller 之间的映射关系，最终由 nova/wsgi.py 的类 Router 加载这些 mapper。
+
+nova/wsgi.py 中的 Router class 如下：
+
+~~~ python
+class Router(object):
+    """WSGI middleware that maps incoming requests to WSGI apps."""
+
+    def __init__(self, mapper):
+        """Create a router for the given routes.Mapper."""
+
+        self.map = mapper
+        self._router = routes.middleware.RoutesMiddleware(self._dispatch,
+                                                          self.map)
+
+    @webob.dec.wsgify(RequestClass=Request)
+    def __call__(self, req):
+        """Route the incoming request to a controller based on self.map.
+
+        If no match, return a 404.
+
+        """
+        return self._router
+
+    @staticmethod
+    @webob.dec.wsgify(RequestClass=Request)
+    def _dispatch(req):
+        """Dispatch the request to the appropriate controller."""
+
+        match = req.environ['wsgiorg.routing_args'][1]
+        if not match:
+            return webob.exc.HTTPNotFound()
+        app = match['controller']
+        return app
+~~~
