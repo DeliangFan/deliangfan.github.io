@@ -1,0 +1,62 @@
+---
+layout: post
+title:  "十月华为"
+categories: 我的老东家们 
+---
+&nbsp;&nbsp;&nbsp;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![huaweilogo](http://7xp2eu.com1.z0.glb.clouddn.com/huaweilogo.png?imageView2/1/w/200/h/200/q/100)
+
+&nbsp;&nbsp;&nbsp;
+
+和华为的交集，源于 2012 年的浙大华为杯比赛，那时以三等奖的成绩(奖金 2000 RMB)获得了入场券。入职后被分配到云操作系统部，通信出身的我近乎从零学习 OpenStack，先后参与 nova, keystone 的二次开发，14 年初成为 Heat 模块的专职负责人，期间兼职了运维角色，负责部门几十台服务器的上架和维护工作。在这十月里，我恶补了计算机的基础功底，也在工作中学习多个方面的知识；我曾在深夜里感到无比的疲惫，也在凌晨中因解决 bug 而惊喜不已；我欣赏 OpenStack 里里外外的设计之美，也厌恶某些低效繁杂的工作模式。
+
+我钦佩华为老东家实干的精神和取得的成就，却不太欣赏所在的部门。来过了，经历了，该走了，留点总结吧。
+
+----
+
+# 视野
+
+我认为云计算的从业人员最好都能问问自己下面两个基本问题：
+
+- 云是什么？为什么起于 AWS？
+- 怎么看待 OpenStack 在公有云和私有云的地位？
+
+很可惜的是，多数的部门人员从未用过各大公有云厂商的服务，也不知道 Redhat 的 RDO 和 Mirantis 的 Fuel。优秀从模仿开始，其实许多还在摸索的问题，人家已经给出了答案。
+
+-----
+
+# 效率
+
+复杂的事情简单化
+简单的事情流程化
+流程的步骤自动化
+
+## CI-CD
+
+回顾 14 年通宵达旦，周末永远单休的经历，实质上的开发量并不多，究其原因在于忽视 CI-CD 导致的恶性循环。
+
+- 废弃了 OpenStack 自带的单元测试，私有代码无单元测试
+- 即没利用社区的 tempest，又没编写集成测试代码，无法保证 API 层面的质量
+
+然后，然后，一切手工测试......
+
+## 工具
+
+- git: 部门采用 svn 管理版本，每次升级都是一场恶梦 
+- gerrit: 缺乏 code review
+- 缺乏外网权限: 导致检索能力低下，解决问题能力低下(源码安装 heat 时需一个个下载依赖 rpm 包)
+
+------
+
+# 工作与生活
+
+如果把 IT 比作建筑：
+
+美满的人生是跟着有视野的 Boss，和一群设计师，充满节奏的精雕细琢，十年后，新城拔地而起。
+
+苦逼的人生是跟着监工般的 Boss，和一群工友，通宵达旦积极的搬砖头，十年后，积劳成疾。
+
+--------------
+
+最后，感谢老东家，给我一个起点，带我进了一个行业，愿你更上一层楼。
