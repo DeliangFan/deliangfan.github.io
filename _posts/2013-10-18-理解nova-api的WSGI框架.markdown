@@ -4,17 +4,17 @@ title:  "深入理解 nova-api 的 WSGI"
 categories: Architectrue
 ---
 
-本文是 [理解 WSGI 框架](http://wsfdl.com/architectrue/2013/10/14/%E7%90%86%E8%A7%A3WSGI%E6%A1%86%E6%9E%B6.html) 的下篇，重点介绍 WSGI 框架下一些常用的 python module，并使用这些 module 编写一个类似 nova-api 所用的 WSGI 框架的简单例子，最后分析 [nova](https://wiki.openstack.org/wiki/Nova) 是如何使用这些 module 构建其 WSGI 框架。
+本文是 [理解 WSGI 框架](http://wsfdl.com/architectrue/2013/10/14/%E7%90%86%E8%A7%A3WSGI%E6%A1%86%E6%9E%B6.html) 的下篇，重点介绍 WSGI 框架下一些常用的 python module，并使用这些 module 编写一个类似 nova-api 里 WSGI 的简单样例，最后分析 [nova](https://wiki.openstack.org/wiki/Nova) 是如何使用这些 module 构建其 WSGI 框架。
 
 - [eventlet](http://eventlet.net/): python 的高并发网络库
 - [paste.deploy](http://pythonpaste.org/deploy/): 用于发现和配置 WSGI application 和 server 的库
-- [routes](https://routes.readthedocs.org/en/latest/): 处理 url mapping 的库
+- [routes](https://routes.readthedocs.org/en/latest/): 处理 http url mapping 的库
 
 --------------------
 
 # Eventlet
 
-[Eventlet](http://eventlet.net/) 是一个基于协程的 Python 高并发网络库，和上篇文章所用的 [wsgiref](https://docs.python.org/2/library/wsgiref.html) 相比，它具有更强大的功能和更好的性能，openstack 就大量使用 eventlet 以提供并发能力。它具有以下特点：
+[Eventlet](http://eventlet.net/) 是一个基于协程的 Python 高并发网络库，和上篇文章所用的 [wsgiref](https://docs.python.org/2/library/wsgiref.html) 相比，它具有更强大的功能和更好的性能，OpenStack 大量的使用 eventlet 以提供并发能力。它具有以下特点：
 
 - 使用 epoll、kqueue 或 libevent 等 I/O 复用机制，对于非阻塞 I/O 具有良好的性能
 - 基于[协程(Coroutines)](https://en.wikipedia.org/wiki/Coroutine)，和进程、线程相比，其切换开销更小，具有更高的性能
@@ -36,12 +36,12 @@ eventlet.wsgi.server(sock, site, log=None, environ=None,
                      socket_timeout=None, capitalize_response_headers=True)
 ~~~
 
-该函数具有众多的参数，重点介绍以下 2 个参数：
+该函数的参数众多，重点介绍以下 2 个参数：
 
 - sock: 即 TCP Socket，通常由 eventlet.listen('IP', PORT) 实现
 - site: WSGI 的 application
 
-回顾上篇文章内容，本例采用 callable 的 instance 实现一个 WSGI application，采用 eventlet.server 构建 WSGI server，如下：
+回顾上篇文章内容，本例采用 callable 的 instance 实现一个 WSGI application，利用 eventlet.server 构建 WSGI server，如下：
 
 ~~~ python
 import eventlet
@@ -64,7 +64,7 @@ if '__main__' == __name__:
 
 ## Eventlet.spawn
 
-[Eventlet.spawn](http://eventlet.net/doc/basic_usage.html) 基于 greenthread，它通过创建一个协程来执行函数，从而提供并发。
+[Eventlet.spawn](http://eventlet.net/doc/basic_usage.html) 基于 greenthread，它通过创建一个协程来执行函数，从而提供并发处理能力。
 
 ~~~ python
 eventlet.spawn(func, *args, **kw)
@@ -184,9 +184,9 @@ paste.app_factory = animal:AnimalApplication.factory
 
 # Route
 
-[Routes](https://routes.readthedocs.org/en/latest/) 是基于 [ruby on rails](http://rubyonrails.org/) 的 [routes system](http://guides.rubyonrails.org/routing.html) 开发的 python 库，它根据 http url 把请求映射到具体的方法中，routes 简单易用，可很方便的构建 Restful 风格的 url。
+[Routes](https://routes.readthedocs.org/en/latest/) 是基于 [ruby on rails](http://rubyonrails.org/) 的 [routes system](http://guides.rubyonrails.org/routing.html) 开发的 python 库，它根据 http url 把请求映射到具体的方法，routes 简单易用，可方便的构建 Restful 风格的 url。
 
-本例增加 CatController 和 DogController，对于 url_path 为 cats 的 HTTP 请求，由 CatController 处理，对于 url_path 为 dogs 的 HTTP 请求，由 DogController 处理，最终样例如下：
+本例增加 CatController 和 DogController，对于 url_path 为 cats 的 HTTP 请求，映射到 CatController 处理，对于 url_path 为 dogs 的 HTTP 请求，映射到 DogController 处理，最终样例如下：
 
 ~~~ python
 import eventlet
@@ -296,11 +296,16 @@ if '__main__' == __name__:
 $ curl 127.0.0.1:8080/test
 The resource could not be found.
 $ curl 127.0.0.1:8080/cats
-List cats.                                                                                                                            $ curl -X POST 127.0.0.1:8080/cats
-create cat.                                                                                                                            $ curl -X PUT 127.0.0.1:8080/cats/kitty
-update cat.                                                                                                                           $ curl -X DELETE 127.0.0.1:8080/cats/kitty
-delete cat.                                                                                                                           $ curl 127.0.0.1:8080/dogs
-List dogs.                                                                                                                            $ curl -X DELETE 127.0.0.1:8080/dogs/wangcai
+List cats.
+$ curl -X POST 127.0.0.1:8080/cats
+create cat.
+$ curl -X PUT 127.0.0.1:8080/cats/kitty
+update cat.
+$ curl -X DELETE 127.0.0.1:8080/cats/kitty
+delete cat.
+$ curl 127.0.0.1:8080/dogs
+List dogs.
+$ curl -X DELETE 127.0.0.1:8080/dogs/wangcai
 delete dog.
 ~~~
 
