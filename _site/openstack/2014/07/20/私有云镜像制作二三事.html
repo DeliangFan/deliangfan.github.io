@@ -6,11 +6,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>理解 Restful API</title>
-  <meta name="description" content="REpresentational State Transfer (REST) 于 2000 年由 Roy Fielding 在其博士论文 Architectural Styles and the Design of Network-based Software Architectures 提出。">
+  <title>私有云镜像制作二三事</title>
+  <meta name="description" content="   ">
 
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="http://wsfdl.com/openstack/2013/09/20/%E7%90%86%E8%A7%A3Restful-API.html">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2014/07/20/%E7%A7%81%E6%9C%89%E4%BA%91%E9%95%9C%E5%83%8F%E5%88%B6%E4%BD%9C%E4%BA%8C%E4%B8%89%E4%BA%8B.html">
   <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
 </head>
 
@@ -57,16 +57,75 @@
         <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title" itemprop="name headline">理解 Restful API</h1>
-    <p class="post-meta"><time datetime="2013-09-20T00:00:00+08:00" itemprop="datePublished">Sep 20, 2013</time></p>
+    <h1 class="post-title" itemprop="name headline">私有云镜像制作二三事</h1>
+    <p class="post-meta"><time datetime="2014-07-20T00:00:00+08:00" itemprop="datePublished">Jul 20, 2014</time></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
-    <p><strong>R</strong><strong>E</strong>presentational <strong>S</strong>tate <strong>T</strong>ransfer (<a href="https://en.wikipedia.org/wiki/Representational_state_transfer">REST</a>) 于 2000 年由 Roy Fielding 在其博士论文 <a href="https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm">Architectural Styles and the Design of Network-based Software Architectures</a> 提出。</p>
+    <hr />
+<p>   </p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/restresourceaction.png" alt="" /></p>
+<blockquote>
+  <p>Note: 本文参考由文剑编写的镜像制作文档。</p>
+</blockquote>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/resturimethod.png" alt="" /></p>
+<p>                                        <img src="http://7xp2eu.com1.z0.glb.clouddn.com/builddiskimage.png" alt="disk image" /></p>
+
+<h1 id="id-section">简介</h1>
+
+<p>多数企业通常会维护自己的 Linux 操作系统，当企业构建私有云时，需要把该操作系统制作成 OpenStack 的 Image，本文主要介绍私有云场景下镜像制作的方法和注意事项。<a href="http://docs.openstack.org/image-guide/">OpenStack Virtual Machine Image Guide</a> 也给出详细的镜像制作流程。</p>
+
+<p>建议安装的软件：</p>
+
+<ul>
+  <li><a href="https://cloudinit.readthedocs.org/en/latest/">cloud-init</a>: 支持虚拟机在初始化时安装软件、执行脚本和设置某些配置(与 metadata，userdata 有关)，云平台部署 PaaS 组件时，cloud-init 不可或缺。</li>
+  <li><a href="http://wiki.qemu.org/Features/QAPI/GuestAgent">qemu-guest-agent</a>: 支持 ceilometer 采集虚拟机真实的内存使用量。</li>
+</ul>
+
+<p>建议的配置：</p>
+
+<ul>
+  <li>DNS: /etc/resolv.conf 设置为企业的 DNS server</li>
+  <li>NTP: /etc/ntp.conf 设置为企业的 NTP server</li>
+  <li>Repository: 设置为企业的 repository</li>
+</ul>
+
+<hr />
+
+<h1 id="id-section-1">制作步骤</h1>
+
+<p>1.启动虚拟机</p>
+
+<pre><code class="language-bash"># ISO 镜像请参考 OpenStack Virtual Machine Image Guide
+virt-install --virt-type kvm --name build_image --ram 2048 \
+--disk /home/name/your_image.qcow2,format=qcow2 --network network=default \ 
+--graphics vnc,listen=0.0.0.0 --noautoconsole --os-type=linux --os-variant=rhel6 --import
+</code></pre>
+
+<p>2.安装 cloud-init, qemu-guest-agent</p>
+
+<pre><code class="language-bash">$ yum install -y qemu-guest-agent cloud-init
+
+# 启用root账户
+$ sed -i 's/disable_root: 1/disable_root: 0/' /etc/cloud/cloud.cfg
+# 允许ssh客户端使用密码登陆
+$ sed -i 's/ssh_pwauth: 0/ssh_pwauth: 1/' /etc/cloud/cloud.cfg
+
+# 更新 /etc/sudoers Defaults requiretty 为
+Defaults:centos !requiretty
+</code></pre>
+
+<p>3.关机并清除使用痕迹</p>
+
+<pre><code class="language-bash">$ virt-sysprep -d build_image
+[ 0.0] Examining the guest ...
+[ 3.0] Performing "abrt-data" ...
+[ 3.0] Performing "bash-history" ...
+......
+[ 3.0] Performing "customize" ...
+[ 3.0] Setting a random seed
+</code></pre>
+
 
   </div>
 

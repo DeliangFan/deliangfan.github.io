@@ -248,12 +248,107 @@ E:   Ad=xx(s) Atr=xx(ssss) MxPS=dddd Ivl=dddms
 
 <h1 id="id-libvirt-usb-passthrough">Libvirt USB passthrough</h1>
 
+<h2 id="id-libvirt-usb-device">Libvirt USB Device</h2>
+
+<p>在 nova/virt/libvirt/config.py 定义 USB Device 如下：</p>
+
+<pre><code class="language-python">class LibvirtConfigGuestHostdevUSB(LibvirtConfigGuestHostdev):
+    def __init__(self, **kwargs):
+        super(LibvirtConfigGuestHostdevUSB, self).\
+                __init__(mode='subsystem', type='usb',
+                         **kwargs)
+        self.bus = None
+        self.device = None
+        self.startup_policy = 'optional'
+        self.specify_usb_controller = False
+        self.usb_controller_type = 'usb'
+        self.usb_controller_bus = '0'
+        self.usb_controller_port = None
+
+    def format_dom(self):
+        dev = super(LibvirtConfigGuestHostdevUSB, self).format_dom()
+
+        source_address = etree.Element('address')
+        source_address.set('bus', self.bus)
+        source_address.set('device', self.device)
+
+        source = etree.Element('source')
+        source.set('startupPolicy', self.startup_policy)
+        source.append(source_address)
+        dev.append(source)
+
+        if self.specify_usb_controller:
+            address = etree.Element('address')
+            address.set('type', self.usb_controller_type)
+            if self.usb_controller_bus:
+                address.set('bus', self.usb_controller_bus)
+            if self.usb_controller_port:
+                address.set('port', self.usb_controller_port)
+            dev.append(address)
+
+        return dev
+
+    def parse_dom(self, xmldoc):
+        childrens = super(LibvirtConfigGuestHostdevUSB,
+                          self).parse_dom(xmldoc)
+        for children in childrens:
+            if children.tag == 'address':
+                self.specify_usb_controller = True
+                self.usb_controller_type = children.get('type')
+                self.usb_controller_bus = children.get('bus')
+                self.usb_controller_port = children.get('port')
+
+            if children.tag == 'source':
+                for sub in children.getchildren():
+                    if sub.tag == 'address':
+                        self.bus = sub.get('bus')
+                        self.device = sub.get('device')
+</code></pre>
+
 <h2 id="id-libvirt-usb-controller">Libvirt USB Controller</h2>
 
 <p>Libvirt 支持多种 <a href="http://libvirt.org/formatdomain.html#elementsControllers">USB controller</a> 设备，下述xml 描述了两个 USB controller，分别为 ehci 和 uhci。</p>
 
 <pre><code class="language-xml">&lt;controller type='usb' index='0' model='ehci'/&gt;
 &lt;controller type='usb' index='1' model='piix3-uhci'&gt;
+</code></pre>
+
+<p>在 nova/virt/libvirt/config.py 定义 USB Controller 如下：</p>
+
+<pre><code class="language-python">class LibvirtConfigGuestUSBController(LibvirtConfigGuestDevice):
+
+    def __init__(self, **kwargs):
+        super(LibvirtConfigGuestUSBController, self).__init__(
+            root_name="controller",
+            **kwargs)
+
+        self.type = "usb"
+        # Set to uhci controller by default.
+        self.model = "piix3-uhci"
+        # For uhci usb controller, default set its index to 0.
+        self.index = '0'
+        self.ports = None
+        self.vectors = None
+
+    def format_dom(self):
+        dev = super(LibvirtConfigGuestUSBController, self).format_dom()
+
+        dev.set("type", self.type)
+        if self.model:
+            dev.set("model", self.model)
+        if self.index:
+            dev.set("index", self.index)
+        if self.ports:
+            dev.set("ports", self.ports)
+        if self.vectors:
+            dev.set("vectors", self.vectors)
+
+        return dev
+
+    def parse_dom(self, xmldoc):
+        super(LibvirtConfigGuestUSBController, self).parse_dom(xmldoc)
+        self.type = xmldoc.get('type')
+        self.index = xmldoc.get('index')
 </code></pre>
 
 <h2 id="id-attach-usb-device-to-vm">Attach USB Device to VM</h2>

@@ -6,11 +6,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>[行摄] 彩云之南</title>
-  <meta name="description" content="">
+  <title>十月华为</title>
+  <meta name="description" content="   ">
 
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="http://wsfdl.com/photos/2014/06/15/%E5%BD%A9%E4%BA%91%E4%B9%8B%E5%8D%97.html">
+  <link rel="canonical" href="http://wsfdl.com/%E6%88%91%E7%9A%84%E8%80%81%E4%B8%9C%E5%AE%B6%E4%BB%AC/2014/05/31/%E5%8D%8E%E4%B8%BA.html">
   <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
 </head>
 
@@ -57,77 +57,74 @@
         <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
 
   <header class="post-header">
-    <h1 class="post-title" itemprop="name headline">[行摄] 彩云之南</h1>
-    <p class="post-meta"><time datetime="2014-06-15T00:00:00+08:00" itemprop="datePublished">Jun 15, 2014</time></p>
+    <h1 class="post-title" itemprop="name headline">十月华为</h1>
+    <p class="post-meta"><time datetime="2014-05-31T00:00:00+08:00" itemprop="datePublished">May 31, 2014</time></p>
   </header>
 
   <div class="post-content" itemprop="articleBody">
-    <hr />
+    <p>   </p>
 
-<p>彩云之南，我心的方向，孔雀飞去，回忆悠长；玉龙雪山，闪耀着银光，秀色丽江，人在路上。</p>
+<p>                                                <img src="http://7xp2eu.com1.z0.glb.clouddn.com/huaweilogo.png?imageView2/1/w/200/h/200/q/100" alt="huaweilogo" /></p>
 
-<p>此次云南之行，历时半月，途径昆明、大理、丽江和泸沽湖，没有游玩双廊和梅里，甚是遗憾，假以时日，希望再悠闲的走一遭，并好好拍点照。</p>
+<p>   </p>
 
-<blockquote>
-  <p>都说昆明四季如春，可一点也不宜人。   <br />
-洱海，来了不想走，走了还想来。   <br />
-丽江，值得在酒吧，喝上一杯夜色。    <br />
-泸沽湖不去，遗憾万年；去了，万年遗憾。</p>
-</blockquote>
+<p>和华为的交集，源于 2012 年的浙大华为杯比赛，那时以三等奖的成绩(奖金 2000 RMB)获得了入场券。入职后被分配到云操作系统部，通信出身的我近乎从零学习 OpenStack，先后参与 nova, keystone 的二次开发，14 年初成为 Heat 模块的专职负责人，期间兼职了运维角色，负责部门几十台服务器的上架和维护工作。在这十月里，我恶补了计算机的基础功底，也在工作中学习多个方面的知识；我曾在深夜里感到无比的疲惫，也在凌晨中因解决 bug 而惊喜不已；我欣赏 OpenStack 里里外外的设计之美，也厌恶某些低效繁杂的工作模式。</p>
+
+<p>我钦佩华为老东家实干的精神和取得的成就，却不太欣赏所在的部门。来过了，经历了，该走了，留点总结吧。</p>
 
 <hr />
 
-<p>    <br />
-    </p>
+<h1 id="id-section">视野</h1>
 
-<p>P1. 苍山之下</p>
+<p>我认为云计算的从业人员最好都能问问自己下面两个基本问题：</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/P1yn.JPG?imageView2/1/w/533/h/800/q/100" alt="p1" /></p>
+<ul>
+  <li>云是什么？为什么起于 AWS？</li>
+  <li>怎么看待 OpenStack 在公有云和私有云的地位？</li>
+</ul>
 
-<p>    <br />
-    </p>
+<p>很可惜的是，多数的部门人员从未用过各大公有云厂商的服务，也不知道 Redhat 的 RDO 和 Mirantis 的 Fuel。优秀从模仿开始，其实许多还在摸索的问题，人家已经给出了答案。</p>
 
-<p>P2. 洱海之边</p>
+<hr />
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/P2yn.JPG?imageView2/1/w/533/h/800/q/100" alt="p2" /></p>
+<h1 id="id-section-1">效率</h1>
 
-<p>    <br />
-    </p>
+<p>复杂的事情简单化<br />
+简单的事情流程化<br />
+流程的步骤自动化</p>
 
-<p>P3. 洱海之边</p>
+<h2 id="id-ci-cd">CI-CD</h2>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/p3yn.JPG?imageView2/1/w/800/h/533/q/100" alt="p2" /></p>
+<p>回顾 14 年通宵达旦，周末永远单休的经历，实质上的开发量并不多，究其原因在于忽视 CI-CD 导致的恶性循环。</p>
 
-<p>    <br />
-    </p>
+<ul>
+  <li>废弃了 OpenStack 自带的单元测试，私有代码无单元测试</li>
+  <li>即没利用社区的 tempest，又没编写集成测试代码，无法保证 API 层面的质量</li>
+</ul>
 
-<p>P4. 背影</p>
+<p>然后，然后，一切手工测试……</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/P4yn.JPG?imageView2/1/w/800/h/533/q/100" alt="p4" /></p>
+<h2 id="id-section-2">工具</h2>
 
-<p>    <br />
-    </p>
+<ul>
+  <li>git: 部门采用 svn 管理版本，每次升级都是一场恶梦</li>
+  <li>gerrit: 缺乏 code review</li>
+  <li>缺乏外网权限: 导致检索能力低下，解决问题能力低下(源码安装 heat 时需一个个下载依赖 rpm 包)</li>
+</ul>
 
-<p>P5. 泸沽湖旁</p>
+<hr />
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/P5yn.JPG?imageView2/1/w/800/h/533/q/100" alt="p5" /></p>
+<h1 id="id-section-3">工作与生活</h1>
 
-<p>    <br />
-    </p>
+<p>如果把 IT 比作建筑：</p>
 
-<p>P6. 泸沽湖</p>
+<p>美满的人生是跟着有视野的 Boss，和一群设计师，充满节奏的精雕细琢，十年后，新城拔地而起。</p>
 
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/p6yn.JPG?imageView2/1/w/800/h/533/q/100" alt="p6" /></p>
+<p>苦逼的人生是跟着监工般的 Boss，和一群工友，通宵达旦积极的搬砖头，十年后，积劳成疾。</p>
 
-<p>    <br />
-    </p>
+<hr />
 
-<p>P7. 泸沽湖</p>
-
-<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/P7yn.jpg?imageView2/1/w/800/h/533/q/100" alt="p7" /></p>
-
-<p>    <br />
-    </p>
+<p>最后，感谢老东家，给我一个起点，带我进了一个行业，愿你更上一层楼。</p>
 
   </div>
 

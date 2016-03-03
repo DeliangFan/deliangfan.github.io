@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Linux 调试三剑客--strace,lsof,tcpdump</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/linux/2015/01/03/Linux%E8%B0%83%E8%AF%95%E5%88%A9%E5%99%A8.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">Linux 调试三剑客--strace,lsof,tcpdump</h1>
+    <p class="post-meta"><time datetime="2015-01-03T00:00:00+08:00" itemprop="datePublished">Jan 3, 2015</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <hr />
+
+<p>Brendan D. Gregg 专注 Linux performance &amp; tuning 许多年，其博客 <a href="http://www.brendangregg.com/index.html">brendangregg.com</a> 里关于分析和调优的干货琳琅满目。一篇名为 <a href="http://www.brendangregg.com/linuxperf.html">Linux Performance</a> 文章全面而详细的整理了常用工具，覆盖了硬件、存储、网络乃至应用，如下图：</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/linux_observability_tools.png" alt="Linux performance" /></p>
+
+<p>能掌握上图的十八般武艺固然最好，从定位分析的角度来说，我认为三个高级而常用的命令是 strace, lsof 和 tcpdump。</p>
+
+<hr />
+
+<h1 id="id-strace">strace</h1>
+
+<blockquote>
+  <p>strace - trace system calls and signals</p>
+</blockquote>
+
+<p>据说，对一个经验丰富的 Linux C/C++ 工程师，他通过 <a href="http://man7.org/linux/man-pages/man1/strace.1.html">strace</a> 即可分析多数软件的大致实现方式。Linux 进程空间可分为用户空间和内核空间，程序通常运行在用户态，它需要通过 <a href="https://en.wikipedia.org/wiki/System_call">系统调用</a> 访问内核空间。系统调用的重要性不言而喻，凡是涉及到进程、文件管理、设备管理和通信等的操作都必须依赖系统调用完成，如下：</p>
+
+<ul>
+  <li>Process Control: load/execute/end/abort/create/terminate process, get/set process attributes, wait for time/event/signal, allocate/free memory</li>
+  <li>File management: create/delete/open/read/write/reposition file, get/set file attributes</li>
+  <li>Device Management: request/release/attach/detach device，read/write/reposition, get/set device attributes</li>
+  <li>Communication: create/delete connection, send/receive messages, transfer status information</li>
+</ul>
+
+<p>strace 追踪进程产生的所有系统调用，包括参数、返回值和执行消耗的时间，很多是涉及到内核和资源层面的操作都需要系统调用完成，所以 strace 在诊断以下场景非常有效：</p>
+
+<ul>
+  <li>程序意外退出</li>
+  <li>程序运行缓慢</li>
+  <li>进程阻塞</li>
+</ul>
+
+<p>strace 的通常使用方式如下：</p>
+
+<pre><code class="language-bash">strace -f -F -T -tt -o output.txt straced_cmd
+
+-f  跟踪 fork 产生的子进程
+-F  跟踪 vfork 产生的子进程
+-tt 在输出中的每一行前加上时间信息,微秒级
+-T  显示每一个调用所耗的时间
+-o  输出到指定文件 output.txt
+</code></pre>
+
+<p>例如：</p>
+
+<pre><code class="language-bash">$ strace -T -tt -f -F ls
+14:17:18.096447 execve("/bin/ls", ["ls"], [/* 31 vars */]) = 0 &lt;0.000191&gt;
+14:17:18.097156 brk(0)                  = 0x1852000 &lt;0.000196&gt;
+14:17:18.097554 access("/etc/ld.so.nohwcap", F_OK) = -1 ENOENT (No such file or directory) &lt;0.000088&gt;
+14:17:18.097836 mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f6056b52000 &lt;0.000186&gt;
+14:17:18.098242 access("/etc/ld.so.preload", R_OK) = -1 ENOENT (No such file or directory) &lt;0.000097&gt;
+14:17:18.101519 open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3 &lt;0.000131&gt;
+</code></pre>
+
+<p>对于守护进程，strace 的使用为：</p>
+
+<pre><code class="language-bash">strace -T -tt -e trace=all -o output.txt -p daemon_pid
+</code></pre>
+
+<hr />
+
+<h1 id="id-lsof">lsof</h1>
+
+<blockquote>
+  <p>Unix philosophy: everything is a file.</p>
+</blockquote>
+
+<p>Linux/Unix 的<a href="https://en.wikipedia.org/wiki/Unix_file_types">文件类型</a>有以下 7 种：</p>
+
+<ul>
+  <li>Regular file</li>
+  <li>Directory</li>
+  <li>Symbolic link</li>
+  <li>Named pipe</li>
+  <li>Socket</li>
+  <li>Device file</li>
+  <li>Door</li>
+</ul>
+
+<p>lsof 用于查看进程打开的文件，使用方式如下：</p>
+
+<pre><code class="language-bash"># 查看某个进程打开的文件
+lsof -p pid
+
+# 查看某个文件被哪些进程打开
+lsof file_name
+</code></pre>
+
+<p>例如：</p>
+
+<pre><code class="language-bash"># 1250 为 nova-api 的 pid
+$ lsof -p 1250
+COMMAND   PID USER   FD   TYPE DEVICE SIZE/OFF   NODE NAME
+nova-api 1250 nova  cwd    DIR  252,0     4096 133223 /var/lib/nova
+nova-api 1250 nova  rtd    DIR  252,0     4096      2 /
+nova-api 1250 nova  txt    REG  252,0  3345416 274069 /usr/bin/python2.7
+nova-api 1250 nova  mem    REG  252,0    31720 407980 /usr/lib/python2.7/dist-packages/Crypto/Cipher/_AES.x86_64-linux-gnu.so
+......
+nova-api 1250 nova    5w  FIFO    0,9      0t0  12796 pipe
+nova-api 1250 nova    6u  IPv4  12864      0t0    TCP *:8773 (LISTEN)
+nova-api 1250 nova    7u  IPv4  12891      0t0    TCP *:8774 (LISTEN)
+nova-api 1250 nova    8r   CHR    1,9      0t0   6683 /dev/urandom
+nova-api 1250 nova    9u  IPv4  12986      0t0    TCP *:8775 (LISTEN)
+nova-api 1250 nova   17u  0000   0,10        0   6631 anon_inode~ bash
+</code></pre>
+
+<p>又如，查询 /var/log/nova/nova-api 被哪些进程打开：</p>
+
+<pre><code class="language-bash">$ lsof /var/log/nova/nova-api.log
+COMMAND   PID USER   FD   TYPE DEVICE SIZE/OFF   NODE NAME
+nova-api 1250 nova    3w   REG  252,0  2086779 133272 /var/log/nova/nova-api.log
+nova-api 2235 nova    3w   REG  252,0  2086779 133272 /var/log/nova/nova-api.log
+nova-api 2247 nova    3w   REG  252,0  2086779 133272 /var/log/nova/nova-api.log
+nova-api 2255 nova    3w   REG  252,0  2086779 133272 /var/log/nova/nova-api.log
+</code></pre>
+
+<hr />
+
+<h1 id="id-tcpdump">tcpdump</h1>
+
+<p><a href="https://en.wikipedia.org/wiki/Tcpdump">tcpdump</a> 和 <a href="https://www.wireshark.org/">wireshark</a> 类似，都是抓包工具，windows 用户多用 wireshark，linux 用户多用 tcpdump。tcpdump 允许用户拦截和显示发送或收到过网络连接到该计算机的TCP/IP和其他数据包，从数据链路层、网络层、传输层乃至应用层，覆盖了多种常用协议，并提供了丰富的过滤功能，使用如下：</p>
+
+<p>过滤网卡：</p>
+
+<pre><code class="language-bash">tcpdump -i eth1
+</code></pre>
+
+<p>过滤 IP：</p>
+
+<pre><code class="language-bash">tcpdump net 10.10.10.1
+tcpdump src net 10.10.10.1
+tcpdump dst net 10.10.10.2
+</code></pre>
+
+<p>过滤 port：</p>
+
+<pre><code class="language-bash">tcpdump port 80
+tcpdump src port 80
+tcpdump dst port 80
+</code></pre>
+
+<p>过滤 protocol：</p>
+
+<pre><code class="language-bash">tcpdump arp
+tcpdump icmp
+tcpdump ip
+tcpdump udp
+tcpdump tcp
+</code></pre>
+
+<p>常用表达试：</p>
+
+<pre><code>&amp;  or 'and'
+|| or 'or'
+!  or 'not'
+</code></pre>
+
+<p>抓取所有经过 eth0，目的地址是 10.10.10.1:80 的 TCP 数据：</p>
+
+<pre><code class="language-bash">$ tcpdump -i eth0 (tcp) and (dst port 80) and (dst net 10.10.10.1)  
+</code></pre>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
