@@ -1,0 +1,172 @@
+---
+layout: post
+title:  "如何打包和发布 python 应用---(上)"
+categories: Python
+---
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![pypilog](http://7xp2eu.com1.z0.glb.clouddn.com/pipylog.png)
+
+
+[Packaging and Distributing Projects](http://python-packaging-user-guide.readthedocs.org/en/latest/distributing/
+) 介绍了 python application 的打包和发布规范，只有满足这种规范的 package 才能被 pip 等包管理工具管理。[setuptools](http://pythonhosted.org/setuptools/index.html) 是常用的打包工具，其文档 [Building and Distributing Packages with Setuptools](http://pythonhosted.org/setuptools/setuptools.html) 同样详细的阐述打包规范。本文以名为 koala 的 application 为例(官网例子请见 [PyPA sample project](https://github.com/pypa/sampleproject))，展示如何编写一个标准的 package，期间主要涉及三个步骤：
+
+- Configure: python application 的文件和目录组织
+- Package: 打包 application
+- Distribute: 把打包后的 application 发布到 Pypi 中
+
+-------------
+
+# Configuring your Project
+
+编写 application 时，需要注意两方面的规范：
+
+- 文件目录组织：包含目录组织规范、某些必需的文件
+- setup.py：打包的参数信息
+
+## Initial Files
+
+我们以 koala 为例，这是一个非常简单的 application，其目录结构及文件名称如下所示：
+
+~~~
+koala
+├── setup.py
+├── setup.cfg
+├── README.rst
+├── MANIFEST.in
+└── koala
+    ├── __init__.py
+    └── main.py
+~~~
+
+从上图可知，koala 的根目录必须包含四个基本文件：
+
+- setup.py: 最为重要的文件，包含了打包的参数和基本信息，下节请见详细介绍
+- setup.cfg: setup.py 的配置文件，其格式为 [INI](https://en.wikipedia.org/wiki/INI_file)
+- README.rst: 一个 [reStructuredText](http://docutils.sourceforge.net/rst.html) 格式的文件，用于介绍项目
+- MANIFEST.in: 记录某些需要被打包但未被 setup.py 包含的文件，其格式和规范请见 [The MANIFEST.in template](https://docs.python.org/2/distutils/sourcedist.html#the-manifest-in-template) 
+
+setup.py 文件内容请见下节。
+
+setup.cfg 和 MANIFEST.in 在本例中均为空文件。
+
+README.rst 文件的内容如下：
+
+~~~ rst
+$ cat README.rst
+=====
+Koala
+=====
+
+This project provides a demo for packaging and distributing python application.
+~~~
+
+koala/\_\_init\_\_.py 为空文件，koala/main.py 文件的内容如下：
+
+~~~
+$ cat koala/main.py
+print("A demo for python package.")
+~~~
+
+## Setup.py
+
+setup.py 有两个非常重要的函数：
+
+- setup(): 该函数囊括了打包的参数和信息
+- 打包命令的入口: python setup.py --help 可以查看可用的命令
+
+本例 setup.py 文件的内容如下:
+
+~~~ python
+import os
+
+import setuptools
+
+
+setuptools.setup(
+    name='koala',
+    version='2016.03.1',
+    description='A demo for python packaging.',
+    long_description=open(
+        os.path.join(
+            os.path.dirname(__file__),
+            'README.rst'
+        )
+    ).read(),
+    author='vanderliang',
+    author_email='vanderliang@gmail.com',
+    url='https://github.com/DeliangFan/koala',
+    packages=setuptools.find_packages(),
+)
+~~~
+
+- name: 即项目名称，本例为 koala
+- version: 即版本号，关于版本号的取法请见 [Choosing a versioning scheme](https://packaging.python.org/en/latest/distributing/#choosing-a-versioning-scheme)
+- description: 项目简介
+- long_description: 项目详细介绍
+- author: 作者名称
+- author_email: 作者邮箱
+- url: 项目的 homepage
+- packages: 项目包括的 python package，setuptools.find_packages() 可自动找出包含的 package
+
+本例暂未用到如下参数，这些参数的使用请见下篇。
+
+- classifiers:
+- license:
+- keywords: 
+- install_requires: 
+- package_data: 
+- data_files:
+- scripts:
+- entry_points
+- console_scripts:
+
+--------------
+
+# Build your Package
+
+采用 pip 能够安装 source distribution(sdist) 和 wheels 这两种 python package，如果二者同时存在，pip 优选选择 wheel。
+
+- [Source Distributions(sdist)]((https://packaging.python.org/en/latest/glossary/#term-source-distribution-or-sdist)): 即源码包
+- Wheel: 采用预编译格式，相比之下具有安装速度快的特点
+
+## Source Distribution
+
+采用如下命令即可编译成 [source distribution](https://packaging.python.org/en/latest/glossary/#term-source-distribution-or-sdist):
+
+~~~
+python setup.py sdist
+~~~
+
+## Wheel
+
+根据 project 包含的代码类型以及其所支持的 python 版本， Wheel 格式可细分为三种
+
+- Universal wheel: 纯 python 代码，并且支持 python 2 和 3
+- Pure python wheel: 纯 python 代码，不同时支持 python2 和 3
+- Platform wheel: 非纯 python 代码
+
+采用如下命令可编译成 universal wheel
+
+~~~
+python setup.py bdist_wheel --universal
+~~~
+
+采用如下命令可编译成非 universal wheel(即 pure python wheel 或 platform wheel):
+
+~~~
+python setup.py bdist_wheel
+~~~
+
+## Others
+
+Python application 还可以被编译成其它类型的 package，如 rpm, egg 等，只是这些类型的 package 不被 pip 支持。
+
+~~~
++---------------+--------------------------------------------------------+
+| bdist         | create a built (binary) distribution                   |
+| bdist_dumb    | create a "dumb" built distribution                     |
+| bdist_rpm     | create an RPM distribution                             |
+| bdist_wininst | create an executable installer for MS Windows          |
+| bdist_egg     | create an "egg" distribution                           |
++---------------+--------------------------------------------------------+
+~~~
