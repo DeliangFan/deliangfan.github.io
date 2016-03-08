@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "如何打包和发布 python 应用---(上)"
+title:  "Python application 的打包和发布---(上)"
 categories: Python
 ---
 
@@ -84,7 +84,7 @@ import setuptools
 
 setuptools.setup(
     name='koala',
-    version='2016.03.1',
+    version='2015.09.1',
     keywords='demo',
     description='A demo for python packaging.',
     long_description=open(
@@ -134,10 +134,21 @@ setuptools.setup(
 
 ## Source Distribution
 
-采用如下命令即可编译成 [source distribution](https://packaging.python.org/en/latest/glossary/#term-source-distribution-or-sdist):
+采用如下命令即可编译成 source distribution:
 
 ~~~
-python setup.py sdist
+$ python setup.py sdist
+running sdist
+running egg_info
+creating koala.egg-info
+writing koala.egg-info/PKG-INFO
+...
+creating dist
+Creating tar archive
+removing 'koala-2015.09.1' (and everything under it)
+
+$ ls dist/
+koala-2015.09.1.tar.gz
 ~~~
 
 ## Wheel
@@ -151,13 +162,31 @@ python setup.py sdist
 采用如下命令可编译成 universal wheel
 
 ~~~
-python setup.py bdist_wheel --universal
+$ python setup.py bdist_wheel --universal
+running bdist_wheel
+running build
+installing to build/bdist.macosx-10.10-intel/wheel
+......
+running install_scripts
+creating build/bdist.macosx-10.10-intel/wheel/koala-2015.09.1.dist-info/WHEEL
+
+$ ls dist
+koala-2015.09.1-py2-none-any.whl
 ~~~
 
 采用如下命令可编译成非 universal wheel(即 pure python wheel 或 platform wheel):
 
 ~~~
-python setup.py bdist_wheel
+$ python setup.py bdist_wheel
+running bdist_wheel
+running build
+installing to build/bdist.macosx-10.10-intel/wheel
+......
+running install_scripts
+creating build/bdist.macosx-10.10-intel/wheel/koala-2015.09.1.dist-info/WHEEL
+
+$ ls dist
+koala-2015.09.1-py2.py3-none-any.whl
 ~~~
 
 ## Others
@@ -172,4 +201,44 @@ Python application 还可以被编译成其它类型的 package，如 rpm, egg �
 | bdist_wininst | create an executable installer for MS Windows          |
 | bdist_egg     | create an "egg" distribution                           |
 +---------------+--------------------------------------------------------+
+~~~
+
+-----------------
+
+# Uploading your Project to PyPI
+
+安装 twine，用于上传打包好的 package 至 Pypi：
+
+~~~
+$ pip install twine
+~~~
+
+1 . 在 [Pypi](https://pypi.python.org/pypi?%3Aaction=register_form) 创建一个账户。
+
+2 . 把 koala.egg-info/PKG-INFO 上传至 [Pypi submit](https://pypi.python.org/pypi?%3Aaction=submit_form)，用于注册该项目。
+
+~~~
+$ cat koala.egg-info/PKG-INFO
+Metadata-Version: 1.0
+Name: koala
+Version: 2015.09.1
+Summary: A demo for python packaging.
+Home-page: https://github.com/DeliangFan/koala
+Author: vanderliang
+Author-email: vanderliang@gmail.com
+License: MIT
+Description: =====
+        Koala
+        =====
+
+        This project provides a demo for packaging and distributing python application.
+
+Keywords: demo
+Platform: UNKNOWN
+~~~
+
+3 . 上传至 Pypi:
+
+~~~
+$ twine upload dist/*
 ~~~
