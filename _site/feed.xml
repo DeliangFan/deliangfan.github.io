@@ -6,8 +6,8 @@
 </description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 09 Mar 2016 00:11:29 +0800</pubDate>
-    <lastBuildDate>Wed, 09 Mar 2016 00:11:29 +0800</lastBuildDate>
+    <pubDate>Wed, 09 Mar 2016 00:23:19 +0800</pubDate>
+    <lastBuildDate>Wed, 09 Mar 2016 00:23:19 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
@@ -103,11 +103,11 @@
 &lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/Helion2.png&quot; alt=&quot;Helion2&quot; /&gt;&lt;/p&gt;
 </description>
         <pubDate>Wed, 17 Feb 2016 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/algorithm/2016/02/17/HelionOpenStack.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/algorithm/2016/02/17/HelionOpenStack.html</guid>
+        <link>http://wsfdl.com/openstack/2016/02/17/HelionOpenStack.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/openstack/2016/02/17/HelionOpenStack.html</guid>
         
         
-        <category>algorithm</category>
+        <category>openstack</category>
         
       </item>
     
