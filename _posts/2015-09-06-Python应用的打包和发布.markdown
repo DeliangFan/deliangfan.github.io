@@ -8,17 +8,17 @@ categories: Python
 
 
 [Packaging and Distributing Projects](http://python-packaging-user-guide.readthedocs.org/en/latest/distributing/
-) 介绍了 python application 的打包和发布规范，只有满足这种规范的 package 才能被最为常用的 pip 包管理工具管理。[setuptools](http://pythonhosted.org/setuptools/index.html) 是常用的打包工具，其文档 [Building and Distributing Packages with Setuptools](http://pythonhosted.org/setuptools/setuptools.html) 同样详细的阐述打包规范。本文以名为 packagedemo 的 application 为例(官网例子请见 [PyPA sample project](https://github.com/pypa/sampleproject))，展示如何编写一个标准的 package，期间主要涉及三个步骤：
+) 介绍了 python application 打包和发布的规范，只有满足这种规范的 package 才能被最为常用的包管理工具 pip 所管理。[setuptools](http://pythonhosted.org/setuptools/index.html) 是常用的打包工具，其文档 [Building and Distributing Packages with Setuptools](http://pythonhosted.org/setuptools/setuptools.html) 同样详细的阐述打包规范。本文以名为 packagedemo 的 application 为例(官网例子请见 [PyPA sample project](https://github.com/pypa/sampleproject))，展示如何编写一个标准的 package，期间主要涉及三个步骤：
 
-- Configure: python application 的文件和目录组织
-- Package: 打包 application
-- Distribute: 把打包后的 application 发布到 Pypi 中
+- Configure: packagedemo 的文件和目录组织
+- Package: 打包 packagedemo
+- Distribute: 把打包后的 packagedemo 发布到 Pypi 中
 
 -------------
 
 # Configuring your Project
 
-编写 application 时，需要注意两方面的规范：
+编写 packagedemo 时，需要注意两方面的规范：
 
 - 文件目录组织：包含目录组织规范、某些必需的文件
 - setup.py：打包的参数信息
@@ -38,11 +38,11 @@ packagedemo
     └── main.py
 ~~~
 
-从上图可知，packagedemo 的根目录必须包含四个基本文件：
+从上可知，packagedemo 的根目录必须包含四个基本文件：
 
-- setup.py: 最为重要的文件，包含了打包的参数和基本信息，下节请见详细介绍
+- setup.py: 最为重要的文件，包含了打包的参数和基本信息，详细介绍请见下节
 - setup.cfg: setup.py 的配置文件，其格式为 [INI](https://en.wikipedia.org/wiki/INI_file)
-- README.rst: 一个 [reStructuredText](http://docutils.sourceforge.net/rst.html) 格式的文件，用于介绍项目
+- README.rst: [reStructuredText](http://docutils.sourceforge.net/rst.html) 格式的文件，用于介绍项目
 - MANIFEST.in: 记录某些需要被打包但未被 setup.py 包含的文件，其格式和规范请见 [The MANIFEST.in template](https://docs.python.org/2/distutils/sourcedist.html#the-manifest-in-template) 
 
 setup.py 文件内容请见下节。
@@ -116,7 +116,6 @@ setuptools.setup(
 本例暂未用到如下参数，这些参数的使用请见下篇。
 
 - classifiers:
-- license:
 - install_requires: 
 - package_data: 
 - data_files:
@@ -128,16 +127,16 @@ setuptools.setup(
 
 # Build your Package
 
-采用 pip 能够安装 source distribution(sdist) 和 wheels 这两种 python package，如果二者同时存在，pip 优选选择 wheel。
+采用 pip 可安装 source distribution(sdist) 和 wheels 这两种格式 python package，如果二者同时存在，pip 优选选择 wheel。
 
 - [Source Distributions(sdist)]((https://packaging.python.org/en/latest/glossary/#term-source-distribution-or-sdist)): 即源码包
-- Wheel: 采用预编译格式，相比之下具有安装速度快的特点
+- [Wheel](https://www.python.org/dev/peps/pep-0427/): 采用预编译格式，相比之下具有安装速度快的特点
 
 ## Source Distribution
 
 采用如下命令即可编译成 source distribution:
 
-~~~
+~~~ bash
 $ python setup.py sdist
 running sdist
 running egg_info
@@ -154,15 +153,15 @@ packagedemo-2015.09.1.tar.gz
 
 ## Wheel
 
-根据 project 包含的代码类型以及其所支持的 python 版本， Wheel 格式可细分为三种
+根据 application 包含的代码类型以及其所支持的 python 版本， wheel 格式可细分为三种
 
-- Universal wheel: 纯 python 代码，并且支持 python 2 和 3
-- Pure python wheel: 纯 python 代码，不同时支持 python2 和 3
-- Platform wheel: 非纯 python 代码
+- [Universal wheel](http://python-packaging-user-guide.readthedocs.org/en/latest/distributing/#universal-wheels): 纯 python 代码，并且支持 python 2 和 3
+- [Pure python wheel](http://python-packaging-user-guide.readthedocs.org/en/latest/distributing/#pure-python-wheels): 纯 python 代码，不同时支持 python2 和 3
+- [Platform wheel](http://python-packaging-user-guide.readthedocs.org/en/latest/distributing/#platform-wheels): 非纯 python 代码
 
 采用如下命令可编译成 universal wheel
 
-~~~
+~~~ bash
 $ python setup.py bdist_wheel --universal
 running bdist_wheel
 running build
@@ -177,7 +176,7 @@ packagedemo-2015.09.1-py2-none-any.whl
 
 采用如下命令可编译成非 universal wheel(即 pure python wheel 或 platform wheel):
 
-~~~
+~~~ bash
 $ python setup.py bdist_wheel
 running bdist_wheel
 running build
@@ -194,7 +193,7 @@ packagedemo-2015.09.1-py2.py3-none-any.whl
 
 Python application 还可以被编译成其它类型的 package，如 rpm, egg 等，只是这些类型的 package 不被 pip 支持。
 
-~~~
+~~~ bash
 +---------------+--------------------------------------------------------+
 | bdist         | create a built (binary) distribution                   |
 | bdist_dumb    | create a "dumb" built distribution                     |
@@ -210,7 +209,7 @@ Python application 还可以被编译成其它类型的 package，如 rpm, egg �
 
 安装 twine，用于上传打包好的 package 至 Pypi：
 
-~~~
+~~~ bash
 $ pip install twine
 ~~~
 
@@ -218,7 +217,7 @@ $ pip install twine
 
 2 . 把 packagedemo.egg-info/PKG-INFO 上传至 [Pypi submit](https://pypi.python.org/pypi?%3Aaction=submit_form)，用于注册该项目。
 
-~~~
+~~~ bash
 $ cat packagedemo.egg-info/PKG-INFO
 Metadata-Version: 1.0
 Name: packagedemo
@@ -242,7 +241,7 @@ Platform: UNKNOWN
 
 创建如下配置文件 ~/.pypirc：
 
-~~~
+~~~ ini
 [distutils]
 index-servers=pypi
 
@@ -254,7 +253,7 @@ password = <password>
 
 上传 package：
 
-~~~
+~~~ bash
 $ twine upload dist/*
 Uploading distributions to https://pypi.python.org/pypi
 Uploading packagedemo-2015.09.1-py2-none-any.whl
@@ -266,7 +265,7 @@ Uploading packagedemo-2015.09.1.tar.gz
 
 # Test
 
-~~~
+~~~ bash
 $ pip install packagedemo
 Downloading/unpacking packagedemo
   Downloading packagedemo-2015.09.1-py2.py3-none-any.whl
