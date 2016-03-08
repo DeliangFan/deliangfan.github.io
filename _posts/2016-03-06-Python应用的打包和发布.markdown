@@ -85,6 +85,7 @@ import setuptools
 setuptools.setup(
     name='koala',
     version='2016.03.1',
+    keywords='demo',
     description='A demo for python packaging.',
     long_description=open(
         os.path.join(
@@ -96,23 +97,25 @@ setuptools.setup(
     author_email='vanderliang@gmail.com',
     url='https://github.com/DeliangFan/koala',
     packages=setuptools.find_packages(),
+    license='MIT'
 )
 ~~~
 
 - name: 即项目名称，本例为 koala
 - version: 即版本号，关于版本号的取法请见 [Choosing a versioning scheme](https://packaging.python.org/en/latest/distributing/#choosing-a-versioning-scheme)
+- keywords: 描述项目的关键字
 - description: 项目简介
 - long_description: 项目详细介绍
 - author: 作者名称
 - author_email: 作者邮箱
 - url: 项目的 homepage
 - packages: 项目包括的 python package，setuptools.find_packages() 可自动找出包含的 package
+- license: 如 MIT, APACHE, GNU 等
 
 本例暂未用到如下参数，这些参数的使用请见下篇。
 
 - classifiers:
 - license:
-- keywords: 
 - install_requires: 
 - package_data: 
 - data_files:
