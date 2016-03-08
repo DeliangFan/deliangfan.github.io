@@ -4,11 +4,11 @@ title:  "Python application 的打包和发布---(上)"
 categories: Python
 ---
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![pypilog](http://7xp2eu.com1.z0.glb.clouddn.com/pipylog.png)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![pypilog](http://7xp2eu.com1.z0.glb.clouddn.com/pipylog.png)
 
 
 [Packaging and Distributing Projects](http://python-packaging-user-guide.readthedocs.org/en/latest/distributing/
-) 介绍了 python application 的打包和发布规范，只有满足这种规范的 package 才能被 pip 等包管理工具管理。[setuptools](http://pythonhosted.org/setuptools/index.html) 是常用的打包工具，其文档 [Building and Distributing Packages with Setuptools](http://pythonhosted.org/setuptools/setuptools.html) 同样详细的阐述打包规范。本文以名为 koala 的 application 为例(官网例子请见 [PyPA sample project](https://github.com/pypa/sampleproject))，展示如何编写一个标准的 package，期间主要涉及三个步骤：
+) 介绍了 python application 的打包和发布规范，只有满足这种规范的 package 才能被最为常用的 pip 包管理工具管理。[setuptools](http://pythonhosted.org/setuptools/index.html) 是常用的打包工具，其文档 [Building and Distributing Packages with Setuptools](http://pythonhosted.org/setuptools/setuptools.html) 同样详细的阐述打包规范。本文以名为 packagedemo 的 application 为例(官网例子请见 [PyPA sample project](https://github.com/pypa/sampleproject))，展示如何编写一个标准的 package，期间主要涉及三个步骤：
 
 - Configure: python application 的文件和目录组织
 - Package: 打包 application
@@ -25,20 +25,20 @@ categories: Python
 
 ## Initial Files
 
-我们以 koala 为例，这是一个非常简单的 application，其目录结构及文件名称如下所示：
+我们以 packagedemo 为例，这是一个非常简单的 application，其目录结构及文件名称如下所示：
 
 ~~~
-koala
+packagedemo
 ├── setup.py
 ├── setup.cfg
 ├── README.rst
 ├── MANIFEST.in
-└── koala
+└── packagedemo
     ├── __init__.py
     └── main.py
 ~~~
 
-从上图可知，koala 的根目录必须包含四个基本文件：
+从上图可知，packagedemo 的根目录必须包含四个基本文件：
 
 - setup.py: 最为重要的文件，包含了打包的参数和基本信息，下节请见详细介绍
 - setup.cfg: setup.py 的配置文件，其格式为 [INI](https://en.wikipedia.org/wiki/INI_file)
@@ -53,17 +53,17 @@ README.rst 文件的内容如下：
 
 ~~~ rst
 $ cat README.rst
-=====
-Koala
-=====
+===========
+packagedemo
+===========
 
 This project provides a demo for packaging and distributing python application.
 ~~~
 
-koala/\_\_init\_\_.py 为空文件，koala/main.py 文件的内容如下：
+packagedemo/\_\_init\_\_.py 为空文件，packagedemo/main.py 文件的内容如下：
 
 ~~~
-$ cat koala/main.py
+$ cat packagedemo/main.py
 print("A demo for python package.")
 ~~~
 
@@ -83,7 +83,7 @@ import setuptools
 
 
 setuptools.setup(
-    name='koala',
+    name='packagedemo',
     version='2015.09.1',
     keywords='demo',
     description='A demo for python packaging.',
@@ -95,13 +95,14 @@ setuptools.setup(
     ).read(),
     author='vanderliang',
     author_email='vanderliang@gmail.com',
-    url='https://github.com/DeliangFan/koala',
+    
+    url='https://github.com/DeliangFan/packagedemo',
     packages=setuptools.find_packages(),
     license='MIT'
 )
 ~~~
 
-- name: 即项目名称，本例为 koala
+- name: 即项目名称，本例为 packagedemo
 - version: 即版本号，关于版本号的取法请见 [Choosing a versioning scheme](https://packaging.python.org/en/latest/distributing/#choosing-a-versioning-scheme)
 - keywords: 描述项目的关键字
 - description: 项目简介
@@ -140,15 +141,15 @@ setuptools.setup(
 $ python setup.py sdist
 running sdist
 running egg_info
-creating koala.egg-info
-writing koala.egg-info/PKG-INFO
+creating packagedemo.egg-info
+writing packagedemo.egg-info/PKG-INFO
 ...
 creating dist
 Creating tar archive
-removing 'koala-2015.09.1' (and everything under it)
+removing 'packagedemo-2015.09.1' (and everything under it)
 
 $ ls dist/
-koala-2015.09.1.tar.gz
+packagedemo-2015.09.1.tar.gz
 ~~~
 
 ## Wheel
@@ -168,10 +169,10 @@ running build
 installing to build/bdist.macosx-10.10-intel/wheel
 ......
 running install_scripts
-creating build/bdist.macosx-10.10-intel/wheel/koala-2015.09.1.dist-info/WHEEL
+creating build/bdist.macosx-10.10-intel/wheel/packagedemo-2015.09.1.dist-info/WHEEL
 
 $ ls dist
-koala-2015.09.1-py2-none-any.whl
+packagedemo-2015.09.1-py2-none-any.whl
 ~~~
 
 采用如下命令可编译成非 universal wheel(即 pure python wheel 或 platform wheel):
@@ -183,10 +184,10 @@ running build
 installing to build/bdist.macosx-10.10-intel/wheel
 ......
 running install_scripts
-creating build/bdist.macosx-10.10-intel/wheel/koala-2015.09.1.dist-info/WHEEL
+creating build/bdist.macosx-10.10-intel/wheel/packagedemo-2015.09.1.dist-info/WHEEL
 
 $ ls dist
-koala-2015.09.1-py2.py3-none-any.whl
+packagedemo-2015.09.1-py2.py3-none-any.whl
 ~~~
 
 ## Others
@@ -215,21 +216,21 @@ $ pip install twine
 
 1 . 在 [Pypi](https://pypi.python.org/pypi?%3Aaction=register_form) 创建一个账户。
 
-2 . 把 koala.egg-info/PKG-INFO 上传至 [Pypi submit](https://pypi.python.org/pypi?%3Aaction=submit_form)，用于注册该项目。
+2 . 把 packagedemo.egg-info/PKG-INFO 上传至 [Pypi submit](https://pypi.python.org/pypi?%3Aaction=submit_form)，用于注册该项目。
 
 ~~~
-$ cat koala.egg-info/PKG-INFO
+$ cat packagedemo.egg-info/PKG-INFO
 Metadata-Version: 1.0
-Name: koala
+Name: packagedemo
 Version: 2015.09.1
 Summary: A demo for python packaging.
-Home-page: https://github.com/DeliangFan/koala
+Home-page: https://github.com/DeliangFan/packagedemo
 Author: vanderliang
 Author-email: vanderliang@gmail.com
 License: MIT
-Description: =====
-        Koala
-        =====
+Description: ===========
+        packagedemo
+        ===========
 
         This project provides a demo for packaging and distributing python application.
 
@@ -239,6 +240,37 @@ Platform: UNKNOWN
 
 3 . 上传至 Pypi:
 
+创建如下配置文件 ~/.pypirc：
+
+~~~
+[distutils]
+index-servers=pypi
+
+[pypi]
+repository = https://pypi.python.org/pypi
+username = <username>
+password = <password>
+~~~
+
+上传 package：
+
 ~~~
 $ twine upload dist/*
+Uploading distributions to https://pypi.python.org/pypi
+Uploading packagedemo-2015.09.1-py2-none-any.whl
+Uploading packagedemo-2015.09.1-py2.py3-none-any.whl
+Uploading packagedemo-2015.09.1.tar.gz
+~~~
+
+----------
+
+# Test
+
+~~~
+$ pip install packagedemo
+Downloading/unpacking packagedemo
+  Downloading packagedemo-2015.09.1-py2.py3-none-any.whl
+Installing collected packages: packagedemo
+Successfully installed packagedemo
+Cleaning up...
 ~~~
