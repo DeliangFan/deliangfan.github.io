@@ -274,3 +274,5 @@ Installing collected packages: packagedemo
 Successfully installed packagedemo
 Cleaning up...
 ~~~
+
+![packagedemo](http://7xp2eu.com1.z0.glb.clouddn.com/pythonpackagedemo.png)
