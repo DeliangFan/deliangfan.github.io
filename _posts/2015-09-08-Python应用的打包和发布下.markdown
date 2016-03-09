@@ -1,0 +1,76 @@
+---
+layout: post
+title:  "Python application 的打包和发布---(下)"
+categories: Python
+---
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![pypilog](http://7xp2eu.com1.z0.glb.clouddn.com/pipylog.png)
+
+
+本文是 Python application 的打包和发布的下篇([上篇请见此处](http://wsfdl.com/python/2015/09/06/Python%E5%BA%94%E7%94%A8%E7%9A%84%E6%89%93%E5%8C%85%E5%92%8C%E5%8F%91%E5%B8%83.html))，主要介绍某些文件的功能和打包参数，并利用这些文件和参数为 packagedemo 添砖加瓦，最终发布一个五脏俱全的 python package。
+
+回顾上篇的 packagedemo，它的功能简单的不能再简单，只包含一个仅有 2 行代码的 main.py 文件。实际情况下，很多复杂些的 application 都可能包含以下功能和配置。
+
+- CLI: 提供命令行入口
+- Config file: 配置文件一般在 /etc/{package}/ 下
+- Log: 输出日志到相应日志文件
+- Data file: 数据文件
+- Dependency: 依赖其它的 package
+- Pre-install script: 安装前执行的脚本
+- Post-install script: 安装后执行的脚本
+
+-------------------------
+
+# CLI
+
+现在往 packagedemo 新增一个名为 packagedemo_cli 的 CLI，执行 packagedemo_cli 后，直接调用  main.py 的 main 函数，新增如下文件和目录。
+
+~~~
+packagedemo
+├── ...
+└── bin
+    └── packagedemo_cli
+~~~
+
+文件 packagedemo_cli 的内容如下：
+
+~~~ python
+#!/usr/bin/python
+
+from packagedemo import main
+
+main.main()
+~~~
+
+并为 packagedemo_cli 文件设置可执行权限。
+
+~~~ bash
+$ chmod 755 packagedemo_cli
+~~~
+
+最后再设置 setup.py
+
+~~~
+setuptools.setup(
+    ...
+    scripts=['bin/packagedemo_cli'],
+    ...
+)
+~~~
+
+安装后，测试如下：
+
+~~~ bash
+$ which packagedemo_cli
+/usr/local/bin/packagedemo_cli
+
+$ packagedemo_cli
+A demo for python package.
+~~~
+
+除此方法以外，还可以利用 [entry_points](https://packaging.python.org/en/latest/distributing/#id51) 中的 [console_points](https://packaging.python.org/en/latest/distributing/#console-scripts) 配置 CLI，详情请见 [Command Line Scripts](http://python-packaging.readthedocs.org/en/latest/command-line-scripts.html)
+
+-------------------------
+
+
+

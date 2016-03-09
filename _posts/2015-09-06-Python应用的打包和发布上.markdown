@@ -64,7 +64,8 @@ packagedemo/\_\_init\_\_.py 为空文件，packagedemo/main.py 文件的内容�
 
 ~~~
 $ cat packagedemo/main.py
-print("A demo for python package.")
+def main():
+    print("A demo for python package.")
 ~~~
 
 ## Setup.py
