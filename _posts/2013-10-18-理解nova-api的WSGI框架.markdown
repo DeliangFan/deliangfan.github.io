@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "深入理解 nova-api 的 WSGI"
-categories: Architectrue
+categories: OpenStack
 ---
 
 本文是 [理解 WSGI 框架](http://wsfdl.com/architectrue/2013/10/14/%E7%90%86%E8%A7%A3WSGI%E6%A1%86%E6%9E%B6.html) 的下篇，重点介绍 WSGI 框架下一些常用的 python module，并使用这些 module 编写一个类似 nova-api 里 WSGI 的简单样例，最后分析 [nova](https://wiki.openstack.org/wiki/Nova) 是如何使用这些 module 构建其 WSGI 框架。

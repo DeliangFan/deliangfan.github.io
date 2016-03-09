@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "理解 WSGI 框架"
-categories: Architectrue
+categories: Python
 ---
 
 --------------------
