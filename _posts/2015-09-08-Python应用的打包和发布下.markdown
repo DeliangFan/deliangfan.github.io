@@ -13,11 +13,8 @@ categories: Python
 
 - CLI: 提供命令行入口
 - Config file: 配置文件一般在 /etc/{package}/ 下
-- Log: 输出日志到相应日志文件
 - Data file: 数据文件
 - Dependency: 依赖其它的 package
-- Pre-install script: 安装前执行的脚本
-- Post-install script: 安装后执行的脚本
 
 -------------------------
 
@@ -48,9 +45,9 @@ main.main()
 $ chmod 755 packagedemo_cli
 ~~~
 
-最后再设置 setup.py
+更新 setup.py：
 
-~~~
+~~~ python
 setuptools.setup(
     ...
     scripts=['bin/packagedemo_cli'],
@@ -72,5 +69,124 @@ A demo for python package.
 
 -------------------------
 
+# Data File
 
+有些 python application 会依赖一些非 *.py 数据文件，比如 image, documentation 和 data tables 等，我们把这些文件统称为 data file，所以打包时需将这些文件包含在内。现在往 packagedemo 添加 data 目录和相关文件，如下：
 
+~~~
+packagedemo
+├── ...
+└── data
+    └── data.json
+~~~
+
+在上篇为空文件的 MANIFEST.in 终于派上用场，更新如下：
+
+~~~
+$ cat MANIFEST.in
+include data/data.json
+~~~
+
+更新 setup.py：
+
+~~~ python
+setuptools.setup(
+    ...
+    include_package_data=True,
+    ...
+)
+~~~
+
+-------------------------
+
+# Config File
+
+接下来往 packagedemo 添加一个配置文件 packagedemo.conf，并且希望安装后，该配置文件位于 /etc 目录下。新增的文件和目录如下：
+
+~~~
+packagedemo
+├── ...
+└── etc
+    └── packagedemo.conf
+~~~
+
+更新 setup.py：
+
+~~~ python
+setuptools.setup(
+    ...
+    data_files=[('etc', ['etc/packagedemo.conf'])],
+    ...
+)
+~~~
+
+----------------------
+
+# Dependency and Others
+
+当 packagedemo 的功能越来越复杂时，它不免会依赖其它的 package，所以需要往 setup.py 中写入所依赖的 package 名称。假定 packagedemo 依赖 wsgiref 这个 package，并且要求其 version >=0.1.2，那么需往 setup.py 增添如下的参数：
+
+~~~ python
+setuptools.setup(
+    ...
+    install_requires=['wsgiref>=0.1.2'],
+    ...
+)
+~~~
+
+最后一个要被介绍的参数是 [classifiers](https://pypi.python.org/pypi?%3Aaction=list_classifiers)，它包含 package 的成熟度，类型，以及支持的平台等等信息。
+
+~~~ python
+setuptools.setup(
+    ...
+    classifiers=[
+        # How mature is this project? Common values are
+        #   3 - Alpha
+        #   4 - Beta
+        #   5 - Production/Stable
+        'Development Status :: 3 - Alpha',
+
+        # Indicate who your project is intended for
+        'Intended Audience :: Developers',
+        'Topic :: Software Development :: Build Tools',
+
+        # Pick your license as you wish (should match "license" above)
+        'License :: OSI Approved :: MIT License',
+
+        # Specify the Python versions you support here. In particular, ensure
+        # that you indicate whether you support Python 2, Python 3 or both.
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+    ],
+    ...
+)
+~~~
+
+----------------------
+
+# Summary of Python packaging tools
+
+Python 有多种打包工具，如 setuptools, distutils 等等，stackoverflow 有篇名为 [differences-between-distribute-distutils-setuptools-and-distutils2](http://stackoverflow.com/questions/6344076/differences-between-distribute-distutils-setuptools-and-distutils2) 的帖子对这些打包工具做了详细的对比，原文如下：
+
+Here's a summary of the Python packaging landscape in September 2014:
+
+- **Distutils** is still the standard tool for packaging in Python. It is included in the standard library (Python 2 and Python 3.0 to 3.4). It is useful for simple Python distributions, but lacks features. It introduces the distutils Python package that can be imported in your setup.py script.
+
+- **Setuptools** was developed to overcome Distutils' limitations, and is not included in the standard library. It introduced a command-line utility called easy_install. It also introduced the setuptools Python package that can be imported in your setup.py script, and the pkg_resources Python package that can be imported in your code to locate data files installed with a distribution. One of its gotchas is that it monkey-patches the distutils Python package. It should work well with pip. The latest version was released in August 2014.
+
+- **Distribute** was a fork of Setuptools. It shared the same namespace, so if you had Distribute installed, import setuptools would actually import the package distributed with Distribute. Distribute was merged back into Setuptools 0.7, so you don't need to use Distribute any more. In fact, the version on Pypi is just a compatibility layer that installs Setuptools.
+
+- **Distutils2** was an attempt to take the best of Distutils, Setuptools and Distribute and become the standard tool included in Python's standard library. The idea was that Distutils2 would be distributed for old Python versions, and that Distutils2 would be renamed to packaging for Python 3.3, which would include it in its standard library. These plans did not go as intended, however, and currently, Distutils2 is an abandoned project. The latest release was in March 2012, and its Pypi home page has finally been updated to reflect its death.
+
+- **Distlib** is a tool that aims to implement a subset of the previous tools' functionality, but only functionality that is very well-defined in accepted PEPs. It should hopefully be included eventually in the Python standard library. It is still being developed and is not recommended for end-users yet.
+
+- **Bento** is a packaging solution designed to replace Distutils, Setuptools, Distribute and Distutils2, written from the ground up. Its primary developer is also a core developer of numpy/scipy, so he's familiar with non-simple use-cases for packaging systems. Its first commit was in October 2009, and the latest commit as of writing was in August 2014, although the authors are not updating its Pypi page correspondingly. It's in active development but it is not mature yet, and it is not as widely known as Setuptools yet.
+
+关于选择哪种工具，这位大神 [flimm](http://stackoverflow.com/users/247696/flimm) 推荐 setuptools：
+
+So in conclusion, out of all these options, **I would recommend Setuptools**, unless your requirements are very basic and you only need Distutils. Setuptools works very well with Virtualenv and Pip, tools that I highly recommend.
