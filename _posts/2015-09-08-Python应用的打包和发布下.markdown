@@ -7,9 +7,9 @@ categories: Python
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![pypilog](http://7xp2eu.com1.z0.glb.clouddn.com/pipylog.png)
 
 
-本文是 Python application 的打包和发布的下篇([上篇请见此处](http://wsfdl.com/python/2015/09/06/Python%E5%BA%94%E7%94%A8%E7%9A%84%E6%89%93%E5%8C%85%E5%92%8C%E5%8F%91%E5%B8%83.html))，主要介绍某些文件的功能和打包参数，并利用这些文件和参数为 packagedemo 添砖加瓦，最终发布一个五脏俱全的 python package。
+本文是 Python application 的打包和发布的下篇([上篇请见此处](http://wsfdl.com/python/2015/09/06/Python%E5%BA%94%E7%94%A8%E7%9A%84%E6%89%93%E5%8C%85%E5%92%8C%E5%8F%91%E5%B8%83.html))，主要介绍 MANIFEST.in 和打包参数，并利用该文件和参数为 packagedemo 添砖加瓦。
 
-回顾上篇的 packagedemo，它的功能简单的不能再简单，只包含一个仅有 2 行代码的 main.py 文件。实际情况下，很多复杂些的 application 都可能包含以下功能和配置。
+回顾上篇的 packagedemo，它的非常功能简单，只包含一个仅有 2 行代码的 main.py 文件。实际情况下，复杂些的 application 可能要求以下功能。
 
 - CLI: 提供命令行入口
 - Data file: 数据文件
@@ -32,13 +32,12 @@ packagedemo
 
 ~~~ python
 #!/usr/bin/python
-
 from packagedemo import main
 
 main.main()
 ~~~
 
-并为 packagedemo_cli 文件设置可执行权限。
+并为 packagedemo_cli 设置可执行权限：
 
 ~~~ bash
 $ chmod 755 packagedemo_cli
@@ -167,4 +166,4 @@ Here's a summary of the Python packaging landscape in September 2014:
 
 So in conclusion, out of all these options, **I would recommend Setuptools**, unless your requirements are very basic and you only need Distutils. Setuptools works very well with Virtualenv and Pip, tools that I highly recommend.
 
-虽然 python package 能满足多数 application 的需求，但是随着项目的越来越繁杂，RPM 或者 Debian 会是更好的包管理方式，它的功能更为强大丰富。
+虽然 python package 能满足多数 application 的需求，但是随着项目的越来越繁杂，RPM 或者 Debian 会是更好的包管理方式，它们的功能更为强大丰富。
