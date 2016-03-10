@@ -12,7 +12,6 @@ categories: Python
 回顾上篇的 packagedemo，它的功能简单的不能再简单，只包含一个仅有 2 行代码的 main.py 文件。实际情况下，很多复杂些的 application 都可能包含以下功能和配置。
 
 - CLI: 提供命令行入口
-- Config file: 配置文件一般在 /etc/{package}/ 下
 - Data file: 数据文件
 - Dependency: 依赖其它的 package
 
@@ -99,32 +98,9 @@ setuptools.setup(
 
 -------------------------
 
-# Config File
-
-接下来往 packagedemo 添加一个配置文件 packagedemo.conf，并且希望安装后，该配置文件位于 /etc 目录下。新增的文件和目录如下：
-
-~~~
-packagedemo
-├── ...
-└── etc
-    └── packagedemo.conf
-~~~
-
-更新 setup.py：
-
-~~~ python
-setuptools.setup(
-    ...
-    data_files=[('etc', ['etc/packagedemo.conf'])],
-    ...
-)
-~~~
-
-----------------------
-
 # Dependency and Others
 
-当 packagedemo 的功能越来越复杂时，它不免会依赖其它的 package，所以需要往 setup.py 中写入所依赖的 package 名称。假定 packagedemo 依赖 wsgiref 这个 package，并且要求其 version >=0.1.2，那么需往 setup.py 增添如下的参数：
+随着 packagedemo 功能越来越丰富，不免会依赖其它的 package，所以需要往 setup.py 中写入所依赖的 package 名称。假定 packagedemo 依赖 wsgiref 这个 package，并且要求其 version >=0.1.2，那么需往 setup.py 增添如下的参数：
 
 ~~~ python
 setuptools.setup(
@@ -134,7 +110,7 @@ setuptools.setup(
 )
 ~~~
 
-最后一个要被介绍的参数是 [classifiers](https://pypi.python.org/pypi?%3Aaction=list_classifiers)，它包含 package 的成熟度，类型，以及支持的平台等等信息。
+最后一个被介绍的参数是 [classifiers](https://pypi.python.org/pypi?%3Aaction=list_classifiers)，它包含 package 的成熟度，类型，以及支持的平台等信息。
 
 ~~~ python
 setuptools.setup(
@@ -187,6 +163,8 @@ Here's a summary of the Python packaging landscape in September 2014:
 
 - **Bento** is a packaging solution designed to replace Distutils, Setuptools, Distribute and Distutils2, written from the ground up. Its primary developer is also a core developer of numpy/scipy, so he's familiar with non-simple use-cases for packaging systems. Its first commit was in October 2009, and the latest commit as of writing was in August 2014, although the authors are not updating its Pypi page correspondingly. It's in active development but it is not mature yet, and it is not as widely known as Setuptools yet.
 
-关于选择哪种工具，这位大神 [flimm](http://stackoverflow.com/users/247696/flimm) 推荐 setuptools：
+关于选择哪种工具，大神 [flimm](http://stackoverflow.com/users/247696/flimm) 推荐 setuptools：
 
 So in conclusion, out of all these options, **I would recommend Setuptools**, unless your requirements are very basic and you only need Distutils. Setuptools works very well with Virtualenv and Pip, tools that I highly recommend.
+
+虽然 python package 能满足多数 application 的需求，但是随着项目的越来越繁杂，RPM 或者 Debian 会是更好的包管理方式，它的功能更为强大丰富。
