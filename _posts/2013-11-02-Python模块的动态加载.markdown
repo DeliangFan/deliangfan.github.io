@@ -4,10 +4,10 @@ title:  "__import__ 与动态加载 python module"
 categories: Python
 ---
 
-> Direct use of **\_\_import\_\_()** is rare, except in cases where you want to import a module whose name is only known at runtime.
+> Direct use of **\_\_import\_\_()** is rare, except in cases where you want to import a module whose name is only known **at runtime**.
 
 
-本文介绍 python module 的动态加载，我们有时希望从配置文件等地获取要被加载的 module，但是读取后的配置项的类型通常为字符串，对于字符串所表示的 module，无法采用 import 加载，例如：
+本文介绍 python module 的动态加载，我们有时希望从配置文件等地获取要被动态加载的 module，但是所读取的配置项通常为字符串类型，无法用 import 加载，例如：
 
 ~~~ bash
 >>> import 'os'
@@ -17,13 +17,13 @@ categories: Python
 SyntaxError: invalid syntax
 ~~~
 
-Python 提供内建函数 [\_\_import\_\_](https://docs.python.org/2/library/functions.html#__import__) 用于动态加载模块，**\_\_import\_\_** 的用法如下：
+Python 提供内建函数 [**\_\_import\_\_**](https://docs.python.org/2/library/functions.html#__import__) 动态加载 module，\_\_import\_\_ 的用法如下：
 
 ~~~ bash
 __import__ (name[, globals[, locals[, fromlist[, level]]]])
 ~~~
 
-- name (required): 被导入 module 的名称
+- name (required): 被加载 module 的名称
 - globals (optional): 包含全局变量的字典，该选项很少使用，采用默认值 global()
 - locals (optional): 包含局部变量的字典，内部标准实现未用到该变量，采用默认值 local()
 - fromlist (Optional): 被导入的 submodule 名称
@@ -35,7 +35,7 @@ __import__ (name[, globals[, locals[, fromlist[, level]]]])
 <module 'posixpath' from '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/posixpath.pyc'>
 ~~~
 
-事实上 import 本质上是调用 \_\_import\_\_ 加载 module 的，比如：
+事实上，import 本质上是调用 \_\_import\_\_ 加载 module 的，比如：
 
 ~~~ python
 import foo
@@ -45,7 +45,7 @@ import foo
 foo = __import__('foo', globals(), locals(), [], -1)
 ~~~~
 
-如果使用不善，也容易踩坑：
+但如果使用不善，也容易踩坑：
 
 ~~~~ python
 >>> __import__("os")
@@ -55,7 +55,7 @@ foo = __import__('foo', globals(), locals(), [], -1)
 <module 'os' from '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/os.pyc'>
 ~~~~
 
-，如果输入的参数如果带有 "."，采用 \_\_import\_\_ 直接导入 module 很容易造成意想不到的结果，所以 OpenStack 的 [oslo.utils](https://github.com/openstack/oslo.utils/blob/master/oslo_utils/importutils.py) 封装了 \_\_import\_\_，以支持动态导入 class, object 等，例如：
+如果输入的参数如果带有 "."，采用 \_\_import\_\_ 直接导入 module 容易造成意想不到的结果，所以 OpenStack 的 [oslo.utils](https://github.com/openstack/oslo.utils/blob/master/oslo_utils/importutils.py) 封装了 \_\_import\_\_，支持动态导入 class, object 等。
 
 ~~~  python
 import sys
