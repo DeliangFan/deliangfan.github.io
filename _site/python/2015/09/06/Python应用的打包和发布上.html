@@ -10,7 +10,7 @@
   <meta name="description" content="                                                             ">
 
   <link rel="stylesheet" href="/css/main.css">
-  <link rel="canonical" href="http://wsfdl.com/python/2015/09/06/Python%E5%BA%94%E7%94%A8%E7%9A%84%E6%89%93%E5%8C%85%E5%92%8C%E5%8F%91%E5%B8%83.html">
+  <link rel="canonical" href="http://wsfdl.com/python/2015/09/06/Python%E5%BA%94%E7%94%A8%E7%9A%84%E6%89%93%E5%8C%85%E5%92%8C%E5%8F%91%E5%B8%83%E4%B8%8A.html">
   <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
 </head>
 
@@ -127,7 +127,8 @@ This project provides a demo for packaging and distributing python application.
 <p>packagedemo/__init__.py 为空文件，packagedemo/main.py 文件的内容如下：</p>
 
 <pre><code>$ cat packagedemo/main.py
-print("A demo for python package.")
+def main():
+    print("A demo for python package.")
 </code></pre>
 
 <h2 id="id-setuppy">Setup.py</h2>
@@ -179,7 +180,7 @@ setuptools.setup(
   <li>license: 如 MIT, APACHE, GNU 等</li>
 </ul>
 
-<p>本例暂未用到如下参数，这些参数的使用请见下篇。</p>
+<p>本例暂未用到如下参数，这些参数的使用请见<a href="http://wsfdl.com/python/2015/09/08/Python%E5%BA%94%E7%94%A8%E7%9A%84%E6%89%93%E5%8C%85%E5%92%8C%E5%8F%91%E5%B8%83%E4%B8%8B.html">下篇</a>。</p>
 
 <ul>
   <li>classifiers:</li>

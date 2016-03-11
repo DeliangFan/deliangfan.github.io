@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Python application 的打包和发布---(下)</title>
+  <meta name="description" content="                                                             ">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/python/2015/09/08/Python%E5%BA%94%E7%94%A8%E7%9A%84%E6%89%93%E5%8C%85%E5%92%8C%E5%8F%91%E5%B8%83%E4%B8%8B.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">Python application 的打包和发布---(下)</h1>
+    <p class="post-meta"><time datetime="2015-09-08T00:00:00+08:00" itemprop="datePublished">Sep 8, 2015</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>                                                             <img src="http://7xp2eu.com1.z0.glb.clouddn.com/pipylog.png" alt="pypilog" /></p>
+
+<p>本文是 Python application 的打包和发布的下篇(<a href="http://wsfdl.com/python/2015/09/06/Python%E5%BA%94%E7%94%A8%E7%9A%84%E6%89%93%E5%8C%85%E5%92%8C%E5%8F%91%E5%B8%83.html">上篇请见此处</a>)，主要介绍 MANIFEST.in 和某些打包参数，并利用该文件和这些参数为 packagedemo 添砖加瓦。</p>
+
+<p>回顾上篇的 packagedemo，它的非常功能简单，只包含一个仅有 2 行代码的 main.py 文件。实际情况下，复杂些的 application 可能要求以下功能。</p>
+
+<ul>
+  <li>CLI: 提供命令行入口</li>
+  <li>Data file: 数据文件</li>
+  <li>Dependency: 依赖其它的 package</li>
+</ul>
+
+<hr />
+
+<h1 id="id-cli">CLI</h1>
+
+<p>现在往 packagedemo 添加一个名为 packagedemo_cli 的 CLI，执行 packagedemo_cli 后，直接调用  main.py 的 main 函数，新增如下文件和目录。</p>
+
+<pre><code>packagedemo
+├── ...
+└── bin
+    └── packagedemo_cli
+</code></pre>
+
+<p>文件 packagedemo_cli 的内容如下：</p>
+
+<pre><code class="language-python">#!/usr/bin/python
+from packagedemo import main
+
+main.main()
+</code></pre>
+
+<p>并为 packagedemo_cli 设置可执行权限：</p>
+
+<pre><code class="language-bash">$ chmod 755 packagedemo_cli
+</code></pre>
+
+<p>更新 setup.py：</p>
+
+<pre><code class="language-python">setuptools.setup(
+    ...
+    scripts=['bin/packagedemo_cli'],
+    ...
+)
+</code></pre>
+
+<p>安装后，测试如下：</p>
+
+<pre><code class="language-bash">$ which packagedemo_cli
+/usr/local/bin/packagedemo_cli
+
+$ packagedemo_cli
+A demo for python package.
+</code></pre>
+
+<p>除此方法以外，还可以利用 <a href="https://packaging.python.org/en/latest/distributing/#id51">entry_points</a> 中的 <a href="https://packaging.python.org/en/latest/distributing/#console-scripts">console_points</a> 配置 CLI，详情请见 <a href="http://python-packaging.readthedocs.org/en/latest/command-line-scripts.html">Command Line Scripts</a></p>
+
+<hr />
+
+<h1 id="id-data-file">Data File</h1>
+
+<p>有些 python application 会依赖一些非 *.py 数据文件，比如 image, documentation 和 data tables 等，我们把这些文件统称为 data file，所以打包时需将这些文件包含在内。现在往 packagedemo 添加 data 目录和相关文件，如下：</p>
+
+<pre><code>packagedemo
+├── ...
+└── data
+    └── data.json
+</code></pre>
+
+<p>在上篇为空文件的 MANIFEST.in 终于派上用场，更新如下：</p>
+
+<pre><code>$ cat MANIFEST.in
+include data/data.json
+</code></pre>
+
+<p>更新 setup.py：</p>
+
+<pre><code class="language-python">setuptools.setup(
+    ...
+    include_package_data=True,
+    ...
+)
+</code></pre>
+
+<hr />
+
+<h1 id="id-dependency-and-others">Dependency and Others</h1>
+
+<p>随着 packagedemo 功能越来越丰富，不免会依赖其它的 package，所以需要往 setup.py 中写入所依赖的 package 名称。假定 packagedemo 依赖 wsgiref 这个 package，并且要求其 version &gt;=0.1.2，那么需往 setup.py 增添如下的参数：</p>
+
+<pre><code class="language-python">setuptools.setup(
+    ...
+    install_requires=['wsgiref&gt;=0.1.2'],
+    ...
+)
+</code></pre>
+
+<p>最后一个被介绍的参数是 <a href="https://pypi.python.org/pypi?%3Aaction=list_classifiers">classifiers</a>，它包含 package 的成熟度，类型，以及支持的平台等信息。</p>
+
+<pre><code class="language-python">setuptools.setup(
+    ...
+    classifiers=[
+        # How mature is this project? Common values are
+        #   3 - Alpha
+        #   4 - Beta
+        #   5 - Production/Stable
+        'Development Status :: 3 - Alpha',
+
+        # Indicate who your project is intended for
+        'Intended Audience :: Developers',
+        'Topic :: Software Development :: Build Tools',
+
+        # Pick your license as you wish (should match "license" above)
+        'License :: OSI Approved :: MIT License',
+
+        # Specify the Python versions you support here. In particular, ensure
+        # that you indicate whether you support Python 2, Python 3 or both.
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+    ],
+    ...
+)
+</code></pre>
+
+<hr />
+
+<h1 id="id-summary-of-python-packaging-tools">Summary of Python packaging tools</h1>
+
+<p>Python 有多种打包工具，如 setuptools, distutils 等等，stackoverflow 有篇名为 <a href="http://stackoverflow.com/questions/6344076/differences-between-distribute-distutils-setuptools-and-distutils2">differences-between-distribute-distutils-setuptools-and-distutils2</a> 的帖子对这些打包工具做了详细的对比，原文如下：</p>
+
+<p>Here’s a summary of the Python packaging landscape in September 2014:</p>
+
+<ul>
+  <li>
+    <p><strong>Distutils</strong> is still the standard tool for packaging in Python. It is included in the standard library (Python 2 and Python 3.0 to 3.4). It is useful for simple Python distributions, but lacks features. It introduces the distutils Python package that can be imported in your setup.py script.</p>
+  </li>
+  <li>
+    <p><strong>Setuptools</strong> was developed to overcome Distutils’ limitations, and is not included in the standard library. It introduced a command-line utility called easy_install. It also introduced the setuptools Python package that can be imported in your setup.py script, and the pkg_resources Python package that can be imported in your code to locate data files installed with a distribution. One of its gotchas is that it monkey-patches the distutils Python package. It should work well with pip. The latest version was released in August 2014.</p>
+  </li>
+  <li>
+    <p><strong>Distribute</strong> was a fork of Setuptools. It shared the same namespace, so if you had Distribute installed, import setuptools would actually import the package distributed with Distribute. Distribute was merged back into Setuptools 0.7, so you don’t need to use Distribute any more. In fact, the version on Pypi is just a compatibility layer that installs Setuptools.</p>
+  </li>
+  <li>
+    <p><strong>Distutils2</strong> was an attempt to take the best of Distutils, Setuptools and Distribute and become the standard tool included in Python’s standard library. The idea was that Distutils2 would be distributed for old Python versions, and that Distutils2 would be renamed to packaging for Python 3.3, which would include it in its standard library. These plans did not go as intended, however, and currently, Distutils2 is an abandoned project. The latest release was in March 2012, and its Pypi home page has finally been updated to reflect its death.</p>
+  </li>
+  <li>
+    <p><strong>Distlib</strong> is a tool that aims to implement a subset of the previous tools’ functionality, but only functionality that is very well-defined in accepted PEPs. It should hopefully be included eventually in the Python standard library. It is still being developed and is not recommended for end-users yet.</p>
+  </li>
+  <li>
+    <p><strong>Bento</strong> is a packaging solution designed to replace Distutils, Setuptools, Distribute and Distutils2, written from the ground up. Its primary developer is also a core developer of numpy/scipy, so he’s familiar with non-simple use-cases for packaging systems. Its first commit was in October 2009, and the latest commit as of writing was in August 2014, although the authors are not updating its Pypi page correspondingly. It’s in active development but it is not mature yet, and it is not as widely known as Setuptools yet.</p>
+  </li>
+</ul>
+
+<p>关于选择哪种工具，大神 <a href="http://stackoverflow.com/users/247696/flimm">flimm</a> 推荐 setuptools：</p>
+
+<p>So in conclusion, out of all these options, <strong>I would recommend Setuptools</strong>, unless your requirements are very basic and you only need Distutils. Setuptools works very well with Virtualenv and Pip, tools that I highly recommend.</p>
+
+<p>虽然 python package 能满足多数 application 的需求，但是随着项目的越来越繁杂，RPM 或者 Debian 会是更好的包管理方式，它们的功能更为强大丰富。</p>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

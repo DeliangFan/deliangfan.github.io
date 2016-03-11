@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>__import__ 与动态加载 python module</title>
+  <meta name="description" content="  Direct use of __import__() is rare, except in cases where you want to import a module whose name is only known at runtime.">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/python/2013/11/02/Python%E6%A8%A1%E5%9D%97%E7%9A%84%E5%8A%A8%E6%80%81%E5%8A%A0%E8%BD%BD.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">__import__ 与动态加载 python module</h1>
+    <p class="post-meta"><time datetime="2013-11-02T00:00:00+08:00" itemprop="datePublished">Nov 2, 2013</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <blockquote>
+  <p>Direct use of <strong>__import__()</strong> is rare, except in cases where you want to import a module whose name is only known at runtime.</p>
+</blockquote>
+
+<p>本文介绍 python module 的动态加载，我们有时希望从配置文件等地获取要被加载的 module，但是读取后的配置项的类型通常为字符串，对于字符串所表示的 module，无法采用 import 加载，例如：</p>
+
+<pre><code class="language-bash">&gt;&gt;&gt; import 'os'
+  File "&lt;stdin&gt;", line 1
+    import 'os'
+              ^
+SyntaxError: invalid syntax
+</code></pre>
+
+<p>Python 提供内建函数 <a href="https://docs.python.org/2/library/functions.html#__import__">__import__</a> 用于动态加载模块，<strong>__import__</strong> 的用法如下：</p>
+
+<pre><code class="language-bash">__import__ (name[, globals[, locals[, fromlist[, level]]]])
+</code></pre>
+
+<ul>
+  <li>name (required): 被导入 module 的名称</li>
+  <li>globals (optional): 包含全局变量的字典，该选项很少使用，采用默认值 global()</li>
+  <li>locals (optional): 包含局部变量的字典，内部标准实现未用到该变量，采用默认值 local()</li>
+  <li>fromlist (Optional): 被导入的 submodule 名称</li>
+  <li>level (Optional): 导入路径选项，默认为 -1，表示同时支持 absolute import 和 relative import</li>
+</ul>
+
+<pre><code class="language-bash">&gt;&gt;&gt; os_module = __import__('os')
+&gt;&gt;&gt; print os_module.path
+&lt;module 'posixpath' from '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/posixpath.pyc'&gt;
+</code></pre>
+
+<p>事实上 import 本质上是调用 __import__ 加载 module 的，比如：</p>
+
+<pre><code class="language-python">import foo
+
+最终调用如下函数实现
+
+foo = __import__('foo', globals(), locals(), [], -1)
+</code></pre>
+
+<p>如果使用不善，也容易踩坑：</p>
+
+<pre><code class="language-python">&gt;&gt;&gt; __import__("os")
+&lt;module 'os' from '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/os.pyc'&gt;
+
+&gt;&gt;&gt; __import__("os.path")
+&lt;module 'os' from '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/os.pyc'&gt;
+</code></pre>
+
+<p>，如果输入的参数如果带有 “.”，采用 __import__ 直接导入 module 很容易造成意想不到的结果，所以 OpenStack 的 <a href="https://github.com/openstack/oslo.utils/blob/master/oslo_utils/importutils.py">oslo.utils</a> 封装了 __import__，以支持动态导入 class, object 等，例如：</p>
+
+<pre><code class="language-python">import sys
+import traceback
+
+
+def import_class(import_str):
+    """Returns a class from a string including module and class.
+    .. versionadded:: 0.3
+    """
+    mod_str, _sep, class_str = import_str.rpartition('.')
+    __import__(mod_str)
+    try:
+        return getattr(sys.modules[mod_str], class_str)
+    except AttributeError:
+        raise ImportError('Class %s cannot be found (%s)' %
+                          (class_str,
+                           traceback.format_exception(*sys.exc_info())))
+
+
+def import_object(import_str, *args, **kwargs):
+    """Import a class and return an instance of it.
+    .. versionadded:: 0.3
+    """
+    return import_class(import_str)(*args, **kwargs)
+
+
+def import_module(import_str):
+    """Import a module.
+    .. versionadded:: 0.3
+    """
+    __import__(import_str)
+    return sys.modules[import_str]
+</code></pre>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
