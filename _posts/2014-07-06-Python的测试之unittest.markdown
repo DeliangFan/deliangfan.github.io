@@ -10,7 +10,7 @@ categories: Python
 
 ## Basic example
 
-随着项目的不断扩大，单元测试在保证开发效率、可维护性和软件质量等方面越发举足轻重，是一本万例的举措。Python 常用 [unittest](https://docs.python.org/2/library/unittest.html) module 来编写单元测试，它包含四个重要概念：
+随着项目的不断扩大，单元测试在保证开发效率、可维护性和软件质量等方面的地位越发举足轻重，是一本万利的举措。Python 常用 [unittest](https://docs.python.org/2/library/unittest.html) module 来编写单元测试，它包含四个重要概念：
 
 - test fixture：初始化和清理测试环境，比如创建临时的数据库，文件和目录等等，其中 [setUp()](https://docs.python.org/2/library/unittest.html#unittest.TestCase.setUp) 和 [setDown()](https://docs.python.org/2/library/unittest.html#unittest.TestCase.tearDown) 是最常用的方法。
 - test case：单元测试用例，[TestCase](https://docs.python.org/2/library/unittest.html#unittest.TestCase) 是编写单元测试用例最常用的类。
@@ -19,17 +19,17 @@ categories: Python
 
 例如：
 
-~~~ Python
+~~~ python
 import unittest
 
 class TestStringMethods(unittest.TestCase):
 
-  def test_upper(self):
-      self.assertEqual('foo'.upper(), 'FOO')
+    def test_upper(self):
+        self.assertEqual('foo'.upper(), 'FOO')
 
-  def test_isupper(self):
-      self.assertTrue('FOO'.isupper())
-      self.assertFalse('Foo'.isupper())
+    def test_isupper(self):
+        self.assertTrue('FOO'.isupper())
+        self.assertFalse('Foo'.isupper())
 
 if __name__ == '__main__':
     unittest.main()
@@ -50,7 +50,7 @@ OK
 
 [setUp()](https://docs.python.org/2/library/unittest.html#unittest.TestCase.setUp) 和 [setDown()](https://docs.python.org/2/library/unittest.html#unittest.TestCase.tearDown) 允许执行每个测试用例前分别初始化和清理测试环境，用法如下：
 
-~~~ Python
+~~~ python
 import unittest
 
 class TestStringMethods(unittest.TestCase):
@@ -78,18 +78,18 @@ if __name__ == '__main__':
 
 有时希望某些用例不被执行，unittest.skip() 提供了这种功能，用法如下：
 
-~~~ Python
+~~~ python
 import unittest
 
 class TestStringMethods(unittest.TestCase):
 
-  def test_upper(self):
-      self.assertEqual('foo'.upper(), 'FOO')
+    def test_upper(self):
+        self.assertEqual('foo'.upper(), 'FOO')
 
-  @unittest.skip('skip is upper.')
-  def test_isupper(self):
-      self.assertTrue('FOO'.isupper())
-      self.assertFalse('Foo'.isupper())
+    @unittest.skip('skip is upper.')
+    def test_isupper(self):
+        self.assertTrue('FOO'.isupper())
+        self.assertFalse('Foo'.isupper())
 
 if __name__ == '__main__':
     unittest.main()
