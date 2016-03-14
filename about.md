@@ -28,3 +28,5 @@ permalink: /about/
 ----------
 
 技能：Linux,  TCP/IP,  OpenStack, Python, Photoshop, Photography
+
+微博：[老范](http://weibo.com/u/2166224217)
