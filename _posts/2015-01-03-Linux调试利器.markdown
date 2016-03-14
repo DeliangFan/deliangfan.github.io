@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Linux 调试三剑客--strace,lsof,tcpdump"
+title:  "Linux 调试三剑客————strace,lsof,tcpdump"
 categories: Linux
 ---
 

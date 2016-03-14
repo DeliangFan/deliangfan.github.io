@@ -55,7 +55,7 @@ foo = __import__('foo', globals(), locals(), [], -1)
 <module 'os' from '/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/os.pyc'>
 ~~~~
 
-如果输入的参数如果带有 "."，采用 \_\_import\_\_ 直接导入 module 容易造成意想不到的结果，所以 OpenStack 的 [oslo.utils](https://github.com/openstack/oslo.utils/blob/master/oslo_utils/importutils.py) 封装了 \_\_import\_\_，支持动态导入 class, object 等。
+如果输入的参数如果带有 "."，采用 \_\_import\_\_ 直接导入 module 容易造成意想不到的结果。 OpenStack 的 [oslo.utils](https://github.com/openstack/oslo.utils/blob/master/oslo_utils/importutils.py) 封装了 \_\_import\_\_，支持动态导入 class, object 等。
 
 ~~~  python
 import sys
