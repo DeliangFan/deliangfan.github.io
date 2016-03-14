@@ -10,11 +10,11 @@ categories: Python
 
 ## Basic example
 
-随着项目的不断扩大，单元测试在保证开发效率、可维护性和软件质量等方面的地位越发举足轻重，是一本万利的举措。Python 常用 [unittest](https://docs.python.org/2/library/unittest.html) module 来编写单元测试，它包含四个重要概念：
+随着项目的不断扩大，单元测试在保证开发效率、可维护性和软件质量等方面的地位越发举足轻重，是一本万利的举措。Python 常用 [unittest](https://docs.python.org/2/library/unittest.html) module 编写单元测试，它包含四个概念：
 
-- test fixture：初始化和清理测试环境，比如创建临时的数据库，文件和目录等等，其中 [setUp()](https://docs.python.org/2/library/unittest.html#unittest.TestCase.setUp) 和 [setDown()](https://docs.python.org/2/library/unittest.html#unittest.TestCase.tearDown) 是最常用的方法。
-- test case：单元测试用例，[TestCase](https://docs.python.org/2/library/unittest.html#unittest.TestCase) 是编写单元测试用例最常用的类。
-- test suite：单元测试用例的集合，[TestSuite](https://docs.python.org/2/library/unittest.html#unittest.TestSuite) 是最常用的类。
+- test fixture：初始化和清理测试环境，比如创建临时的数据库，文件和目录等，其中 [setUp()](https://docs.python.org/2/library/unittest.html#unittest.TestCase.setUp) 和 [setDown()](https://docs.python.org/2/library/unittest.html#unittest.TestCase.tearDown) 是最常用的方法
+- test case：单元测试用例，[TestCase](https://docs.python.org/2/library/unittest.html#unittest.TestCase) 是编写单元测试用例最常用的类
+- test suite：单元测试用例的集合，[TestSuite](https://docs.python.org/2/library/unittest.html#unittest.TestSuite) 是最常用的类
 - test runner：执行单元测试
 
 例如：
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     unittest.main()
 ~~~
 
-执行结果如下所示：
+执行结果如下：
 
 ~~~ bash
 $ python testdemo.py
@@ -56,7 +56,7 @@ import unittest
 class TestStringMethods(unittest.TestCase):
 
     def setUp(self):
-        # Do something to initial the test environment here.
+        # Do something to initiate the test environment here.
         pass
 
     def tearDown(self):
@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
 ## Igore some testcases
 
-有时希望某些用例不被执行，unittest.skip() 提供了这种功能，用法如下：
+有时希望某些用例不被执行，unittest.skip() 提供了忽略某个测试用例的功能，用法如下：
 
 ~~~ python
 import unittest
@@ -114,7 +114,7 @@ OK (skipped=1)
 
 ## Command Line Interface
 
-unittest 也提供了丰富的命令行入口，可以根据需要执行某些特定的用例。有了命令行的支持，上述例子的最后两行代码就显得冗余，应当被移除：
+unittest 提供了丰富的命令行入口，可以根据需要执行某些特定的用例。有了命令行的支持，上述例子的最后两行代码就显得冗余，应当被移除：
 
 ~~~ python
 ...
@@ -124,21 +124,21 @@ if __name__ == '__main__':
     unittest.main()
 ~~~
 
-执行 testdemo.py 文件的所有测试用例：
+执行 testdemo.py 文件所有的测试用例：
 
 ~~~ bash
 $ python -m unittest testdemo
 ~~~
 
-执行 testdemo.py 文件 TestStringMethods 类的所有测试用例：
+执行 testdemo.py 文件的 TestStringMethods 类的所有测试用例：
 
-~~ bash
+~~~ bash
 $ python -m unittest test_demo.TestStringMethods
 ~~~
 
-执行 testdemo.py 文件 TestStringMethods 的 test_upper 用例：
+执行 testdemo.py 文件 TestStringMethods 类的 test_upper：
 
-~~~
+~~~ bash
 $ python -m unittest test_demo.TestStringMethods.test_upper
 ~~~
 
@@ -147,7 +147,7 @@ $ python -m unittest test_demo.TestStringMethods.test_upper
 
 ## Test Discovery
 
-unittest 也提供自动匹配发现并执行测试用例的功能，随着项目代码结构的越发庞大，势必有多个测试文件，自动匹配发现并测试用例的功能在此就显得非常有用，只要满足 [load_tests protocol](https://docs.python.org/2/library/unittest.html#load-tests-protocol) 的测试代码都会被 unittest 发现并执行，测试用例文件的默认匹配规则为 test\*.py。**通过一条命令即可执行所有的测试用例，如此就很容易被 tox 等测试工具所集成**。使用如下：
+unittest 提供了自动匹配发现并执行测试用例的功能，随着项目代码结构越发庞大，势必有多个测试文件，自动匹配发现并测试用例的功能在此就显得非常有用，只要满足 [load_tests protocol](https://docs.python.org/2/library/unittest.html#load-tests-protocol) 的测试用例都会被 unittest 发现并执行，测试用例文件的默认匹配规则为 test\*.py。**通过一条命令即可执行所有的测试用例，如此就很容易被 tox 等测试工具所集成**。使用如下：
 
 ~~~ bash
 python -m unittest discover
