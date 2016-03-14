@@ -4,6 +4,14 @@ title:  "Python 的单元测试之 tox"
 categories: Python
 ---
 
+&nbsp;&nbsp;&nbsp;
+
+![testtools](http://7xp2eu.com1.z0.glb.clouddn.com/pythontesttools.png)
+
+&nbsp;&nbsp;&nbsp;
+
+---------------------
+
 # Overview
 
 [Tox](https://tox.readthedocs.org/en/latest/) 是个标准的virtualenv 管理器和命令行测试工具，提供了标准化的测试。它创造了一个隔离的 Python 沙箱环境，根据配置下载安装依赖包，然后执行测试用例。
