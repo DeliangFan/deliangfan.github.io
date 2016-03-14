@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Python application 的打包和发布————(下)"
+title:  "Python application 的打包和发布——(下)"
 categories: Python
 ---
 
