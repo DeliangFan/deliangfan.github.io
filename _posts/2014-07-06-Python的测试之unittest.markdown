@@ -229,3 +229,18 @@ OK
 | assertDictEqual(a, b)          | dicts                                                 | 2.7   |
 +--------------------------------+-------------------------------------------------------+-------+
 ~~~
+
+--------------------
+
+# Testtools
+
+> testtools is a set of extensions to the Python standard library’s unit testing framework.
+
+[testtools](https://pypi.python.org/pypi/testtools) 是一个功能类似 unittest 的库，它集合众家标准测试库之所长，和 unittest 相比，功能更为强大，使用更为简单，OpenStack 广泛的利用它编写单元测试。由于在用法上 testtools 和 unittest 类似，所以本节简要介绍 testtols 的特点：
+
+- Better assertion methods: 支持 assertIn, assertIs, assertIsInstance 等 assertion
+- More debugging info: 更为详细的 debug 信息
+- Extend unittest, but stay compatible and re-usable: 兼容 unittest
+- Cross-Python compatibility: 支持多种 Python 版本 2.7, 3.3, 3.4, 3.5
+
+更为详细的说明和用法请见 [testtools: tasteful testing for Python](http://testtools.readthedocs.org/en/latest/overview.html)。
