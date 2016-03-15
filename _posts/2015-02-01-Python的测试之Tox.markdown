@@ -14,7 +14,7 @@ categories: Python
 
 # Overview
 
-[Tox](https://tox.readthedocs.org/en/latest/) 是个标准的virtualenv 管理器和命令行测试工具，提供了标准化的测试。它创造了一个隔离的 Python 沙箱环境，根据配置下载安装依赖包，然后执行测试用例。
+[Tox](https://tox.readthedocs.org/en/latest/) 是标准的 virtualenv 管理器和命令行测试工具，它创造一个隔离的 Python 沙箱环境，根据配置下载安装依赖包，然后执行测试用例。
 
 - 在不同的 Python 版本环境下检验 package 能否正确安装
 - 在不同的 Python 版本环境下运行测试用例，检查编码规范，测试覆盖率等
@@ -29,7 +29,7 @@ categories: Python
 
 ## tox-quickstart
 
-Tox 依赖配置文件 tox.ini 运行构建测试环境，下面介绍如何编写 tox.ini，首先可运行 tox-quickstart 生成一个基本的 tox.ini。
+Tox 依赖配置文件 tox.ini 构建测试环境，下面介绍如何编写 tox.ini，首先运行 tox-quickstart 生成一个基本的 tox.ini。
 
 ~~~ bash
 $ tox-quickstart
@@ -58,7 +58,7 @@ Creating file tox.ini.
 ...
 ~~~
 
-本文要运行的测试文件为 testdemo.py，生成后的 tox.ini 如下：
+本文要执行的测试文件为 testdemo.py，生成后的 tox.ini 如下：
 
 ~~~ ini
 [tox]
@@ -69,23 +69,64 @@ commands = python -m unittest testdemo
 deps =
 ~~~
 
-可指定 python 版本运行测试用例，下例在 py27 下执行测试用例：
+可指定 python 版本执行测试用例， 如在 py27 下执行用例：
 
 ~~~
 tox -epy27
 ~~~
 
+## Config dependency
+
+Tox 支持多种设置 dependency 的方法，如在 setup.py，tox.ini 和 requirements.txt 均可设置。
+
+- setup.py 设置 dependency 的样例：
+
+~~~ python
+setuptools.setup(
+    ...
+    install_requires=(
+        'python-ldap',
+        'ldappool'
+    ),
+    ...
+)
+~~~
+
+- 在 tox.ini 设置如下：
+
+~~~ ini
+[testenv]
+deps=
+    python-ldap4
+    ldappool
+~~~
+
+- 在 requirement.txt 设置如下：
+
+~~~
+$ cat requirement.txt
+python-ldap4
+ldappool
+~~~
+
+同时需设置 tox.ini：
+
+~~~
+[testenv]
+deps = -rrequirements.txt
+~~~
+
 ## Config a different Pypi server
 
-Tox 某认的 Pypi server 为 [http://pypi.python.org/simple](http://pypi.python.org/simple)，我们也可以为 tox 指定某个 Pypi server:
+Tox 默认的 Pypi server 为 [http://pypi.python.org/simple](http://pypi.python.org/simple)，我们可以为 tox 指定某个 Pypi server:
 
 ~~~ ini
 [tox]
 indexserver =
-    another = http://default-pypi.com
+    another = http://another-pypi.com
 ~~~
 
-Tox 也允许指定设置多个 Pypi server:
+Tox 允许指定设置多个 Pypi server:
 
 ~~~ ini
 [tox]
@@ -96,7 +137,7 @@ indexserver =
 
 ## Add pep8 checker
 
-Tox 支持为项目项添加代码规范检查，样例如下：
+Tox 支持为项目项设置代码规范检查，样例如下：
 
 ~~~ ini
 [testenv:pep8]
@@ -110,7 +151,7 @@ show-source = True
 exclude = .venv,.tox,dist,doc,*egg,build,
 ~~~
 
-运行
+执行：
 
 ~~~
 tox -epep8
@@ -118,14 +159,14 @@ tox -epep8
 
 ## Add coverage
 
-为项目生成覆盖测试报表，样例如下：
+为项目生成测试覆盖率报表，样例如下：
 
 ~~~ ini
 [testenv:cover]
 commands = python setup.py testr --coverage --testr-args='{posargs}'
 ~~~
 
-运行
+执行：
 
 ~~~
 tox -ecover
