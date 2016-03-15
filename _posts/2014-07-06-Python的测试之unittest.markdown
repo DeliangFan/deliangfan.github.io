@@ -80,7 +80,7 @@ if __name__ == '__main__':
     unittest.main()
 ~~~
 
-## Igore some testcases
+## Ignore some testcases
 
 有时希望某些用例不被执行，unittest.skip() 提供了忽略某个测试用例的功能，用法如下：
 
