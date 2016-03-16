@@ -148,9 +148,6 @@ $ python -m unittest test_demo.TestStringMethods
 $ python -m unittest test_demo.TestStringMethods.test_upper
 ~~~
 
-
--------------------------
-
 ## Test Discovery
 
 unittest 提供了自动匹配发现并执行测试用例的功能，随着项目代码结构越发庞大，势必有多个测试文件，自动匹配发现并测试用例的功能在此就显得非常有用，只要满足 [load_tests protocol](https://docs.python.org/2/library/unittest.html#load-tests-protocol) 的测试用例都会被 unittest 发现并执行，测试用例文件的默认匹配规则为 test\*.py。**通过一条命令即可执行所有的测试用例，如此就很容易被 tox 等测试工具所集成**。使用如下：
