@@ -1,0 +1,107 @@
+---
+layout: post
+title:  "vim 养成记"
+categories: DevOps
+---
+
+----------
+
+
+![learning ied](http://7xp2eu.com1.z0.glb.clouddn.com/horrorstories.jpg)
+
+
+学习 vim 犹如攀登高峰，过程曲折，登顶舒爽。
+
+--------------
+
+# 推荐学习资源
+
+**Game**
+
+- [VIM advantrue](http://vim-adventures.com/)
+
+**Resource**
+
+- [Learn-Vim-Progressively](http://yannesposito.com/Scratch/en/blog/Learn-Vim-Progressively/)
+- [VIM 简明攻略](http://coolshell.cn/?s=vim+%E5%AD%A6%E4%B9%A0)
+
+----------
+
+# Options
+
+Vim 的参数非常之多，详情请见 [QUICKREF](http://vimcdoc.sourceforge.net/doc/quickref.html#Q_op)，[vim-setup](http://platinhom.github.io/2015/06/08/Vim-Setup/) 列出以下常用参数。
+
+~~~
+set backspace=indent,eol,start  #使vi可以用退格键删除,默认不能删旧的.
+                               #indent是指可以删除字段缩进,eol是可以通过退格键合并两行,
+                               #start则是可以删除插入前的输入(bs)
+set nocompatible    #缺省vi兼容模式,不能用退格.设置为不兼容模式(cp)
+set number          #行号显示(nu)
+set ruler           #底部的行号等显示
+set showmatch       #当输入一个左括号时自动匹配右括号
+set whichwrap=>     #默认时,右键不能转到下一行.ww可以开启自动折向
+                    #下行.<>分别代表左右,=后是指定可以换行的.(ww)
+set autoindent      #开启自动缩进   (ai)
+set smartindent     #智能选择对齐方式,类似C语言.换行时自动学会缩进.
+set tabstop=4       #一个tab等于多少空格(ts)
+set shiftwidth=4    #自动缩进时缩进为4格(sw)
+set expandtab       #编辑时可以将tab替换为空格(et)
+set cindent         #c缩进
+set incsearch   #很聪明的查找,输入一个字符马上自动匹配,而不是输入完再查找
+set highlight       #寻找时匹配高亮显示(hls)
+set softtabstop     #
+set nobackup        #不备份(讨厌的~文件)
+set cursorline      #高亮当前行(青色)
+set guioptions-=T   #关闭GUI版工具栏
+set t_vb            #当vim进行编辑时，如果命令错误，会发出一个响声，该设置去掉响声
+set autowrite       #自动保存
+set autochdir       #自动切换当前目录为当前文件所在的目录
+set nowrapscan      #关闭扫描到文件两端时重新搜索
+set background=dark/light    #设置背景颜色与syntax对应     
+~~~
+
+----------------
+
+
+# Plugins
+
+Vim 的 plugin 非常之多，[vim awesome](http://vimawesome.com/) 列出各个 plugin 的功能和受欢迎程度。
+
+![vim plugin](http://7xp2eu.com1.z0.glb.clouddn.com/vimplugins.png)
+
+--------------
+
+# My vim
+
+本人的 vimr 配置如下：
+
+~~~
+syntax on
+
+set tabstop=4
+set expandtab
+set hlsearch
+set incsearch
+set autochdir
+set tags=./tags,tags;$HOME
+
+nmap <F5> :silent! Tlist<CR>
+nmap <F3> :vertical resize +3<CR>
+nmap <F4> :vertical resize -3<CR>
+nmap <F6> :resize +3<CR>
+nmap <F7> :resize -3<CR>
+
+let Tlist_Show_One_File=1
+let Tlist_Auto_Open=1
+let Tlist_Ctags_Cmd='ctags'
+let Tlist_Use_Right_Window=1
+let Tlist_File_Fold_Auto_Close=1
+let Tlist_Exit_OnlyWindow=1
+let Tlist_Process_File_Always=0
+let Tlist_Inc_Winwidth=0
+~~~
+
+使用的插件如下：
+
+- NERD_tree.vim
+- taglist.vim
