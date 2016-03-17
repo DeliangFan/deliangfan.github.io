@@ -4,13 +4,15 @@ title:  "vim 养成记"
 categories: DevOps
 ---
 
-----------
+&nbsp;&nbsp;&nbsp;
+
+> Better, Stronger, Faster
+
+学习 vim 犹如攀登高峰，过程曲折，登顶舒爽。
 
 
 ![learning ied](http://7xp2eu.com1.z0.glb.clouddn.com/horrorstories.jpg)
 
-
-学习 vim 犹如攀登高峰，过程曲折，登顶舒爽。
 
 --------------
 
