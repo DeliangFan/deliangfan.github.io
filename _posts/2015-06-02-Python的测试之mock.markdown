@@ -28,7 +28,7 @@ categories: Python
 mock 的安装非常简便：
 
 ~~~ bash
-pip install mock
+$ pip install mock
 ~~~
 
 ---------
@@ -48,13 +48,14 @@ http://stackoverflow.com/questions/17181687/mock-vs-magicmock
 >>> foo = Foo()
 >>> foo.echo = mock.MagicMock()
 >>> foo.echo.return_value = "mock value"
+>>>
 >>> foo.echo()
 'mock value'
 >>> foo.echo(1, 2)
 'mock value'
 ~~~
 
-被模拟后，foo.echo 的类型是一个名为 mock.MagicMock 类，
+被模拟后，foo.echo 的类型是一个名为 mock.MagicMock 类，具有 assert\_any\_call, assert\_called\_once\_with 等方法，其中 assert 类型的方法通常用于检验 foo.echo 是否被调用。
 
 ~~~ bash
 >>> type(foo.echo)
@@ -64,6 +65,7 @@ http://stackoverflow.com/questions/17181687/mock-vs-magicmock
 ['assert_any_call', 'assert_called_once_with', 'assert_called_with', 'assert_has_calls', 'attach_mock', 'call_args', 'call_args_list', 'call_count', 'called', 'configure_mock', 'method_calls', 'mock_add_spec', 'mock_calls', 'reset_mock', 'return_value', 'side_effect']
 ~~~
 
+断言 foo.echo 被调用的情况，其中 foo.echo 共被调用两次(见上)。
 
 ~~~ bash
 >>> foo.echo.called
@@ -72,10 +74,7 @@ True
 2
 >>> foo.echo.mock_calls
 [call(), call(1, 2)]
-~~~~
-
-
-~~~ bash
+>>>
 >>> foo.echo.assert_called_with(1, 2)
 >>> foo.echo.assert_called_with(1)
 Traceback (most recent call last):
@@ -85,3 +84,6 @@ Traceback (most recent call last):
 AssertionError: Expected call: mock(1)
 Actual call: mock(1, 2)
 ~~~
+
+----------
+
