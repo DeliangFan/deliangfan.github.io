@@ -41,7 +41,7 @@ http://stackoverflow.com/questions/17181687/mock-vs-magicmock
 
 ~~~ bash
 >>> class Foo(object):
-...     def echo(*args):
+...     def echo(self, *args):
 ...         return "hello"
 ...
 >>>
@@ -62,7 +62,10 @@ http://stackoverflow.com/questions/17181687/mock-vs-magicmock
 <class 'mock.MagicMock'>
 
 >>> dir(foo.echo)
-['assert_any_call', 'assert_called_once_with', 'assert_called_with', 'assert_has_calls', 'attach_mock', 'call_args', 'call_args_list', 'call_count', 'called', 'configure_mock', 'method_calls', 'mock_add_spec', 'mock_calls', 'reset_mock', 'return_value', 'side_effect']
+['assert_any_call', 'assert_called_once_with', 'assert_called_with',
+'assert_has_calls', 'attach_mock', 'call_args', 'call_args_list',
+'call_count', 'called', 'configure_mock', 'method_calls', 'mock_add_spec',
+'mock_calls', 'reset_mock', 'return_value', 'side_effect']
 ~~~
 
 断言 foo.echo 被调用的情况，其中 foo.echo 共被调用两次(见上)。
@@ -85,5 +88,60 @@ AssertionError: Expected call: mock(1)
 Actual call: mock(1, 2)
 ~~~
 
-----------
+-------------------------
 
+# Mocking Classes
+
+采用 mock 可方便的模拟 class，例如：
+
+~~~ bash
+>>> def some_function():
+...     foo = Foo()
+...     return foo.echo()
+...
+>>> with mock.patch('__main__.Foo') as foo_mock:
+...     instance = foo_mock.return_value
+...     instance.echo.return_value = "mock result"
+...     result = some_function()
+...     assert result == "mock result"
+...
+>>> print some_function()
+hello
+~~~
+
+值得注意的是，mock.patch 把模拟的效果限制在 with 作用域的范围内，所以 with 作用域之外的 some_function 的返回值依旧为 hello。
+
+---------------------
+
+# Setting Return Values and Attributes
+
+mock 同样可方便的模拟返回值 和 attributes，例如模拟一个对象的返回值，
+
+~~~ bash
+>>> mock = Mock()
+>>> mock.return_value = 3
+>>> mock()
+3
+~~~
+
+模拟一个方法的返回值：
+
+~~~ bash
+>>> mock = Mock()
+>>> mock.method.return_value = 3
+>>> mock.method()
+3
+~~~
+
+模拟对象的 attribute：
+
+~~~ bash
+>>> mock = Mock()
+>>> mock.x = 3
+>>> mock.x
+3
+~~~
+
+-------------
+
+#
