@@ -14,9 +14,9 @@ categories: Python
 
 # Overview
 
-[mock](http://www.voidspace.org.uk/python/mock/index.html) 是一个用于单元测试的 Python 库，它使用 mock 替代系统中如 class, method 等部分，模拟被替代部分的功能，并且断言它们是如何被调用的。在编写单元测试时，mock 非常适合模拟数据库，web 服务器等依赖外部的场景。本文是 mock 的入门篇，主要介绍 mock 的基本用法。
+[mock](http://www.voidspace.org.uk/python/mock/index.html) 是一个用于单元测试的 Python 库，它使用 mock 模拟系统中如 class, method 等部分，并且断言它们是如何被调用的。在编写单元测试时，mock 非常适合模拟数据库，web 服务器等依赖外部的场景。本文是 mock 的入门篇，主要介绍 mock 的基本用法。
 
-除了 mock 外，Python 还有许多其它 mocking 库，[Python Mock Library Comparison](http://garybernhardt.github.io/python-mock-comparison/) 在用法上对这些库做了简单的比较，其中 OpenStack 单元测试广泛的使用了 mock 和 mox。
+除了 mock 外，还有许多其它的 mocking 库，[Python Mock Library Comparison](http://garybernhardt.github.io/python-mock-comparison/) 在用法上对这些库做了简单的比较，其中 OpenStack 单元测试广泛的使用了 mock 和 mox。
 
 - [mock](http://www.voidspace.org.uk/python/mock/)
 - [flexmock](https://pypi.python.org/pypi/flexmock)
@@ -54,7 +54,7 @@ $ pip install mock
 'mock value'
 ~~~
 
-被模拟后，foo.echo 的类型是一个名为 mock.MagicMock 类，具有 assert\_any\_call, assert\_called\_once\_with 等方法，其中 assert 类型的方法通常用于检验 foo.echo 是否被调用。
+被模拟后，foo.echo 的类型是一个名为 mock.MagicMock 类，具有 assert\_any\_call, assert\_called\_once\_with 等方法，其中 assert 类型的方法通常用于检验 foo.echo 是否被正确调用。
 
 ~~~ bash
 >>> type(foo.echo)
@@ -119,7 +119,7 @@ hello
 
 # Setting Return Values and Attributes
 
-mock 同样可方便的模拟返回值 和 attributes，例如模拟一个对象的返回值，
+mock 同样可方便的模拟返回值和 attributes，例如模拟一个对象的返回值，
 
 ~~~ bash
 >>> value_mock = mock.Mock()
