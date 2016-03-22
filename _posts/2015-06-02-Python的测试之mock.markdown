@@ -14,7 +14,7 @@ categories: Python
 
 # Overview
 
-[mock](http://www.voidspace.org.uk/python/mock/index.html) 是一个用于单元测试的 Python 库，它使用 mock 替代系统中如 class, method 等部分，模拟被替代部分的功能，并且断言它们是如何被调用的。在编写单元测试时，mock 非常适合模拟数据库，web 服务器等。本文是 mock 的入门篇，主要介绍 mock 的基本用法。
+[mock](http://www.voidspace.org.uk/python/mock/index.html) 是一个用于单元测试的 Python 库，它使用 mock 替代系统中如 class, method 等部分，模拟被替代部分的功能，并且断言它们是如何被调用的。在编写单元测试时，mock 非常适合模拟数据库，web 服务器等依赖外部的场景。本文是 mock 的入门篇，主要介绍 mock 的基本用法。
 
 除了 mock 外，Python 还有许多其它 mocking 库，[Python Mock Library Comparison](http://garybernhardt.github.io/python-mock-comparison/) 在用法上对这些库做了简单的比较，其中 OpenStack 单元测试广泛的使用了 mock 和 mox。
 
@@ -35,7 +35,6 @@ $ pip install mock
 
 # Mock Patching Methods
 
-http://stackoverflow.com/questions/17181687/mock-vs-magicmock
 
 当使用 mock 模拟 methods 时，mock 会替换被模拟的 methods，并且记录调用详情。
 
@@ -88,6 +87,11 @@ AssertionError: Expected call: mock(1)
 Actual call: mock(1, 2)
 ~~~
 
+mock.Mock 和 mock.MagicMock 是两个常用的类，stackoverflow 有篇帖子 [mock-vs-magicmock](http://stackoverflow.com/questions/17181687/mock-vs-magicmock) 专门讲述二者的区别：
+
+- MagicMock 是 Mock 的之类
+- MagicMock 额外实现了很多 [magic 的方法](http://www.voidspace.org.uk/python/mock/magicmock.html#mock.MagicMock)
+
 -------------------------
 
 # Mocking Classes
@@ -109,7 +113,7 @@ Actual call: mock(1, 2)
 hello
 ~~~
 
-值得注意的是，mock.patch 把模拟的效果限制在 with 作用域的范围内，所以 with 作用域之外的 some_function 的返回值依旧为 hello。
+值得注意的是，[mock.patch](http://www.voidspace.org.uk/python/mock/getting-started.html#patch-decorators) 把模拟的效果限制在 with 作用域的范围内，所以 with 作用域之外的 some_function 的返回值依旧为 hello。
 
 ---------------------
 
@@ -118,30 +122,76 @@ hello
 mock 同样可方便的模拟返回值 和 attributes，例如模拟一个对象的返回值，
 
 ~~~ bash
->>> mock = Mock()
->>> mock.return_value = 3
->>> mock()
+>>> value_mock = mock.Mock()
+>>> value_mock.return_value = 3
+>>> value_mock()
 3
 ~~~
 
 模拟一个方法的返回值：
 
 ~~~ bash
->>> mock = Mock()
->>> mock.method.return_value = 3
->>> mock.method()
+>>> method_value_mock = mock.Mock()
+>>> method_value_mock.method.return_value = 3
+>>> method_value_mock.method()
 3
 ~~~
 
 模拟对象的 attribute：
 
 ~~~ bash
->>> mock = Mock()
->>> mock.x = 3
->>> mock.x
+>>> attr_mock = mock.Mock()
+>>> attr_mock.x = 3
+>>> attr_mock.x
 3
 ~~~
 
 -------------
 
-#
+# 参数 side_effect
+
+side\_effect 是一个非常有用的参数，大大提高了 mock 返回值的灵活性，它可以是一个异常、函数或者可迭代对象。例如返回一个异常：
+
+~~~ bash
+>>> except_mock = mock.Mock(side_effect=Exception('Boom!'))
+>>> except_mock()
+Traceback (most recent call last):
+  ...
+Exception: Boom!
+~~~
+
+当 side\_effect 为迭代对象时，样例如下：
+
+~~~ bash
+>>> iter_mock = mock.Mock(side_effect=[1, 2, 3])
+>>> iter_mock()
+1
+>>> iter_mock()
+2
+>>> iter_mock()
+3
+>>> iter_mock()
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/Library/Python/2.7/site-packages/mock/mock.py", line 1062, in __call__
+    return _mock_self._mock_call(*args, **kwargs)
+  File "/Library/Python/2.7/site-packages/mock/mock.py", line 1121, in _mock_call
+    result = next(effect)
+  File "/Library/Python/2.7/site-packages/mock/mock.py", line 127, in next
+    return _next(obj)
+StopIteration
+~~~
+
+单 side\_effect 为函数时，样例如下：
+
+~~~ bash
+>>> def side_effect(value):
+...     return value
+...
+>>>
+>>> side_effect_mock = mock.Mock(side_effect=side_effect)
+>>> side_effect_mock(1)
+1
+>>> side_effect_mock("hello world!")
+'hello world!'
+~~~
