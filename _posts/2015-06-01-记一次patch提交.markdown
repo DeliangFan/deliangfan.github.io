@@ -1,0 +1,20 @@
+---
+layout: post
+title:  "记一次 patch 提交"
+categories: OpenStack
+---
+
+近期稍闲，于是在 Heat 项目找了个名为 [Cannot delete the stack after replacing image during stack-update Edit](https://bugs.launchpad.net/heat/+bug/1356084) 的 bug 来 fix。本文并不是要介绍如何 fix bug，而是为了感谢和赞美社区该 bug 的描述如下:
+
+~~~ bash
+Steps to Reproduce:
+    * create a stack with with a single server (see attached example template)
+    * update the stack and replace the image the instance is using
+        - This will fail with the error "Conflict: Port <uuid> is still in use. (HTTP 409) "
+    * Try to delete the stack
+        - This will fail with the error "Failed to DELETE : Error deleting backup resources: 
+          Resource DELETE failed: Forbidden: You are not authorized to perform the requested
+          action, identity:delete_user. (HTTP 403)"
+~~~
+
+深入折腾后
