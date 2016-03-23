@@ -4,7 +4,13 @@ title:  "记一次 patch 提交"
 categories: OpenStack
 ---
 
-近期稍闲，于是在 Heat 项目找了个名为 [Cannot delete the stack after replacing image during stack-update Edit](https://bugs.launchpad.net/heat/+bug/1356084) 的 bug 来 fix。本文并不是要介绍如何 fix bug，而是为了感谢和赞美社区该 bug 的描述如下:
+&nbsp;&nbsp;&nbsp;
+ 
+> 感谢 Angus Salkeld 春风化雨般的教导。
+
+&nbsp;&nbsp;&nbsp;
+
+近期稍闲，于是在 Heat 项目找了个名为 [Cannot delete the stack after replacing image during stack-update Edit](https://bugs.launchpad.net/heat/+bug/1356084) 的 bug 来 fix。本文并不是要介绍如何 fix bug，而是为了感谢社区大神们春风化雨的教导和赞美社区互助的品质，该 bug 的描述如下:
 
 ~~~ bash
 Steps to Reproduce:
