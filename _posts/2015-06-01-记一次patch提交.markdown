@@ -6,21 +6,49 @@ categories: OpenStack
 
 &nbsp;&nbsp;&nbsp;
  
-> 感谢 Angus Salkeld 春风化雨般的教导。
+> 感谢 [Angus Salkeld](https://launchpad.net/~asalkeld) 春风化雨般的教导，此次 patch 让我更加认知测试的重要性。
 
 &nbsp;&nbsp;&nbsp;
 
-近期稍闲，于是在 Heat 项目找了个名为 [Cannot delete the stack after replacing image during stack-update Edit](https://bugs.launchpad.net/heat/+bug/1356084) 的 bug 来 fix。本文并不是要介绍如何 fix bug，而是为了感谢社区大神们春风化雨的教导和赞美社区互助的品质，该 bug 的描述如下:
+近期稍闲，于是在 Heat 项目找了个名为 [Cannot delete the stack after replacing image during stack-update Edit](https://bugs.launchpad.net/heat/+bug/1356084) 的 bug 来 fix。本文并不是要介绍如何 fix bug，而是为了感谢社区大神们春风化雨的教导和赞美社区互助的品质。首先介绍该 bug， 其描述如下:
 
 ~~~ bash
 Steps to Reproduce:
     * create a stack with with a single server (see attached example template)
     * update the stack and replace the image the instance is using
-        - This will fail with the error "Conflict: Port <uuid> is still in use. (HTTP 409) "
+        - This will fail with the error "Conflict: Port <uuid> is still in
+          use. (HTTP 409) "
     * Try to delete the stack
-        - This will fail with the error "Failed to DELETE : Error deleting backup resources: 
-          Resource DELETE failed: Forbidden: You are not authorized to perform the requested
-          action, identity:delete_user. (HTTP 403)"
+        - This will fail with the error "Failed to DELETE :
+          Error deleting backup resources:
+          Resource DELETE failed:
+          Forbidden: You are not authorized to perform the requested action,
+          dentity:delete_user. (HTTP 403)"
 ~~~
 
-深入折腾后
+折腾不久找出[原因](https://bugs.launchpad.net/heat/+bug/1356084/comments/15)，简单的说就是 stack.stack\_user\_project\_id 参数为空，于是我简单暴力的直接赋值，第一个 patch 共 5 行代码，没有测试，review 结果可想而知。
+
+![patch1](http://7xp2eu.com1.z0.glb.clouddn.com/heat-patch-1.png)
+
+从上图可知：
+
+- Jason Dunsmore 要求 patch 必须要有测试用例
+- Steve Baker 细心的教我如何编写测试用例
+- Angus Salkeld 考虑更为全面，于是他把 patch 邮件给我，如下图。
+
+![patch2](http://7xp2eu.com1.z0.glb.clouddn.com/heat-patch-2.png)
+
+然后，然后粗心的我直接把 Angus Salkeld 发我的 patch 提交上去，未料到他特意埋了些坑(主要在注释)，此时的我羞愧难以自容，于是立刻掌握清楚 mox/mock 的用法。
+
+![patch3](http://7xp2eu.com1.z0.glb.clouddn.com/heat-patch-3.png)
+
+根据 Angus Salkeld 的建议重新提交 patch 后，他又鼓励我再次添加一个用例，覆盖另一种场景。
+
+~~~
+nearly there, i had the focus of testing on the delete, but it seems it is on the
+update-replacement of the server. Let's make that more explicit in the functional
+test, otherwise it's going to be confusing what this test is really doing.
+~~~
+
+![patch4](http://7xp2eu.com1.z0.glb.clouddn.com/heat-patch-4.png)
+
