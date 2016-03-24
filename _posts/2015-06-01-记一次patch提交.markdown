@@ -26,7 +26,7 @@ Steps to Reproduce:
           dentity:delete_user. (HTTP 403)"
 ~~~
 
-折腾不久找出[原因](https://bugs.launchpad.net/heat/+bug/1356084/comments/15)，简单的说就是 stack.stack\_user\_project\_id 参数为空，于是简单暴力的直接赋值，由于对 mox/mock 掌握不深，故没有编写单元测试，第一个 patch 共 5 行代码，review 结果可想而知。
+折腾不久找出[原因](https://bugs.launchpad.net/heat/+bug/1356084/comments/15)，简单的说就是 stack.stack\_user\_project\_id 参数未被赋值，于是简单暴力的直接赋值，由于对 mox/mock 掌握不深，故没有编写单元测试，第一个 patch 共 5 行代码，review 结果可想而知。
 
 ![patch1](http://7xp2eu.com1.z0.glb.clouddn.com/heat-patch-1.png)
 
@@ -52,3 +52,5 @@ really doing.
 ~~~
 
 ![patch4](http://7xp2eu.com1.z0.glb.clouddn.com/heat-patch-4.png)
+
+Angus Salkeld 是 Heat 的 PTL，他愿如此不愿其烦的教导一个小菜鸟，令我感触颇深。
