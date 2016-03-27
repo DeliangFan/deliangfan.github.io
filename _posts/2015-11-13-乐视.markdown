@@ -17,7 +17,7 @@ categories: 老东家们
 
 ----------------------------
 
-# 900 个 OpenStack 物理节点
+# 900 物理节点
 
 
 
@@ -26,12 +26,16 @@ categories: 老东家们
 
 # 成长
 
-忻哥是一位非常注重底层基础知识的领导，他非常关心团队的成长，加上文剑和冬卯大神等伙伴
+忻哥是一位非常注重底层基础知识的开明领导，非常关心团队的成长，他要求我们培养扎实的基础知识，也为我们提供了很多和外界交流的机会；和大气开明 Boss，和牛逼的大神伙伴一起共事成长，是一种福气。
 
 ## 基础知识
 
+[Richard Stevens](https://en.wikipedia.org/wiki/W._Richard_Stevens) 所作有关 UNIX 和 TCP/IP 等领域的书籍非常值得拜读，它们解答我的许多疑惑，增强了定位和解决问题的能力，大有柳暗花明之感。
 
-
+- [Advanced Promgramming in the UNIX Environment](https://en.wikipedia.org/wiki/Advanced_Programming_in_the_Unix_Environment)
+- [UNIX Network Programming](https://en.wikipedia.org/wiki/UNIX_Network_Programming)
+- [TCP/IP Illustrated, Volume 1: The Protocols](https://en.wikipedia.org/wiki/TCP/IP_Illustrated)
+- Operating system: [CS162](https://cs162.eecs.berkeley.edu/)(Berkeley 公开课)
 
 ## 工具
 
@@ -45,4 +49,7 @@ categories: 老东家们
 
 ## 社区
 
+额外花点时间参与社区同样有助于成长：
 
+- Commit 代码: 学习标准规范的开发测试流程，培养编写测试用例的良好习惯
+- Meetup: 取长补短，认识优秀的同行
