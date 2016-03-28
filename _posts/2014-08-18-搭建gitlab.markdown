@@ -4,7 +4,7 @@ title:  "搭建 GitLab"
 categories: DevOps
 ---
 
-----------
+&nbsp;&nbsp;&nbsp;
 
 ![gitlab](http://7xp2eu.com1.z0.glb.clouddn.com/gitlab.png)
 
