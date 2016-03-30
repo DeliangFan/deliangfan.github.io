@@ -1,0 +1,107 @@
+---
+layout: post
+title:  "深入理解 Python == 和 is"
+categories: Python
+---
+
+![python is](http://7xp2eu.com1.z0.glb.clouddn.com/pythonis%3D%3D.png)
+
+# Case 1
+
+~~~ bash
+>>> a = [1, 2]
+>>> b = [1, 2]
+>>> a == b
+True
+>>> a is b
+False
+~~~
+
+阐述 == 和 is 的区别前，先要明确 Python 的一个概念，[一切皆对象，每个对象包含一个 identity、一个 type 和一个 value](https://docs.python.org/2/reference/datamodel.html#objects-values-and-types)：
+
+> Everything in Python is an object.    
+> Every object has an identity, a type and a value.
+
+identity 表示对象所在的地址空间，可用 id() 查看：
+
+~~~ bash
+>>> id(a)
+4539217360
+>>> id(b)
+4539217488
+~~~
+
+** 运算符 is 比较两个对象的地址空间是否相同，即判断二者是否为同一个对象！**
+
+a is b 相当于 id(a) == id(b)
+
+# Case 2
+
+~~~ bash
+>>> class A(object):
+...     def __eq__(self, other):
+...         return True
+...
+>>> a = A()
+>>> a == 1
+True
+>>> a == 2
+True
+>>> a == "abcdefg"
+True
+~~~
+
+再有趣点：
+
+~~~ bash
+>>> class B(A):
+...     def __ne__(self, other):
+...         return True
+...
+>>> b = B()
+>>> b == 1
+True
+>>> b != 1
+True
+~~~
+
+在一切皆为对象的 Python 里，操作符 **== 调用对象的 __eq__()** 方法，同理有：
+
+~~~ bash
++--------+-------------+
+| x == y | x.__eq__(y) |
+| x != y | x.__ne__(y) |
+| x <= y | x.__le__(y) |
+| x < y  | x.__lt__(y) |
+| x > y  | x.__gt__(y) |
+| x >= y | x.__ge__(y) |
++--------+-------------+
+~~~
+
+# Case 3
+
+~~~ bash
+>>> a = 1
+>>> b = 1
+>>> a == b
+True
+>>> a is b
+True
+>>>
+>>> a = 100000
+>>> b = 100000
+>>> a == b
+True
+>>> a is b
+False
+~~~
+
+此例告知我们，Python 会缓存一些较小的 int 和 str 对象；另外所有的 None 对象都指向相同的地址空间，类似的还有 False 和 True，所以有如下常用的用法：
+
+~~~
+if a is None:
+	...
+
+if a is True:
+    ...
+~~~
