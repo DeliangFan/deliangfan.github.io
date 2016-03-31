@@ -6,11 +6,11 @@ categories: Python
 
 ![object](http://7xp2eu.com1.z0.glb.clouddn.com/pythonobjectmutable.png)
 
-在 Python 的世界里，一切皆对象，每个对象包含各包含一个 idendity、type 和 value。
+在 Python 的世界里，一切皆对象，每个对象各包含一个 idendity、type 和 value。
 
-- identity: identity 可理解为 object 的内存地址空间，其值可用 id() 函数获取。一旦 object 被创建，其 identity 不可变。
-- type: type 可理解为 object 的类名，其值可用 type() 函数获取。一旦 object 被创建，其 type 也不可变。
-- value: value 可理解为 object 的值，和 identity 和 type 不同，有些 object 的 value 可变，有些 object 的 value 永不可变。我们把 value 可变动的 object 成为 mutable object，把 value 不可变动的 object 称之为 immutable。
+- identity: 可理解为 object 的内存地址空间，其值可由 id() 函数获取，一旦 object 被创建，其 identity 将不可改变。
+- type: 可理解为 object 的类型，其值可由 type() 函数获取，一旦 object 被创建，其 type 也不可该变。
+- value: 可理解为 object 的值，和 identity 与 type 不同，有些 object 的 value 可变，有些 object 的 value 永不可变。我们把 value 可变动的 object 称为 mutable object，把 value 不可变动的 object 称为 immutable object。
 
 常见的 immutable objects:
 
