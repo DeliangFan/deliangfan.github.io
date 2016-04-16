@@ -4,7 +4,12 @@ title:  "理解 HMAC-Based One-Time Password Algorithm"
 categories: Algorithm
 ---
 
-------------
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![](http://7xp2eu.com1.z0.glb.clouddn.com/otp1.png)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
 
 # Two-Factor Authentication and One-Time Password
 
