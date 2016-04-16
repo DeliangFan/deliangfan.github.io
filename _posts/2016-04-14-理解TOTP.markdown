@@ -4,36 +4,36 @@ title:  "理解 Time-based One-Time Password Algorithm"
 categories: Algorithm
 ---
 
-------------
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
-This document describes an extension of the One-Time Password (OTP)   algorithm, namely the HMAC-based One-Time Password (HOTP) algorithm,   as defined in RFC 4226, to support the time-based moving factor.  The   HOTP algorithm specifies an event-based OTP algorithm, where the   moving factor is an event counter.  The present work bases the moving   factor on a time value.  A time-based variant of the OTP algorithm   provides short-lived OTP values, which are desirable for enhanced   security.The proposed algorithm can be used across a wide range of network   applications, from remote Virtual Private Network (VPN) access and   Wi-Fi network logon to transaction-oriented Web applications.  The   authors believe that a common and shared algorithm will facilitate   adoption of two-factor authentication on the Internet by enabling   interoperability across commercial and open-source implementations.
-   
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![](http://7xp2eu.com1.z0.glb.clouddn.com/otp1.png)
 
-# HOTP
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;   
 
-[HOTP](http://tools.ietf.org/pdf/rfc4226)
+# TOTP
 
-   As defined in [RFC4226], the HOTP algorithm is based on the   HMAC-SHA-1 algorithm (as specified in [RFC2104]) and applied to an   increasing counter value representing the message in the HMAC   computation.
-   
-   Basically, the output of the HMAC-SHA-1 calculation is truncated to   obtain user-friendly values:      HOTP(K,C) = Truncate(HMAC-SHA-1(K,C))
-K and C represent the shared secret and   counter value;
-   TOTP is the time-based variant of this algorithm, where a value T,   derived from a time reference and a time step, replaces the counter C   in the HOTP computation.
-   
-   TOTP implementations MAY use HMAC-SHA-256 or HMAC-SHA-512 functions,   based on SHA-256 or SHA-512 [SHA2] hash functions, instead of the   HMAC-SHA-1 function that has been specified for the HOTP computation   in [RFC4226].
-   
-# Design
-- The prover (e.g., token, soft token) and verifier (authentication or validation server) MUST know or be able to derive the current Unix time.
--  The prover and verifier MUST either share the same secret or the knowledge of a secret transformation to generate a shared secret.
--  The algorithm MUST use HOTP [RFC4226] as a key building block.
--  The prover and verifier MUST use the same time-step value X.
--  There MUST be a unique secret (key) for each prover.
+本文主要介绍基于时间的一次性密码生成算法 TOTP，它由 [RFC 6238](https://tools.ietf.org/html/rfc6238) 定义。和基于事件的一次性密码生成算法不同 [HOTP](http://tools.ietf.org/pdf/rfc4226)，TOTP 是基于时间的，它和 HOTP 具有如下关系。
 
+~~~
+TOTP = HOTP(K, T)
 
-# Algorithm
+HOTP(K,C) = Truncate(HMAC-SHA-1(K,C))
+~~~
 
-- X represents the time step in seconds (default value X = 30 seconds) and is a system parameter.- T0 is the Unix time to start counting time steps (default value is 0, i.e., the Unix epoch) and is also a system parameter.
+其中：
 
-TOTP as TOTP = HOTP(K, T)
-T = (Current Unix time - T0) / X,
-For example, with T0 = 0 and Time Step X = 30, T = 1 if the current   Unix time is 59 seconds, and T = 2 if the current Unix time is   60 seconds.      
-
+- T：T = (Current Unix time - T0) / X， T0 = 0，X = 30
+- K：客户端和服务端的共享密钥，不同的客户端的密钥各不相同。
+- HOTP：HOTP 的算法请参考 RFC，也可参考博文 [理解 HMAC-Based One-Time Password Algorithm](http://wsfdl.com/algorithm/2016/04/05/%E7%90%86%E8%A7%A3HOTP.html)
+例如：
+
+~~~
+>>> import datatime
+>>> import time
+>>>
+>>> current_time = datetime.datetime.now()
+>>> print current_time
+2016-04-16 22:11:38.508616>>> time.mktime(current_time.timetuple())
+1460815898.0  # Current Unix Time~~~
+当前时间为 2016-04-16 22:11:38.508616 的 Unix Time 为 1460815898.0，所以 T 为:~~~
+T = (1460815898.0 - 0) / 30 = 48693863~~~
