@@ -1,0 +1,84 @@
+---
+layout: post
+title:  "理解 HMAC-Based One-Time Password Algorithm"
+categories: Algorithm
+---
+
+------------
+
+# Two-Factor Authentication and One-Time Password
+
+[双因子认证(Two-Factor Authentication)](http://baike.baidu.com/view/1298637.htm)认证是指结合密码以及实物(令牌、SMS等)两种条件对用户进行认证的方法，提高了系统的安全性。[一次性密码(One-Time Passcode)](https://en.wikipedia.org/wiki/One-time_password)是最为常用的双因子认证方法之一，如
+
+- HOTP: HMAC-Based One-Time Password
+- TOTP: Time-Based One-Time Password
+
+本文主要介绍基于事件的一次性密码的生成算法 HOTP，由 [RFC 4226](https://tools.ietf.org/html/rfc4226) 定义。
+
+-----------
+
+# HOTP Aligorithm
+
+HOTP 的生成算法如下：
+
+~~~
+HOTP(K,C) = Truncate(HMAC-SHA-1(K,C))
+~~~
+
+其中:
+
+- C: 8-byte 的移动因子，对于客户端，每次生成一次性密码，C 的值加 1；对于服务端，每次认证客服端产生的一次性密码，C 的值加 1，所以客服端和服务端必须同步该数值。
+- K: 客户端和服务端的共享密钥，不同的客户端的密钥各不相同。
+- HMAC-SHA-1: Hash-based Message Authentication Code, 采用了 SHA1 哈希算法，输出值为 20 Bytes 的消息摘要。
+- Truncate: 将消息摘要缩减为一次性验证码，通常为 6 位数字。
+
+该算法可分为 3 个步骤
+
+- Step 1: 生成 20 Byte 的消息摘要 HS，其中 HS = HMAC-SHA-1(K,C)。- Step 2: 根据 HS 生成 4 Byte 的字符串 Sbits，其中 Sbits = DT(HS)，DT 的步骤请见后面。- Step 3: 把 Sbits 转换为数字 Snum，再让 D = Snum mod 10^6，D 即为一次性密码。
+
+## HMAC-SHA-1
+
+HMAC 是密钥相关的哈希运算消息认证码，由 [RFC 2104](https://tools.ietf.org/pdf/rfc2104.pdf) 定义，[hmac](https://docs.python.org/2/library/hmac.html) 是一个实现该算法的 Python 库，它支持 md5, sha1 等哈希算法，HTOP 采用了 sha1 算法。
+
+~~~ python
+import hashlib
+import hmac
+
+
+def get_hmac_sha1(secret, msg):
+    result = hmac.new(secret, msg, hashlib.sha1).hexdigest()
+    return result
+~~~
+
+例如，以 C = 0、K='12345678901234567890' 为例，其 hmac_sha1 的摘要为：
+
+~~~ bash
+>>> K = '12345678901234567890'
+>>> C = bytearray([0, 0, 0, 0, 0, 0, 0, 1])
+>>> print get_hmac_sha1(K, C)
+cc93cf18508d94934c64b65d8ba7667fb7cde4b0
+~~~
+
+以下为 C 从 0 到 9 时的摘要值:
+
+~~~ bash
+Secret = '12345678901234567890'
+
++-------+------------------------------------------+
+| Count | Hexadecimal HMAC-SHA-1(secret, count)    |+-------+------------------------------------------+| 0     | cc93cf18508d94934c64b65d8ba7667fb7cde4b0 || 1     | 75a48a19d4cbe100644e8ac1397eea747a2d33ab || 2     | 0bacb7fa082fef30782211938bc1c5e70416ff44 || 3     | 66c28227d03a2d5529262ff016a1e6ef76557ece || 4     | a904c900a64b35909874b33e61c5938a8e15ed1c || 5     | a37e783d7b7233c083d4f62926c7a25f238d0316 || 6     | bc9cd28561042c83f219324d3c607256c03272ae || 7     | a4fb960c0bc06e1eabb804e5b397cdc4b45596fa || 8     | 1b3c89f65e6c9e883012052823443f048b4332db || 9     | 1637409809a679dc698207310c8c7fc07290d9e5 |
++-------+------------------------------------------+
+~~~
+
+## Truncation20 Bytes 的消息摘要过于冗长复杂，不利于用户的输入，所以需要将其浓缩为长度合适的验证码。Truncation 就是将 20 Bytes 的消息摘要生成 6 位数字的过程，即上述的 Step 2 和 Step 3。具体步骤如下：
+假定用 String 表示消息摘要，String[0] 表示第一个 Byte，依次类推，String[19] 表示第 20 个 Byte。
+
+- 选取 String[19]\(即第 20 Byte\)的低位 4 bit，用 Offset 表示，其中 0 <= Offset <= 15。
+- P = String[Offset]...String[Offset + 3]
+- Sbits = P & 0x7fffffff
+- 把 Sbits 转换为十进制数字 Snum，再让 D = Snum mod 10^6，D 即为一次性密码。以值为 0x1f8698690e02ca16618550ef7f19da8e945b555a 的消息摘要为例：~~~
++-----------------------------------------------------------+| Byte Number                                               |+-----------------------------------------------------------+|00|01|02|03|04|05|06|07|08|09|10|11|12|13|14|15|16|17|18|19|+-----------------------------------------------------------+| Byte Value                                                |+-----------------------------------------------------------+|1f|86|98|69|0e|02|ca|16|61|85|50|ef|7f|19|da|8e|94|5b|55|5a|+------------------------------***********------------------+~~~
+- String[19] 为 0x5a，低位的 4 bit 为 0xa，所以 Offset = 0xa = 10。
+- P = String[10]...String[10 + 3] = 0x50ef7f19。
+- Sbits = P & 0x7fffffff = 0x50ef7f19
+- Snum = 0x50ef7f19 = 1357872921
+- 最后的验证码为 D = Snum mod 10^6 = 872921注意到 Sbits = P & 0x7fffffff，之所以不取 P 的最高位，是为了确保 Sbits 为无符号数，避免在不同硬件平台因为符号位而产生不同的结果。
