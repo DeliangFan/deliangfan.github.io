@@ -13,12 +13,12 @@ categories: Algorithm
 
 # Two-Factor Authentication and One-Time Password
 
-[双因子认证(Two-Factor Authentication)](http://baike.baidu.com/view/1298637.htm)认证是指结合密码以及实物(令牌、SMS等)两种条件对用户进行认证的方法，提高了系统的安全性。[一次性密码(One-Time Passcode)](https://en.wikipedia.org/wiki/One-time_password)是最为常用的双因子认证方法之一，如
+[双因子认证(Two-Factor Authentication)](http://baike.baidu.com/view/1298637.htm)认证是指结合密码以及实物(令牌、SMS等)两种条件对用户进行认证的方法，提高了系统的安全性。[一次性密码(One-Time Passcode)](https://en.wikipedia.org/wiki/One-time_password)是最为常用的双因子认证方法之一，如：
 
 - HOTP: HMAC-Based One-Time Password
 - TOTP: Time-Based One-Time Password
 
-本文主要介绍基于事件的一次性密码的生成算法 HOTP，由 [RFC 4226](https://tools.ietf.org/html/rfc4226) 定义。
+本文主要介绍基于事件的一次性密码的生成算法 HOTP，它由 [RFC 4226](https://tools.ietf.org/html/rfc4226) 定义。
 
 -----------
 
@@ -77,13 +77,13 @@ Secret = '12345678901234567890'
 ## Truncation20 Bytes 的消息摘要过于冗长复杂，不利于用户的输入，所以需要将其浓缩为长度合适的验证码。Truncation 就是将 20 Bytes 的消息摘要生成 6 位数字的过程，即上述的 Step 2 和 Step 3。具体步骤如下：
 假定用 String 表示消息摘要，String[0] 表示第一个 Byte，依次类推，String[19] 表示第 20 个 Byte。
 
-- 选取 String[19]\(即第 20 Byte\)的低位 4 bit，用 Offset 表示，其中 0 <= Offset <= 15。
-- P = String[Offset]...String[Offset + 3]
-- Sbits = P & 0x7fffffff
+- 选取 String[19] 的低位 4 bit，用 Offset 表示，其中 0 <= Offset <= 15。
+- 令 P = String[Offset]...String[Offset + 3]
+- 令 Sbits = P & 0x7fffffff
 - 把 Sbits 转换为十进制数字 Snum，再让 D = Snum mod 10^6，D 即为一次性密码。以值为 0x1f8698690e02ca16618550ef7f19da8e945b555a 的消息摘要为例：~~~
 +-----------------------------------------------------------+| Byte Number                                               |+-----------------------------------------------------------+|00|01|02|03|04|05|06|07|08|09|10|11|12|13|14|15|16|17|18|19|+-----------------------------------------------------------+| Byte Value                                                |+-----------------------------------------------------------+|1f|86|98|69|0e|02|ca|16|61|85|50|ef|7f|19|da|8e|94|5b|55|5a|+------------------------------***********------------------+~~~
 - String[19] 为 0x5a，低位的 4 bit 为 0xa，所以 Offset = 0xa = 10。
 - P = String[10]...String[10 + 3] = 0x50ef7f19。
 - Sbits = P & 0x7fffffff = 0x50ef7f19
 - Snum = 0x50ef7f19 = 1357872921
-- 最后的验证码为 D = Snum mod 10^6 = 872921注意到 Sbits = P & 0x7fffffff，之所以不取 P 的最高位，是为了确保 Sbits 为无符号数，避免在不同硬件平台因为符号位而产生不同的结果。
+- 最后的验证码为 D = Snum mod 10^6 = 872921注意到 Sbits = P & 0x7fffffff，之所以不取 P 的最高位，是为了确保 Sbits 为无符号数，避免在不同硬件平台因为符号位而产生的差异。
