@@ -37,3 +37,20 @@ HOTP(K,C) = Truncate(HMAC-SHA-1(K,C))
 1460815898.0  # Current Unix Time~~~
 当前时间为 2016-04-16 22:11:38.508616 的 Unix Time 为 1460815898.0，所以 T 为:~~~
 T = (1460815898.0 - 0) / 30 = 48693863~~~对于 HOTP，客户端和服务端需要同步移动因子 C；而对于 TOTP，只需客户端和服务器端采用相同的时区，不存在同步的问题，提高了便利性和通用性。
+----------
+# Python Demo
+~~~ python
+import hashlib
+import hmac
+
+
+def get_hotp_passcode(secret, count):
+    data = bytearray([int(hex(count >> i & 0xff), 16) for i in (56, 48, 40, 32 ,24, 16, 8, 0)])
+    hs = hmac.new(secret, data, hashlib.sha1).hexdigest()
+    offset = int(hs[-1], 16)
+    sbits = int(hs[offset * 2: offset * 2 + 8], 16) & 0x7fffffff
+    return sbits % 1000000
+
+
+def get_totp_passcode(secret, unix_time):
+    return get_totp_passcode(secret, int(unix_time) / 30)~~~
