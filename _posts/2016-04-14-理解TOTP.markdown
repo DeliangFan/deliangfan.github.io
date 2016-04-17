@@ -12,7 +12,7 @@ categories: Algorithm
 
 # TOTP
 
-本文主要介绍基于时间的一次性密码生成算法 TOTP，它由 [RFC 6238](https://tools.ietf.org/html/rfc6238) 定义。和基于事件的一次性密码生成算法不同 [HOTP](http://tools.ietf.org/pdf/rfc4226)，TOTP 是基于时间的，它和 HOTP 具有如下关系。
+本文主要介绍基于时间的一次性密码生成算法 TOTP，它由 [RFC 6238](https://tools.ietf.org/html/rfc6238) 定义。和基于事件的一次性密码生成算法不同 [HOTP](http://tools.ietf.org/pdf/rfc4226)，TOTP 是基于时间的，它和 HOTP 具有如下关系：
 
 ~~~
 TOTP = HOTP(K, T)
@@ -24,7 +24,7 @@ HOTP(K,C) = Truncate(HMAC-SHA-1(K,C))
 
 - T：T = (Current Unix time - T0) / X， T0 = 0，X = 30
 - K：客户端和服务端的共享密钥，不同的客户端的密钥各不相同。
-- HOTP：HOTP 的算法请参考 RFC，也可参考博文 [理解 HMAC-Based One-Time Password Algorithm](http://wsfdl.com/algorithm/2016/04/05/%E7%90%86%E8%A7%A3HOTP.html)
+- HOTP：该算法请参考 RFC，也可参考博文 [理解 HMAC-Based One-Time Password Algorithm](http://wsfdl.com/algorithm/2016/04/05/%E7%90%86%E8%A7%A3HOTP.html)
 例如：
 
 ~~~
@@ -36,4 +36,4 @@ HOTP(K,C) = Truncate(HMAC-SHA-1(K,C))
 2016-04-16 22:11:38.508616>>> time.mktime(current_time.timetuple())
 1460815898.0  # Current Unix Time~~~
 当前时间为 2016-04-16 22:11:38.508616 的 Unix Time 为 1460815898.0，所以 T 为:~~~
-T = (1460815898.0 - 0) / 30 = 48693863~~~
+T = (1460815898.0 - 0) / 30 = 48693863~~~对于 HOTP，客户端和服务端需要同步移动因子 C；而对于 TOTP，只需客户端和服务器端采用相同的时区，不存在同步的问题，提高了便利性和通用性。
