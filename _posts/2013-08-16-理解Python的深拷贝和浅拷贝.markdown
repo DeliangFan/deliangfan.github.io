@@ -90,6 +90,8 @@ d = copy.copy(a) 创建了一个新对象，复制了原有对象的引用。
 
 e = copy.deepcopy(a) 新建了一个新对象，完整的在内存中复制原有对象。
 
+-----------------
+
 # Note
 
 关于浅拷贝和深拷贝的区别，Python 的 [document](https://docs.python.org/2/library/copy.html) 是这样解释的:
