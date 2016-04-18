@@ -19,19 +19,19 @@ categories: Python
 ![reference](http://7xp2eu.com1.z0.glb.clouddn.com/copy_reference.png)
 
 ~~~ bash
->>> a = [1 , 2]
->>> b = [a, 3, 4]
+>>> b = [1 , 2]
+>>> a = [b, 3, 4]
 >>>
->>> c = b
+>>> c = a
 >>> print c
 [[1, 2], 3, 4]
->>> id(b)
+>>> id(a)
 4408148552
 >>> id(c)
 4408148552
 ~~~
 
-c = b 表示 c 和 b 指向相同的地址空间，并没有创建新的对象。
+c = a 表示 c 和 a 指向相同的地址空间，并没有创建新的对象。
 
 ------------------------
 
@@ -41,26 +41,26 @@ c = b 表示 c 和 b 指向相同的地址空间，并没有创建新的对象�
 
 ~~~ bash
 >>> import copy
->>> d = copy.copy(b)
+>>> d = copy.copy(a)
 >>> print d
 [[1, 2], 3, 4]
 >>>
->>> id(b)
+>>> id(a)
 4408148552
 >>> id(d)
 4408199792
 >>>
->>> id(b[0])
+>>> id(a[0])
 4408022944
 >>> id(d[0])
 4408022944
 >>>
 >>> d[0][0] = 5
->>> print b
+>>> print a
 >>> [[5, 2], 3, 4]
 ~~~
 
-d = copy.copy(b) 创建了一个新对象，复制了原有对象的引用。
+d = copy.copy(a) 创建了一个新对象，复制了原有对象的引用。
 
 ------------------------
 
@@ -69,26 +69,26 @@ d = copy.copy(b) 创建了一个新对象，复制了原有对象的引用。
 ![deepcopy](http://7xp2eu.com1.z0.glb.clouddn.com/copy_deepcopy.png)
 
 ~~~ bash
->>> e = copy.deepcopy(b)
+>>> e = copy.deepcopy(a)
 >>> print e
 >>> [[1, 2], 3, 4]
 >>>
->>> id(b)
+>>> id(a)
 >>> 4408148552
 >>> id(e)
 >>> 4408394792
 >>>
->>> id(b[0])
+>>> id(a[0])
 >>> 4408022944
 >>> id(e[0])
 >>> 4408398432
 >>>
 >>> e[0][0] = 5
->>> print b
+>>> print a
 >>> [[1, 2], 3, 4]
 ~~~
 
-e = copy.deepcopy(b) 新建了一个新对象，完整的在内存中复制原有对象。
+e = copy.deepcopy(a) 新建了一个新对象，完整的在内存中复制原有对象。
 
 # Note
 
