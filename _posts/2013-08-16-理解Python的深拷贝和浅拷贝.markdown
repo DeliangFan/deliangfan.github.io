@@ -1,0 +1,85 @@
+---
+layout: post
+title:  "理解 Python 引用、浅拷贝和深拷贝"
+categories: Python
+---
+
+![object](http://7xp2eu.com1.z0.glb.clouddn.com/pythonobjectmutable.png)
+
+在阐述引用、浅拷贝和深拷贝前，首先需要要了解 Python 的世界里，一切皆对象，每个对象各包含一个 idendity、type 和 value。
+
+- 引用(Reference)
+- 浅拷贝(Shallow copy)
+- 深拷贝(Deep copy)
+
+# Reference
+
+~~~ bash
+>>> a = [1 , 2]
+>>> b = [a, 3, 4]
+>>>
+>>> c = b
+>>> print c
+[[1, 2], 3, 4]
+>>> id(b)
+4408148552
+>>> id(c)
+4408148552
+~~~
+
+c = b 表示 c 和 b 指向相同的地址空间，并没有创建新的对象。
+
+![reference](http://7xp2eu.com1.z0.glb.clouddn.com/copy_reference.png)
+
+# Shallow Copy
+
+~~~ bash
+>>> import copy
+>>> d = copy.copy(b)
+>>> print d
+[[1, 2], 3, 4]
+>>>
+>>> id(b)
+4408148552
+>>> id(d)
+4408199792
+>>>
+>>> id(b[0])
+4408022944
+>>> id(d[0])
+4408022944
+>>>
+>>> d[0][0] = 5
+>>> print b
+>>> [[5, 2], 3, 4]
+~~~
+
+d = copy.copy(b) 创建了一个新对象，拷贝了原有对象的引用。
+
+![shadow copy](http://7xp2eu.com1.z0.glb.clouddn.com/copy_shallow_copy.png)
+
+# Deepcopy
+
+~~~ bash
+>>> e = copy.deepcopy(b)
+>>> print e
+>>> [[1, 2], 3, 4]
+>>>
+>>> id(b)
+>>> 4408148552
+>>> id(e)
+>>> 4408394792
+>>>
+>>> id(b[0])
+>>> 4408022944
+>>> id(e[0])
+>>> 4408398432
+>>>
+>>> e[0][0] = 5
+>>> print b
+>>> [[1, 2], 3, 4]
+~~~
+
+e = copy.deepcopy(b) 新建了一个新对象，在内存中完整的复制原有对象。
+
+![deepcopy](http://7xp2eu.com1.z0.glb.clouddn.com/copy_deepcopy.png)
