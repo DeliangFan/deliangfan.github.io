@@ -12,7 +12,11 @@ categories: Python
 - 浅拷贝(Shallow copy)
 - 深拷贝(Deep copy)
 
+------------------------
+
 # Reference
+
+![reference](http://7xp2eu.com1.z0.glb.clouddn.com/copy_reference.png)
 
 ~~~ bash
 >>> a = [1 , 2]
@@ -29,9 +33,11 @@ categories: Python
 
 c = b 表示 c 和 b 指向相同的地址空间，并没有创建新的对象。
 
-![reference](http://7xp2eu.com1.z0.glb.clouddn.com/copy_reference.png)
+------------------------
 
 # Shallow Copy
+
+![shadow copy](http://7xp2eu.com1.z0.glb.clouddn.com/copy_shallow_copy.png)
 
 ~~~ bash
 >>> import copy
@@ -56,9 +62,11 @@ c = b 表示 c 和 b 指向相同的地址空间，并没有创建新的对象�
 
 d = copy.copy(b) 创建了一个新对象，拷贝了原有对象的引用。
 
-![shadow copy](http://7xp2eu.com1.z0.glb.clouddn.com/copy_shallow_copy.png)
+------------------------
 
 # Deepcopy
+
+![deepcopy](http://7xp2eu.com1.z0.glb.clouddn.com/copy_deepcopy.png)
 
 ~~~ bash
 >>> e = copy.deepcopy(b)
@@ -82,4 +90,17 @@ d = copy.copy(b) 创建了一个新对象，拷贝了原有对象的引用。
 
 e = copy.deepcopy(b) 新建了一个新对象，在内存中完整的复制原有对象。
 
-![deepcopy](http://7xp2eu.com1.z0.glb.clouddn.com/copy_deepcopy.png)
+# Note
+
+关于浅拷贝和深拷贝的区别，Python 的 [document](https://docs.python.org/2/library/copy.html) 是这样解释的:
+
+The difference between shallow and deep copying is only relevant for compound objects (objects that contain other objects, like lists or class instances):
+
+- A shallow copy constructs a new compound object and then (to the extent possible) inserts references into it to the objects found in the original.
+- A deep copy constructs a new compound object and then, recursively, inserts copies into it of the objects found in the original.
+
+使用深拷贝时，需要注意以下两个问题:
+
+- 递归对象拷贝: Recursive objects (compound objects that, directly or indirectly, contain a reference to themselves) may cause a recursive loop.
+- 大对象拷贝: Because deep copy copies everything it may copy too much, e.g., administrative data structures that should be shared even between copies.
+
