@@ -40,7 +40,7 @@ Region 者，区域也，表示该区域中云资源或服务的集合，源于 
 本节主要介绍 multi-region 的部署流程以及所需注意的事项，最终提供统一的、易扩展的管理平台。该设计主要涉及以下点：
 
 - Endpint Design
-- Choose Token
+- Choose Token Format
 - Deployment Tips
 - OpenStack Version Tips
 
@@ -86,8 +86,60 @@ $ keystone endpoint-list
 - 域名：如果未申请域名，可在 /etc/hosts 中配置解析。
 - https 证书：如果未申请证书，可用 openssl 自制。
 
+## Choose Token Format
+
+当访问 OpenStack 服务时，token 均存放在 Http 请求的 Header 中，但是几乎所有的 Http 服务器 Http header 的大小都会有限制，以下是几种服务器默认的最大 Http header：
+
+~~~
++----------+--------+---------+-------------+
+|  Apache  |  Nginx | Haproxy | Python Http |
++----------+--------+---------+-------------+
+|   8 KB   |  4 KB  |  4 KB   |    16 KB    |
++----------+--------+---------+-------------+
+~~~
+
+Keystone 目前支持 3 种 token，它们具有以下特点：
+
+|Token 类型|UUID|PKI|PKIZ|Fernet|
+|:---|:----|:---|:---|:---|
+|大小|32 Byte|KB 级别| KB 级别| 约 255 Byte|
+|支持本地认证|不支持|支持|支持|不支持|
+|Keystone 负载|大 |小|小|大|
+|存储于数据库|是|是|是|否|
+|携带信息|无|user, catalog 等|user, catalog 等|user 等|
+|涉及加密方式|无|非对称加密|非对称加密|对称加密(AES)|
+|是否压缩|否|否|是|否|
+|版本支持| D|G|J|K|
+
+Token 类型的选择涉及多个因素，包括 Keystone server 的负载、region 数量、安全因素、维护成本以及 token 本身的成熟度。region 的数量影响 PKI/PKIZ token 的大小，从安全的角度上看，UUID 无需维护密钥，PKI 需要妥善保管 Keystone server 上的私钥，因此从安全、维护成本和成熟度上看，UUID > PKI/PKIZ，如果：
+
+- Keystone server 负载低，region 少于 3 个，采用 UUID token。
+- Keystone server 负载高，region 少于 3 个，采用 PKI/PKIZ token。
+- Keystone server 负载低，region 大与或等于 3 个，采用 UUID token。
+
+可通过如下配置项配置 token 格式：
+
+~~~
+#providers are "keystone.token.providers.[pkiz|pki|uuid].Provider".
+
+provider = keystone.token.providers.uuid.Provider
+~~~
+
 ## Deployment Tips
 
+部署的时候，需要考虑网络、性能等多种因素，推荐：
 
+- 如果有集群出于外网，推荐 Keystone 部署于公网；如果有集群部署于内网，推荐 Horizon 部署于内网。如此 Keystone 可被所有集群访问，Horizon 可访问所有集群。
+- Keystone 部署于 Apache，提高并发性能。
+- Keystone 以 Active-Active 的形式部署，由 haproxy 复杂均衡复杂，提高可靠性。
+
+![performance](http://7xp2eu.com1.z0.glb.clouddn.com/keystone_performace.png)
 
 ## OpenStack Version Tips
+
+### API Version
+
+推荐 Keystone 使用 V3，V3 支持 domain 等更多的特性。
+
+### Release Version
+• Keystone：推荐使用 Icehouse 及以上版本，Keystone 的 API 较为稳定，具有优良的向下兼容性。• Horizon：推荐使用 Python-django-openstack-auth >= 1.1.7，使用 Memcache 存储会话信息。
