@@ -100,16 +100,16 @@ $ keystone endpoint-list
 
 Keystone 目前支持 3 种 token，它们具有以下特点：
 
-|Token 类型|UUID|PKI|PKIZ|Fernet|
-|:---|:----|:---|:---|:---|
-|大小|32 Byte|KB 级别| KB 级别| 约 255 Byte|
-|支持本地认证|不支持|支持|支持|不支持|
-|Keystone 负载|大 |小|小|大|
-|存储于数据库|是|是|是|否|
-|携带信息|无|user, catalog 等|user, catalog 等|user 等|
-|涉及加密方式|无|非对称加密|非对称加密|对称加密(AES)|
-|是否压缩|否|否|是|否|
-|版本支持| D|G|J|K|
+|Token 类型|UUID|PKI|PKIZ|
+|:---|:----|:---|:---|
+|大小|32 Byte|KB 级别| KB 级别|
+|支持本地认证|不支持|支持|支持|
+|Keystone 负载|大 |小|小|
+|存储于数据库|是|是|是|
+|携带信息|无|user, catalog 等|user, catalog 等|
+|涉及加密方式|无|非对称加密|非对称加密|
+|是否压缩|否|否|是|
+|版本支持| D|G|J|
 
 Token 类型的选择涉及多个因素，包括 Keystone server 的负载、region 数量、安全因素、维护成本以及 token 本身的成熟度。region 的数量影响 PKI/PKIZ token 的大小，从安全的角度上看，UUID 无需维护密钥，PKI 需要妥善保管 Keystone server 上的私钥，因此从安全、维护成本和成熟度上看，UUID > PKI/PKIZ，如果：
 
