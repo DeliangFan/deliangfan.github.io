@@ -19,7 +19,7 @@ categories: DevOps
 [Git blame](https://git-scm.com/docs/git-blame) 可以查询每一行代码的 commit ID、提交者和提交日期。
 
 ~~~
-$git blame nova/api/openstack/compute/servers.py
+$ git blame nova/api/openstack/compute/servers.py
 
 5b866f3a nova/api/openstack/v2/servers.py               (Kevin L. Mitchell        2012-01-09 13:13:08 -0600  776)     @wsgi.response(202)
 5b866f3a nova/api/openstack/v2/servers.py               (Kevin L. Mitchell        2012-01-09 13:13:08 -0600  777)     @wsgi.serializers(xml=FullServerTemplate)

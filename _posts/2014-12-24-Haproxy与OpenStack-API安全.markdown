@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Haproxy 与 OpenStack-API 安全"
-categories: DevOps
+categories: OpenStack
 ---
 
 ----------
