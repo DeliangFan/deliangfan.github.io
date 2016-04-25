@@ -1,0 +1,23 @@
+---
+layout: post
+title:  "理解 UUID"
+categories: Algorithm
+---
+
+# Overview   This specification defines a Uniform Resource Name namespace for   UUIDs (Universally Unique IDentifier), also known as GUIDs (Globally   Unique IDentifier).  A UUID is 128 bits long, and can guarantee   uniqueness across space and time.  UUIDs were originally used in the   Apollo Network Computing System and later in the Open Software   Foundation’s (OSF) Distributed Computing Environment (DCE), and then   in Microsoft Windows platforms.
+   
+   and requires no central   registration process.The UUID generation algorithm described here supports very   high allocation rates of up to 10 million per second per machine if   necessary, so that they could even be used as transaction IDs.\
+   
+    This lends itself well to sorting,   ordering, and hashing of all sorts, storing in databases, simple   allocation, and ease of programming in general  Since UUIDs are unique and persistent, they make excellent Uniform   Resource Names.  The unique ability to generate a new UUID without a   registration process allows for UUIDs to be one of the URNs with the   lowest minting cost.
+
+A UUID is an identifier that is unique across both space and time,      with respect to the space of all UUIDs.  Since a UUID is a fixed      size and contains a time field, it is possible for values to      rollover (around A.D. 3400, depending on the specific algorithm      used)
+      
+---------------Identifier uniqueness considerations:      This document specifies three algorithms to generate UUIDs: the      first leverages the unique values of 802 MAC addresses to      guarantee uniqueness, the second uses pseudo-random number      generators, and the third uses cryptographic hashing and      application-provided text strings.  As a result, the UUIDs      generated according to the mechanisms here will be unique from all      other UUIDs that have been or will be assigned.   Identifier persistence considerations:      UUIDs are inherently very difficult to resolve in a global sense.      This, coupled with the fact that UUIDs are temporally unique      within their spatial context, ensures that UUIDs will remain as      persistent as possible. Process of identifier assignment:      Generating a UUID does not require that a registration authority      be contacted.  One algorithm requires a unique value over space      for each generator.  This value is typically an IEEE 802 MAC      address, usually already available on network-connected hosts.      The address can be assigned from an address block obtained from      the IEEE registration authority.  If no such address is available,~~~
+Msb0 Msb1 Msb2 Description0xx Reserved, NCS backward compatibility. 10x The variant specified in this document.110 Reserved, Microsoft Corporation backward                     compatibility111 Reserved for future definition.~~~ 
+
+------------
+
+
+~~~
+01230 1234567890123456789012345678901   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+   |                          time_low                             |   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+   |       time_mid                |         time_hi_and_version   |   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+   |clk_seq_hi_res |  clk_seq_low  |         node (0-1)            |   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+   |                         node (2-5)                            |   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+~~~
