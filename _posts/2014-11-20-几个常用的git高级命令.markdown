@@ -93,4 +93,6 @@ $ git cherry-pick -x commit_id
 - 合并分支
 - 重新修改 Commit，如合并 commit，调整 commit 的顺序。
 
-Git rebase 用法请见 [Git Book](https://git-scm.com/book/en/v2/Git-Branching-Rebasing)
+Git rebase 用法请见 [Git Book](https://git-scm.com/book/en/v2/Git-Branching-Rebasing)，但是使用时，请注意以下[准则](https://www.atlassian.com/git/tutorials/merging-vs-rebasing/conceptual-overview)：
+
+> The golden rule of git rebase is to never use it on public branches.
