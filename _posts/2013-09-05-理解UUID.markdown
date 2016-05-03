@@ -7,7 +7,7 @@ categories: Algorithm
 
 > 根据生日悖论，若每秒产生 10 亿笔 UUID，100 年后只产生一次重复的概率是 50%。如果地球上每个人都各有 6 亿笔 UUID，发生一次重复的概率是 50%。产生重复UUID 并造成错误的情况非常低，是故大可不必考虑此问题。
 
-# Overview[UUID(Universally Unique Identifier)](https://en.wikipedia.org/wiki/Universally_unique_identifier) 是长为 128 bits 的通用唯一识别码，它由 [RFC 4122](https://www.ietf.org/rfc/rfc4122.txt) 定义，最早被用于阿波罗网络计算系统(Apollo Network Computing System) 和微软的 Windows 平台，如今 OpenStack 也广泛的使用它来标志计算、存储和网络等资源。UUID 的目的，是让分布式系统中的所有元素，都能有唯一的辨识信息，而不需要通过中央控制端来做辨识信息。本文主要介绍 UUID 的生成算法，并且解释为什么它能保证全局唯一。
+# Overview[UUID(Universally Unique Identifier)](https://en.wikipedia.org/wiki/Universally_unique_identifier) 是长为 128 bits 的通用唯一识别码，它由 [RFC 4122](https://www.ietf.org/rfc/rfc4122.txt) 定义，最早被用于阿波罗网络计算系统(Apollo Network Computing System) 和微软的 Windows 平台，如今 OpenStack 也广泛的使用它来标志计算、存储和网络等资源。UUID 的目的，是让分布式系统中的所有元素，都能有唯一的辨识信息，而不需要通过中央控制端来做辨识信息。本文主要介绍 UUID 的生成算法，并且解释它为什么能保证全局唯一。
 
 为便于表示，UUID 标准型式包含 32 个 16 进制数字，以连字号分为五段，形式为 8\-4\-4\-4\-12 的 32 个字符，例如：
 
@@ -23,12 +23,12 @@ f81d4fae-7dec-11d0-a765-00a0c91e6bf6
 
 - time_low: 4 Bytes，timestamp 数据的低位部分
 - time_mid: 2 Bytes，timestamp 数据的中位部分
-- time_hi_and_version: 2 Bytes，timestamp 数据的高位部分和 vesion 信息
+- time_hi_and_version: 2 Bytes，timestamp 数据的高位部分和 version 信息
 - clk_seq_hi_res: 1 Byte，clock sequence 数据的高位部分和 type 信息
 - clk_seq_low: 1 Byte，clock sequence 数据的低位部分
 - node: 6 Bytes，node 的 MAC 地址信息
 
-首先注意到 time_hi_and_version 包含的 vesion 信息和 clk_seq_hi_res 包含的 variant 表示的类型信息，它们在 UUID 的位置分别如下：
+首先注意到 time_hi_and_version 包含的 version 信息和 clk_seq_hi_res 包含的 variant 表示的类型信息，它们在 UUID 的位置分别如下：
 
 ~~~
 xxxxxxxx-xxxx-Vxxx-Txxx-xxxxxxxxxxxx
