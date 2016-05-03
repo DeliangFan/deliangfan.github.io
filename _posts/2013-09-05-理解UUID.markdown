@@ -5,28 +5,28 @@ categories: Algorithm
 ---
 
 
-> 根据生日悖论，若每秒产生 10 亿笔 UUID，100 年后只产生一次重复的概率是 50%。如果地球上每个人都各有 6 亿笔 UUID，发生一次重复的概率是 50%。产生重复UUID并造成错误的情况非常低，是故大可不必考虑此问题。
+> 根据生日悖论，若每秒产生 10 亿笔 UUID，100 年后只产生一次重复的概率是 50%。如果地球上每个人都各有 6 亿笔 UUID，发生一次重复的概率是 50%。产生重复UUID 并造成错误的情况非常低，是故大可不必考虑此问题。
 
-# Overview[UUID(Universally Unique Identifier)](https://en.wikipedia.org/wiki/Universally_unique_identifier) 是长为 128 bits 的通用唯一识别码，它由 [RFC 4122](https://www.ietf.org/rfc/rfc4122.txt) 定义，最早被用于阿波罗网络计算系统(Apollo Network Computing System) 和微软的 Windows 平台，如今 OpenStack 也广泛的使用 UUID 标志计算、存储和网络等资源。UUID的目的，是让分布式系统中的所有元素，都能有唯一的辨识信息，而不需要通过中央控制端来做辨识信息的指定。如此一来，每个人都可以创建不与其它人冲突的UUID。本文主要介绍 UUID 的生成算法，并且解释为什么 UUID 能做到全局唯一。
+# Overview[UUID(Universally Unique Identifier)](https://en.wikipedia.org/wiki/Universally_unique_identifier) 是长为 128 bits 的通用唯一识别码，它由 [RFC 4122](https://www.ietf.org/rfc/rfc4122.txt) 定义，最早被用于阿波罗网络计算系统(Apollo Network Computing System) 和微软的 Windows 平台，如今 OpenStack 也广泛的使用它来标志计算、存储和网络等资源。UUID 的目的，是让分布式系统中的所有元素，都能有唯一的辨识信息，而不需要通过中央控制端来做辨识信息。本文主要介绍 UUID 的生成算法，并且解释为什么它能保证全局唯一。
 
-为了便于表示，UUID 标准型式包含 32 个 16 进制数字，以连字号分为五段，形式为 8\-4\-4\-4\-12 的 32 个字符，例如：
+为便于表示，UUID 标准型式包含 32 个 16 进制数字，以连字号分为五段，形式为 8\-4\-4\-4\-12 的 32 个字符，例如：
 
 ~~~
 f81d4fae-7dec-11d0-a765-00a0c91e6bf6
 ~~~
-128 bits 的 UUID 的结构如下：
-~~~    0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+   |                          time_low                             |   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+   |       time_mid                |         time_hi_and_version   |   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+   |clk_seq_hi_res |  clk_seq_low  |         node (0-1)            |   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+   |                         node (2-5)                            |   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+详细的结构如下：
+~~~ 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+|                          time_low                             |+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+|       time_mid                |         time_hi_and_version   |+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+|clk_seq_hi_res |  clk_seq_low  |         node (0-1)            |+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+|                         node (2-5)                            |+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ~~~
 
 
 它由六类参数构成：
 
-- time_low：4 Byte，timestamp 数据的低位部分
-- time_mid：2 Byte，timestamp 数据的中位部分
-- time_hi_and_version：2 Byte，timestamp 数据的高位部分和 vesion 信息
-- clk_seq_hi_res：1 Byte，clock sequence 数据的高位部分和 type 信息
-- clk_seq_low：1 Byte，clock sequence 数据的低位部分
-- node：6 Byte，node 的 mac 地址信息
+- time_low: 4 Bytes，timestamp 数据的低位部分
+- time_mid: 2 Bytes，timestamp 数据的中位部分
+- time_hi_and_version: 2 Bytes，timestamp 数据的高位部分和 vesion 信息
+- clk_seq_hi_res: 1 Byte，clock sequence 数据的高位部分和 type 信息
+- clk_seq_low: 1 Byte，clock sequence 数据的低位部分
+- node: 6 Bytes，node 的 MAC 地址信息
 
 首先注意到 time_hi_and_version 包含的 vesion 信息和 clk_seq_hi_res 包含的 variant 表示的类型信息，它们在 UUID 的位置分别如下：
 
@@ -34,7 +34,7 @@ f81d4fae-7dec-11d0-a765-00a0c91e6bf6
 xxxxxxxx-xxxx-Vxxx-Txxx-xxxxxxxxxxxx
 
 V: version，即版本号，共 4 bits，V 的取值为 1、2、3、4 和 5。
-T: variant，即类型信息，共 2-3 bits，常见的为 2  bits，值为 10，所以 T 的取值通常为 8、9、A 和 B。
+T: variant，即类型信息，常见的为 2  bits，值为 10，故 T 的取值通常为 8、9、A 和 B。
 ~~~
 
 __注__：不同 version 的 UUID 的取值来源不同，本文只讲述 version 为 1，variant 为 10 的 UUID 的生成算法。
@@ -45,27 +45,68 @@ __注__：不同 version 的 UUID 的取值来源不同，本文只讲述 versio
 
 从上节的结构图表可知，UUID 的信息主要来源于三部分：
 
-- timestamp：60 bits 的时间戳。
-- clock sequence：避免主机因往回调整时间或者更改 node 而生成相同的 UUDI。
-- node：主机上的 IEEE 802 MAC 地址。
+- timestamp：时间戳
+- node：主机上的 IEEE 802 MAC 地址
+- clock sequence：避免因某些异常场景而生成重复的 UUID
+
 
 ## Timestamp
 
-Timestamp 是一个共有 60 bit 的无符合数，对于 version 为 1 的 UUID，它从 1582-10-15 00:00:000000000 起到当前 UTC 时间，每隔 100 纳秒加一。对于无法获取 UTC 时间的系统，可以采用 localtime。
+Timestamp 是一个 60 bits 的无符号数，对于 version 为 1 的 UUID，它从 1582-10-15 00:00:000000000 起到当前 UTC 时间，每隔 100 纳秒加一。对于无法获取 UTC 时间的系统，可以采用 localtime。
 
-虽然采用 60 bit 的时间戳存在溢出的问题，但是需要长达 3400 年的时间才会出现溢出，所以 timestamp 保证了同一台主机不会生成相同的 UUID。
+虽然采用 60 bit 的时间戳存在溢出的问题，但是需要长达 3400 年才会出现溢出，所以 timestamp 保证了同一台主机不会生成相同的 UUID。
 
 ## Node
 
-For UUID version 1, the node field consists of an IEEE 802 MAC   address, usually the host address.  For systems with multiple IEEE   802 addresses, any available one can be used.  The lowest addressed   octet (octet number 10) contains the global/local bit and the   unicast/multicast bit, and is the first octet of the address   transmitted on an 802.3 LAN.   For systems with no IEEE address, a randomly or pseudo-randomly   generated value may be used; see Section 4.5.  The multicast bit must   be set in such addresses, in order that they will never conflict with   addresses obtained from network cards.
+Node 是一个 48 bits 的无符号数，对于 version 为 1 的 UUID，它选取 IEEE 802 MAC 地址，即网卡的 MAC 地址。当系统有多块网卡时，任何一块有效的网卡都可被做 Node 数据；对于没有网卡的系统，取值为随机数。
+
+~~~ bash
+➜  ~  ifconfig en0
+en0: flags=8823<UP,BROADCAST,SMART,SIMPLEX,MULTICAST> mtu 1500
+	ether b8:e8:56:2f:95:3e
+	nd6 options=1<PERFORMNUD>
+	media: autoselect (<unknown type>)
+	status: inactive
+~~~
+
+生成的 uuid 如下，该 uuid 的 node 字段为 b8e8562f953e， 和网卡 en0 完全一致。 
+
+~~~ bash
+>>> import uuid
+>>> print uuid.uuid1()
+a31f74d1-10da-11e6-8453-b8e8562f953e
+~~~
+
+MAC 地址由 IEEE 和厂家决定，它们保证了唯一性，所以不同的主机在任何时刻生成的 UUID 均不相同。
 
 ## Clock Sequence
 
-4.1.5.  Clock Sequence   For UUID version 1, the clock sequence is used to help avoid   duplicates that could arise when the clock is set backwards in time   or if the node ID changes.   If the clock is set backwards, or might have been set backwards   (e.g., while the system was powered off), and the UUID generator can   not be sure that no UUIDs were generated with timestamps larger than   the value to which the clock was set, then the clock sequence has to   be changed.  If the previous value of the clock sequence is known, it   can just be incremented; otherwise it should be set to a random or   high-quality pseudo-random value.
+Clock sequence 是一个 14 bits 的无符号数，它的出现是为了避免因某些特殊情况而生成重复的 UUID，比如：
 
-Similarly, if the node ID changes (e.g., because a network card has   been moved between machines), setting the clock sequence to a random   number minimizes the probability of a duplicate due to slight   differences in the clock settings of the machines.  If the value of   clock sequence associated with the changed node ID were known, then   the clock sequence could just be incremented, but that is unlikely.   The clock sequence MUST be originally (i.e., once in the lifetime of   a system) initialized to a random number to minimize the correlation   across systems.  This provides maximum protection against node   identifiers that may move or switch from system to system rapidly.   The initial value MUST NOT be correlated to the node identifier.--------------
+- 主机往回调整时间
+- 主机更换网卡
+
+每当以上特殊情况发生时，通常的做法是：
+
+- 如果之前的 clock sequence 存在，则增大 clock sequence 的值
+- 如果之前不存在 clock sequence，则随机生成一个 clock sequence--------------
 
 # Algorithem
 
-The following algorithm is simple, correct, and inefficient:   o  Obtain a system-wide global lock   o  From a system-wide shared stable store (e.g., a file), read the      UUID generator state: the values of the timestamp, clock sequence,      and node ID used to generate the last UUID.   o  Get the current time as a 60-bit count of 100-nanosecond intervals      since 00:00:00.00, 15 October 1582.   o  Get the current node ID.   o  If the state was unavailable (e.g., non-existent or corrupted), or      the saved node ID is different than the current node ID, generate      a random clock sequence value.   o  If the state was available, but the saved timestamp is later than      the current timestamp, increment the clock sequence value.   o  Save the state (current timestamp, clock sequence, and node ID)      back to the stable store.   o  Release the global lock.   o  Format a UUID from the current timestamp, clock sequence, and node      ID values according to the steps in Section 4.2.2.   If UUIDs do not need to be frequently generated, the above algorithm   may be perfectly adequate.  For higher performance requirements,   however, issues with the basic algorithm include:   o  Reading the state from stable storage each time is inefficient.   o  The resolution of the system clock may not be 100-nanoseconds.   o  Writing the state to stable storage each time is inefficient.   o  Sharing the state across process boundaries may be inefficient.   Each of these issues can be addressed in a modular fashion by local   improvements in the functions that read and write the state and read   the clock.  We address each of them in turn in the following   sections.4.2.2.  Generation Details   Version 1 UUIDs are generated according to the following algorithm:   o  Determine the values for the UTC-based timestamp and clock      sequence to be used in the UUID, as described in Section 4.2.1.   o  For the purposes of this algorithm, consider the timestamp to be a      60-bit unsigned integer and the clock sequence to be a 14-bit      unsigned integer.  Sequentially number the bits in a field,      starting with zero for the least significant bit.   o  Set the time_low field equal to the least significant 32 bits      (bits zero through 31) of the timestamp in the same order of      significance.   o  Set the time_mid field equal to bits 32 through 47 from the      timestamp in the same order of significance.   o  Set the 12 least significant bits (bits zero through 11) of the      time_hi_and_version field equal to bits 48 through 59 from the      timestamp in the same order of significance.   o  Set the four most significant bits (bits 12 through 15) of the      time_hi_and_version field to the 4-bit version number      corresponding to the UUID version being created, as shown in the      table above.   o  Set the clock_seq_low field to the eight least significant bits      (bits zero through 7) of the clock sequence in the same order of      significance.Leach, et al.               Standards Track                    [Page 12]
-RFC 4122                  A UUID URN Namespace                 July 2005   o  Set the 6 least significant bits (bits zero through 5) of the      clock_seq_hi_and_reserved field to the 6 most significant bits      (bits 8 through 13) of the clock sequence in the same order of      significance.   o  Set the two most significant bits (bits 6 and 7) of the      clock_seq_hi_and_reserved to zero and one, respectively.   o  Set the node field to the 48-bit IEEE address in the same order of      significance as the address.
+下面阐述 version 为 1 的 UUID 的生成算法，它具有简单、准确但是低效的特点：
+
+1. 从数据表读取(读取需加锁)曾经被用于生成 UUID 的 timestamp, clock sequence 和 node 等信息
+2. 获取当前的 timestamp
+3. 获取当前的 node 信息
+4. 如果第 1 步读取信息失败，或者读取的 node 与当前的 node 不一致，生成一个随机的 clock sequence
+5. 如果 timestamp 比当前的 timestamp 小，clock sequence 调大
+6. 把当前 timestamp，node 和 clock sequence 存入数据表
+7. 根据当前的 timestamp，node 和 clock sequence 生成 UUID，细节如下： 
+	- time_low 为 timestamp[28:59]
+	- time_mid 为 timestamp[12:27]
+	- time_hi_and_version[4:15] 为 timestamp[0]...timestamp[11]
+	- time_hi_and_version[0:3] 为 0001
+	- clock_seq_low 为 clock_sequence[6:13]
+	- clock_seq_hi_and_reserved[2:7] 为 clock_sequence[0:5]
+	- clock_seq_hi_and_reserved[0:1] 为 10
+	- node 为 MAC[0:47]
