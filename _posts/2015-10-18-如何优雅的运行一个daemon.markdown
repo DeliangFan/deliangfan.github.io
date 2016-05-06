@@ -1,0 +1,115 @@
+---
+layout: post
+title:  "如何优雅的运行一个 Daemon"
+categories: Linux
+---
+
+----------
+
+[Daemon](https://en.wikipedia.org/wiki/Daemon_(computing)) 是运行在后台的进程，俗称守护进程，常见的 apache, nginx 和 mysqld 等都是以守护进程的形式运行。本文主要介绍其的原理以及如何优雅的运行一个 daemon。
+
+# The theory
+
+[Advanced Programming in the Unix Environmen](https://en.wikipedia.org/wiki/Advanced_Programming_in_the_Unix_Environment) 第三版本的 13 章详细的介绍了 daemon 的原理、特征和编程规则。它通常具有以下特点：
+
+- 父进程多数为 1，父进程为 0 的进程通常是内核进程
+- 无控制终端，即不受终端的控制
+- 多数以超级用户特权运行
+
+创建 daemon 进程的过程通常如下：
+
+- umask 为 0，避免父进程权限小而引起权限相关问题
+- 调用 fork 创建子进程，之后父进程推出，子进程在后台运行
+- 调用 setsid 创建新会话并成为新会话首进程，同时失去控制终端
+- 把工作目录改为根目录并关闭某些不需要的文件描述符
+- 把标准输出和错误重定向到 /dev/null，并且以 /dev/null 作为标准输入，隔绝终端上的交互。
+- 忽略 SIGHUP 信号
+
+------------------
+
+# The simple way
+
+以下是一种运行 daemon 简单方式： 
+
+~~~
+nohup COMMAND >/dev/null 2>&1 &
+~~~
+
+## >/dev/null 2>&1
+
+先介绍 Linux shell 的一些基本概念，如[文件描述符](https://en.wikipedia.org/wiki/File_descriptor)和[重定向](https://en.wikipedia.org/wiki/Redirection_(computing))：
+
+- 0: [标准输入](https://en.wikipedia.org/wiki/Standard_streams#Standard_input_.28stdin.29)的文件描述符
+- 1: [标准输出](https://en.wikipedia.org/wiki/Standard_streams#Standard_output_.28stdout.29)的文件描述符，如果没有明确指出，那么 1 通常为默认值，即标准输出
+- 2: [标准错误输出](https://en.wikipedia.org/wiki/Standard_streams#Standard_error_.28stderr.29)的文件描述符
+- \>: 重定向符
+- [/dev/null](https://en.wikipedia.org/wiki/Null_device): 空设备文件，它丢弃一切写入其中的数据，但会报告写入成功
+
+所以 >/dev/null 2>&1 的含义如下：
+
+- \>/dev/null 因没有明确指出文件描述符，所以默认为标准输出，即把标准输出重定向到 /dev/null
+- 2>&1，标准错误重定向到标准输入，因标准输出被重定向到 /dev/null，所以标准错误最终也会被重定向到 /dev/null
+
+~~~
++---------+                    +------------+   >   +-----------+
+|         | ----------------   | standout 1 | ----> | /dev/null |
+|         |            +--->   +------------+       +-----------+
+| Program |            | >
+|         |            |
+|         |      +------------+
+|         | ---- | standerr 2 |
++---------+      +------------+
+~~~
+
+如下是一些功能等价的命令，都是把标准输出和标准错误重定向到 /dev/null 中，更多的细节请参考 [Adanced Bash-Scripting Guide](http://unix.stackexchange.com/questions/70963/difference-between-2-2-dev-null-dev-null-and-dev-null-21)。
+
+- \>/dev/null 2\>/dev/null
+- \&>/dev/null
+- \>/dev/null 2>&-
+
+## &
+
+如果某个 Command 以 & 结尾，shell 会在后台执行该命令，它会立马返回，不需要等到命令执行完。
+
+## nohup
+
+忽略 [SIGHUP](https://en.wikipedia.org/wiki/SIGHUP) 信号，避免因父 shell 退出而导致 COMMAND 启动的子进程被杀死。
+
+-------------------
+
+# The better way
+
+优秀从模仿开始，欲知如何优雅的运行一个 daemon，我们应该从分析 linux 的做法开始，linux 环境下，我们通常用 service 命令来启动各种 daemon：
+
+~~~ bash
+service apache start
+service sshd start
+service nginx start
+
+......
+~~~
+
+Service 最终调用 /etc/inti.d/ 目录下的脚本启动相应的服务，这些脚本就是我们的学习样本，以 nginx 为例，精简版的脚本如下：
+
+~~~
+. /lib/lsb/init-functions
+
+case "$1" in
+  start)
+    start-stop-daemon --start --quiet --pidfile /run/nignx.pid --exec /usr/sbin/nginx 2>/dev/null
+    ;;
+  stop)
+    start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile /run/nignx.pid --name nginx
+    ;;
+esac
+
+exit 0
+~~~
+
+和上节的方法相比，通过 service 命令具有以下优点：
+
+- 操作简洁，友好规范
+- 完整的生命周期管理，支持 start/stop/restart/status 操作
+- 可在脚本中做前置工作检查、后置清理等
+
+另一件很有趣的事情就是绝大多数 /etc/init.d 下的守护进程都是以 start-stop-daemon 命令启动，和 nohup 相比，它的功能更为丰富，支持启动和杀死 daemon，支持后台运行，支持以某个用户的身份运行等等。
