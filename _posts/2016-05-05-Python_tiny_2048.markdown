@@ -41,7 +41,7 @@ while 1:
  M=Y(M,">BDAC".find(os.read(0,3)[2]))
 ~~~
 
-以下是本人写的 python 版本的 tiny 2048，当然远远不及那位大神，见笑之处请多多包涵。
+怎奈其思路难以理解，以下是本人按照自己思路所作的 tiny 2048，当然远远不及那位大神，相形见绌，见笑之处请多多包涵。
 
 ~~~ python
 import os,tty;tty.setcbreak(0);from random import randint;W=[0]*16;W[randint(0,15)]=randint(1,2)*2
@@ -59,3 +59,7 @@ while(1):
     elif all(W): continue
     c=randint(1,W.count(0));W[[1 if W[0:i+1].count(0)==c else 0 for i in range(16)].index(1)]=randint(1,2)*2
 ~~~
+
+增加色彩处理的代码后，效果如下：
+
+![game](http://7xp2eu.com1.z0.glb.clouddn.com/2048_game.png)
