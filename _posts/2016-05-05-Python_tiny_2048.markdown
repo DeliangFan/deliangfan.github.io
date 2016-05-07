@@ -1,0 +1,59 @@
+---
+layout: post
+title:  "Tiny 2048"
+categories: Python 
+---
+
+
+2048 这款小游戏曾在几年前风靡朋友圈，与此同时，github 用户 [justecorruptio](https://gist.github.com/justecorruptio) 给出的 c 语言 [tiny 2048](https://gist.github.com/justecorruptio/9967738) 也小小的惊艳了码农圈，代码如下：
+
+~~~ c
+M[16],X=16,W,k;main(){T(system("stty cbreak")
+);puts(W&1?"WIN":"LOSE");}K[]={2,3,1};s(f,d,i
+,j,l,P){for(i=4;i--;)for(j=k=l=0;k<4;)j<4?P=M
+[w(d,i,j++)],W|=P>>11,l*P&&(f?M[w(d,i,k)]=l<<
+(l==P):0,k++),l=l?P?l-P?P:0:l:P:(f?M[w(d,i,k)
+]=l:0,++k,W|=2*!l,l=0);}w(d,i,j){return d?w(d
+-1,j,3-i):4*i+j;}T(i){for(i=X+rand()%X;M[i%X]
+*i;i--);i?M[i%X]=2<<rand()%2:0;for(W=i=0;i<4;
+)s(0,i++);for(i=X,puts("\e[2J\e[H");i--;i%4||
+puts(""))printf(M[i]?"%4d|":"    |",M[i]);W-2
+||read(0,&k,3)|T(s (1,K[(k>>X)%4]));}//[2048]
+~~~
+
+他还写了一个 python 版本 [tiny 2048](https://gist.github.com/justecorruptio/9635149)，巨牛逼！
+
+~~~ python
+import os,tty;tty.setcbreak(0);M=['']*16
+def G(v):
+ p=['']*4;u=list(filter(str,v));i=3
+ while u:z=u.pop();p[i]=u and z==u[-1]and 2*u.pop()or z;i-=1
+ return p
+def Y(M,k):i=1;M=zip(*[iter(M)]*4);exec'M=map([list,G][i*k==k*k],zip(*M))[::-1];i+=1;'*4;return sum(M,[])
+while 1:
+ r=id(M)%71+17
+ while M[r%16]*r:r-=1
+ if r:M[r%16]=r%7%2*2+2
+ J="WIN"*(2048in M)or"LOSE"*all(Y(M,0));print'\x1b[2J\x1b[H'+('%4s|'*4+'\n')*4%tuple(M)+J
+ if J:break
+ M=Y(M,">BDAC".find(os.read(0,3)[2]))
+~~~
+
+以下是本人写的 python 版本的 tiny 2048，当然远远不及那位大神，见笑之处请多多包涵。
+
+~~~ python
+import os,tty;tty.setcbreak(0);from random import randint;W=[0]*16;W[randint(0,15)]=randint(1,2)*2
+def f(a):
+    a=filter(int,a)+[0]*5;
+    for i in range(4): a[i:i+2]=[a[i]*2,0] if a[i]==a[i+1] else a[i:i+2];
+    return (filter(int,a)+[0]*4)[0:4]
+def s(k):
+    for i in range(4):
+        (u,v,d)=(i,16,4) if k in (1,3) else (i*4,i*4+4,1);W[u:v:d]=f(W[u:v:d]) if k in (1,4) else f(W[u:v:d][::-1])[::-1]
+while(1):
+    os.system('clear');print ('%4s|'*4+'\n')*4%tuple(W);s(">ACBD".find(os.read(0,3)[2]))
+    if max(W) == 2048: exit("win")
+    if all(W) and all([W[i*4+j]^W[i*4+j+1] and W[i*4+j]^W[i*4+j+4] and W[4*i+3]^W[4*i+7] for i in range(3) for j in range(3)]):exit('lost')
+    elif all(W): continue
+    c=randint(1,W.count(0));W[[1 if W[0:i+1].count(0)==c else 0 for i in range(16)].index(1)]=randint(1,2)*2
+~~~
