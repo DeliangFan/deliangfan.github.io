@@ -4,6 +4,8 @@ title:  "Tiny 2048"
 categories: Python 
 ---
 
+![](http://7xp2eu.com1.z0.glb.clouddn.com/2048_fb.jpg)
+
 
 2048 这款小游戏曾在几年前风靡朋友圈，与此同时，github 用户 [justecorruptio](https://gist.github.com/justecorruptio) 给出的 c 语言 [tiny 2048](https://gist.github.com/justecorruptio/9967738) 也小小的惊艳了码农圈，代码如下：
 
