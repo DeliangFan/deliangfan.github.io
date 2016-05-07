@@ -60,4 +60,5 @@ while(1):
     if max(W) == 2048: exit("win")
     if all(W) and all([W[i*4+j]^W[i*4+j+1] and W[i*4+j]^W[i*4+j+4] and W[4*i+3]^W[4*i+7] for i in range(3) for j in range(3)]):exit('lost')
     elif all(W): continue
-    c=randint(1,W.count(0));W[[1 if W[0:i+1].count(0)==c else 0 for i in range(16)].index(1)]=randint(1,2)*2~~~
+    c=randint(1,W.count(0));W[[1 if W[0:i+1].count(0)==c else 0 for i in range(16)].index(1)]=randint(1,2)*2
+~~~
