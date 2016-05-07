@@ -60,4 +60,4 @@ Stackoverflow 中 [Querying for all results in SQLAlchemy 0.7.10](http://stackov
 
 > In the most general sense, the Session establishes all conversations with the database and represents a “holding zone” for all the objects which you’ve loaded or associated with it during its lifespan. It provides the entrypoint to acquire a Query object, which sends queries to the database using the Session object’s current database connection, populating result rows into objects that are then stored in the Session, inside a structure called the Identity Map - a data structure that maintains unique copies of each object, where “unique” means “only one object with a particular primary key”.
 
-所以，在设计 primary key，或者 composite primary key 时，一定要注意唯一性的问题。通常的做法是采用递增的整数 id 作为 primary key，简单又高效。
+所以，在设计 primary key，或者 composite primary key 时，一定要注意唯一性的问题。通常的做法是采用递增的整数 id 作为 primary key，uuid 作为逻辑主键，兼顾简单高效和可扩展性。

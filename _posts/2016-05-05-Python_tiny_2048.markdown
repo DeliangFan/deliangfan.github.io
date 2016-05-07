@@ -40,12 +40,10 @@ while 1:
  M=Y(M,">BDAC".find(os.read(0,3)[2]))
 ~~~
 
-怎奈其思路难以理解，以下是本人按照自己思路所作的 tiny 2048，增加色彩，移除了 0，当然远远不及那位大神，相形见绌，见笑之处请多多包涵。
+怎奈其思路难以理解，以下是本人按照自己思路所作的 tiny 2048，增加色彩，移除了 0，提升用户体验，但是就功底而言远远不及那位大神，见笑之处请多多包涵。
 
 ~~~ python
-import math,os,tty;tty.setcbreak(0);from random import randint;
-W=[0]*16;W[randint(0,15)]=randint(1,2)*2;P=[0]*32
-
+import math,os,tty;tty.setcbreak(0);from random import randint;W=[0]*16;W[randint(0,15)]=randint(1,2)*2;P=[0]*32
 def f(a):
     a=filter(int,a)+[0]*5;
     for i in range(4): a[i:i+2]=[a[i]*2,0] if a[i]==a[i+1] else a[i:i+2];
