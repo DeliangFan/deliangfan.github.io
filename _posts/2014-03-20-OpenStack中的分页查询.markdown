@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "OpenStack 中的分页查询"
+title:  "OpenStack 的分页查询"
 categories: OpenStack
 ---
 

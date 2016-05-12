@@ -1,0 +1,119 @@
+---
+layout: post
+title:  "从地址空间理解 fork"
+categories: Linux
+---
+
+# Linux Process Address Space
+
+~~~
+  high address   +---------------+
+                 |               |
+                 |     Stack     |    int local_b
+                 |               |
+                 +---------------+
+                 |       |       |
+                 |       v       |
+                 |               |
+                 |               |
+                 |       ^       |
+                 |       |       |
+                 +---------------+
+                 |               |
+                 |     Heap      |    int * heap_c = malloc()
+                 |               |
+                 +---------------+
+                 |     Data      |    int global_a
+                 +---------------+
+                 |     Code      |
+  low address    +---------------+
+~~~
+
+上图是 Linux 的进程[地址空间](https://en.wikipedia.org/wiki/Address_space)，从低位到高位分别为：
+
+- Code Segment: 程序的代码，CPU 执行的指令部分，通常是共享可读
+- Data Segment: 可细分为初始化数据段和未初始化数据段，常用于存储全局变量等
+- Stack: 函数以及自动变量(未加 static 的可称为局部变量)
+- Heap: 动态分配内存，如 malloc() 分配的内存
+
+更为详细的介绍请见 [Anatomy of a Program in Memory](http://duartes.org/gustavo/blog/post/anatomy-of-a-program-in-memory/)。
+
+----------
+
+# Fork
+
+~~~
+                  Parent Process             Child Process
+
+  high address   +---------------+          +---------------+
+                 |               |          |               |
+                 |     Stack     |          |     Stack     |
+                 |               |          |               |
+                 +---------------+          +---------------+
+                 |       |       |          |       |       |
+                 |       v       |          |       v       |
+                 |               |          |               |
+                 |               |          |               |
+                 |       ^       |          |       ^       |
+                 |       |       |          |       |       |
+                 +---------------+          +---------------+
+                 |               |          |               |
+                 |     Heap      |          |     Heap      |
+                 |               |          |               |
+                 +---------------+          +---------------+
+                 |     Data      |          |     Data      |
+                 +---------------+----------+---------------+
+                 |                   Code                   |
+  low address    +------------------------------------------+
+~~~
+
+[fork](https://en.wikipedia.org/wiki/Fork_(system_call)) 是 linux 中最重要的系统调用之一，用于创建一个新进程，它完全的复制父进程地址空间的 data segment、 heap 和 stack，但是和父进程共享一个 code segment，因为 code segment 通常为只读，从__逻辑的角度__来看，子进程和父进程的内存地址空间互相独立，子进程修改自己的 data segment，heap 和 stack 并不影响父进程内存空间。每次调用 fork，返回两次结果，其中父进程的返回值为子进程的 pid，子进程的返回值为 0。
+
+~~~ c
+#include<stdio.h>
+#include<stdlib.h>
+#include <unistd.h>
+
+int global_a = 0;   // data segment
+
+int main(void)
+{
+    int local_b = 0, status;    // stack
+    int * heap_c = malloc(sizeof(int));     // heap
+    pid_t pid;
+
+    if(!fork()){
+        global_a ++;
+        local_b ++;
+        *heap_c = 1;
+        exit(0);
+    }
+    else{
+        wait(&status);
+    }
+
+    printf("global_a = %d, local_b = %d, heap_c = %d\n", global_a, local_b, *heap_c);
+}
+~~~
+
+程序的输出结果如下：
+
+~~~ bash
+$ ./a.out
+global_a = 0, local_b = 0, heap_c = 0
+~~~
+
+Note：为了减轻 fork 调用开销，实际采用 [copy on write(COW)](http://unix.stackexchange.com/questions/58145/how-does-copy-on-write-in-fork-handle-multiple-fork) 的技术。
+
+-----------
+
+# Properties shared both by parent and child process
+
+虽然父进程和子进程的地址空间是独立的，但是二者依旧共享很多其它的资源，以下摘自 [http://www.amazon.com/Advanced-Programming-UNIX-Environment-3rd/dp/0321637739](http://www.amazon.com/Advanced-Programming-UNIX-Environment-3rd/dp/0321637739)：
+
+- File descriptor
+- Real user ID, real group ID, effective user ID, effective group ID- Supplementary group IDs- Process group ID- Session ID- Controlling terminal- The set-user-ID and set-group-ID flags- Current working directory- Root directory- File mode creation mask- Signal mask and dispositions- The close-on-exec flag for any open file descriptors- Environment- Attached shared memory segments- Memory mappings- Resource limits 
+
+
+
+
