@@ -12,9 +12,9 @@ categories: OpenStack
 
 # Overview
 
-OpenStack 由 python 语言编写，依赖协程实现并发。协程([Coroutine](http://www.dabeaz.com/coroutines/Coroutines.pdf))又称为用户态线程，完全由应用程序负责调度，上下文切换的开销远远小于线程，加上 python 的全局解释锁(Global Interpreter Lock)，python 线程的效率大大打折扣，所以 python 多用协程而非线程实现并发。
+OpenStack 由 python 语言编写，主要依赖协程处理并发事务。协程([Coroutine](http://www.dabeaz.com/coroutines/Coroutines.pdf))又称为用户态线程，完全由应用程序负责调度，其上下文切换的开销远远小于线程；由于多线程的效率因[全局解释锁(Global Interpreter Lock)](https://wiki.python.org/moin/GlobalInterpreterLock) 而大打折扣，所以 python 多用协程而非线程处理并发。
 
-[Evenlet](http://eventlet.net/) 是一个高性能的网络库，它依赖两个关键的库：
+[Eventlet](http://eventlet.net/) 是一个高性能的网络库，它依赖两个关键的库：
 
 - greenlet: 协程库，提供并发能力
 - epoll/kqueue: 基于事件驱动的网络库，处理网络请求
@@ -32,7 +32,7 @@ Nova 依赖 evenlet 完成各种并发任务，它的进程可分为两类：
 
 Nova-api 由 nova/cmd/api.py 启动，它初始化一个 WSGIService(由 nova/service.py 定义) 对象。
 
-~~~
+~~~ python
 def main():
     ...
     launcher = service.process_launcher()
@@ -50,7 +50,7 @@ def main():
 
 WSGIService 最终调用 nova/wsgi.py 中 Server 类的 start 方法，启动一个 WSGI application，监听和处理 http 请求：
 
-~~~
+~~~ python
     def start(self):
         """Start serving a WSGI application.
 
@@ -74,9 +74,9 @@ WSGIService 最终调用 nova/wsgi.py 中 Server 类的 start 方法，启动一
         self._server = eventlet.spawn(**wsgi_kwargs)
 ~~~
 
-注意 wsgi_kwargs 中的参数 func，它的值为 eventlet.wsgi.server，定义如下：
+注意 wsgi_kwargs 中的参数 func，它的值为 eventlet.wsgi.server，在 eventlet/wsgi.py 的定义如下：
 
-~~~
+~~~ python
 def server(sock, site,
            ......,
            capitalize_response_headers=True):
@@ -112,7 +112,7 @@ def server(sock, site,
 
 看，是不是看到熟悉的一幕了！sock.accept() 监听请求，每当接收到一个新请求，调用 pool.spawn_n() 启动一个协程处理该请求，精简版的逻辑如下：
 
-~~~
+~~~ python
 while True:
 	client_socket = sock.accept()
 	pool.spawn_n(serv.process_request, client_socket)
@@ -131,7 +131,7 @@ Service 类型的进程同样由 nova/cmd/* 目录下某些文件创建：
 
 作为消息中间件的消费者，它们监听各自的 queue，每当有 rpc 请求来临时，它们创建一个新的协程处理 rpc 请求。以 nova-compute 为例，启动时初始化一个 Server(由 nova/service.py 定义) 对象。
 
-~~~
+~~~ python
 def main():
     ......
     server = service.Service.create(binary='nova-compute',
@@ -142,7 +142,8 @@ def main():
 ~~~
 
 在 Icehouse 版本时，nova 的各个组件依赖 oslo.messaging 访问消息服务器，通过 oslo/messaging/server.py 初始化一个 MessageHandlingServer 的对象，监听消息队列。
-~~~
+
+~~~ python
 class MessageHandlingServer(object):
     """Server for handling messages.
 
@@ -195,7 +196,7 @@ class MessageHandlingServer(object):
 
 上述的对象又初始化一个 EventletExecutor(由 oslo/messaging/_executors/impl_eventlet.py) 类型的 excuete 对象，它调用 self.listener.poll() 监听 rpc 请求，每当接收到一个请求，创建一个协程处理该请求。
 
-~~~
+~~~ python
 class EventletExecutor(base.ExecutorBase):
 
     """A message executor which integrates with eventlet.
@@ -207,7 +208,7 @@ class EventletExecutor(base.ExecutorBase):
     method waits for all message dispatch greenthreads to complete.
     """
 
-	......
+    ......
 
     def start(self):
         if self._thread is not None:
@@ -228,7 +229,7 @@ class EventletExecutor(base.ExecutorBase):
 
 简化版的逻辑如下：
 
-~~~
+~~~ python
 while True:
     incoming = self.listener.poll()
     spawn_with(ctxt=self.dispatcher(incoming),
