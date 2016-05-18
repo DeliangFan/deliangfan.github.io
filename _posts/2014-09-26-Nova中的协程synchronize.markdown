@@ -130,7 +130,7 @@ nova 还基于上节的 lock 函数定义许多其它和锁相关的函数，这
 - synchronized_with_prefix(lock_file_prefix)，见 nova/openstack/common/lockutils.py
 - synchronized = lockutils.synchronized_with_prefix('nova-')，见 nova/utils.py
 
-例如协程锁：
+例如协程锁，多用于虚拟机生命周期的管理中：
 
 ~~~ python
 def run_instance(self, context, instance, request_spec,
