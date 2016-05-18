@@ -4,6 +4,11 @@ title:  "Nova 中的协程 -- 同步 (二)"
 categories: OpenStack
 ---
 
+![synchronize](http://7xp2eu.com1.z0.glb.clouddn.com/synchronize.png)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[图片来源请见](http://blog.takipi.com/5-things-you-didnt-know-about-synchronization-in-java-and-scala/)
+
+
 - Nova 版本：Icehouse
 - Eventlet 版本：0.18.2
 
@@ -11,32 +16,34 @@ categories: OpenStack
 
 # Overview
 
-同步是一个与并发相随的永恒话题，也是编程的一个难题。对 race condition 处理不当，轻者影响性能，重则死锁。协程被称为用户态的线程，为系统提供并发；但是只要有并发，就可能存在竞态条件，所以和线程一样，协程也必须要有处理竞态条件的能力。
+同步是一个与并发相随的永恒话题，也是编程的一个难题。对 [race condition](https://en.wikipedia.org/wiki/Race_condition) 处理不当，轻者影响性能，重则死锁。协程被称为用户态的线程，为系统提供并发；但是只要有并发，就可能存在竞态条件，所以和线程一样，协程也必须要有处理竞态条件的能力。
 
 线程常用的同步方式为：
 
 - Lock: 确保同一时间只有一个线程访问数据。其中互斥锁最为常用
-- Semaphore: 信号量，为值为 1 时，相当于 lock。
-- Condition Variable: 条件变量，线程按照特性顺序执行
+- Semaphore: 信号量，值为 1 时，相当于 lock。
+- Condition Variable: 条件变量，允许线程按照特性顺序执行
 
-与线程类似，eventlet 为协程提供也如下同步方式：
+与线程类似，eventlet 为协程提供如下同步方式：
 
 - Lock: eventlet.semaphore.Semaphore(value=1)
 - Semaphore: [eventlet.semaphore.Semaphore](http://eventlet.net/doc/modules/semaphore.html) 
 - Condition Variable: [eventlet.event.Event](http://eventlet.net/doc/modules/event.html)
 
+
 ----------
+
 
 # Synchronization in Nova
 
-Nova 主要使用的同步方式是互斥锁，它支持两种类型的锁：
+Nova 使用的同步方式是互斥锁，它支持两种类型的锁：
 
 - 协程锁: semaphore.Semaphore() 实现
-- 进程锁: Nova 在 semaphore.Semaphore() 基础之上实现的跨进程的文件锁
+- 进程锁: Nova 在 semaphore.Semaphore() 基础之上自身实现的跨进程的文件锁
 
-这两种锁由 lock(nova/openstack/common/lockutils.py) 函数实现，其中 external 参数决定改锁是协程锁还是进程锁：
+这两种锁由 lock(nova/openstack/common/lockutils.py) 函数实现，其中 external 参数决定该锁是协程锁还是进程锁：
 
-~~~
+~~~ python
 def lock(name, lock_file_prefix=None, external=False, lock_path=None):
     """Context based lock
 
@@ -111,7 +118,9 @@ def lock(name, lock_file_prefix=None, external=False, lock_path=None):
             local.strong_store.locks_held.remove(name)
 ~~~
 
+
 --------------
+
 
 # Lock Usage in Nova
 
@@ -123,42 +132,42 @@ nova 还基于上节的 lock 函数定义许多其它和锁相关的函数，这
 
 例如协程锁：
 
+~~~ python
+def run_instance(self, context, instance, request_spec,
+                 filter_properties, requested_networks,
+                 injected_files, admin_password,
+                 is_first_time, node, legacy_bdm_in_spec):
+
+    if filter_properties is None:
+        filter_properties = {}
+
+    @utils.synchronized(instance['uuid'])
+    def do_run_instance():
+        self._run_instance(context, request_spec,
+                filter_properties, requested_networks, injected_files,
+                admin_password, is_first_time, node, instance,
+                legacy_bdm_in_spec)
+    do_run_instance()
 ~~~
-    def run_instance(self, context, instance, request_spec,
-                     filter_properties, requested_networks,
-                     injected_files, admin_password,
-                     is_first_time, node, legacy_bdm_in_spec):
 
-        if filter_properties is None:
-            filter_properties = {}
+例如进程锁，它多用于镜像文件处理过程中：
 
-        @utils.synchronized(instance['uuid'])
-        def do_run_instance():
-            self._run_instance(context, request_spec,
-                    filter_properties, requested_networks, injected_files,
-                    admin_password, is_first_time, node, instance,
-                    legacy_bdm_in_spec)
-        do_run_instance()
-~~~
+~~~ python
+def create_image(self, prepare_template, base, size, *args, **kwargs):
+    filename = os.path.split(base)[-1]
 
-例如进程锁，其中进程锁多用于镜像文件处理过程中：
-
-~~~
-    def create_image(self, prepare_template, base, size, *args, **kwargs):
-        filename = os.path.split(base)[-1]
-
-        @utils.synchronized(filename, external=True, lock_path=self.lock_path)
-        def create_lvm_image(base, size):
-            base_size = disk.get_disk_size(base)
-            self.verify_base_size(base, size, base_size=base_size)
-            resize = size > base_size
-            size = size if resize else base_size
-            libvirt_utils.create_lvm_image(self.vg, self.lv,
-                                           size, sparse=self.sparse)
-            images.convert_image(base, self.path, 'raw', run_as_root=True)
-            if resize:
-                disk.resize2fs(self.path, run_as_root=True)
-            ......
+    @utils.synchronized(filename, external=True, lock_path=self.lock_path)
+    def create_lvm_image(base, size):
+        base_size = disk.get_disk_size(base)
+        self.verify_base_size(base, size, base_size=base_size)
+        resize = size > base_size
+        size = size if resize else base_size
+        libvirt_utils.create_lvm_image(self.vg, self.lv,
+                                       size, sparse=self.sparse)
+        images.convert_image(base, self.path, 'raw', run_as_root=True)
+        if resize:
+            disk.resize2fs(self.path, run_as_root=True)
+        ......
 ~~~
 
 
