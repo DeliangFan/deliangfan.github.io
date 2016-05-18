@@ -12,19 +12,26 @@ categories: OpenStack
 
 # Overview
 
-OpenStack 由 python 语言编写，主要依赖协程处理并发事务。协程([Coroutine](http://www.dabeaz.com/coroutines/Coroutines.pdf))又称为用户态线程，完全由应用程序负责调度，其上下文切换的开销远远小于线程；由于多线程的效率因[全局解释锁(Global Interpreter Lock)](https://wiki.python.org/moin/GlobalInterpreterLock) 而大打折扣，所以 python 多用协程而非线程处理并发。
+OpenStack 由 python 语言编写，主要依赖[协程处理并发事务](http://docs.openstack.org/developer/nova/threading.html)。协程([Coroutine](http://www.dabeaz.com/coroutines/Coroutines.pdf))又称为用户态线程，完全由应用程序负责调度，其上下文切换的开销远远小于线程；由于多线程的效率因[全局解释锁(Global Interpreter Lock)](https://wiki.python.org/moin/GlobalInterpreterLock) 而大打折扣，所以 python 多用协程而非线程处理并发。
 
 [Eventlet](http://eventlet.net/) 是一个高性能的网络库，它依赖两个关键的库：
 
 - greenlet: 协程库，提供并发能力
 - epoll/kqueue: 基于事件驱动的网络库，处理网络请求
 
+Eventlet 常用的 API 如下：
+
+- eventlet.spawn(func, *args, **kw)：启动一个协程并获取其返回值
+- eventlet.spawn_n(func, *args, **kw)：启动一个协程，但不获取返回值
+- eventlet.spawn_after(seconds, func, *args, **kw)：过段时间启动一个协程并获取返回值
+- eventlet.sleep(seconds=0)：切换运行中的协程，进入 sleep 状态
+
 Nova 依赖 evenlet 完成各种并发任务，它的进程可分为两类：
 
 - WSGIService: 接收和处理 http 请求，依赖 eventlet.wsgi 的 wsgi server 处理 http 请求，nova-api 是唯一的 WSGIService 类型的进程
 - Service: 接收和处理 rpc 请求，非 nova-api 以外的其它 nova 进程，如 nova-scheduler，nova-compute 和 nova-conductor 等
 
-无论是 WSGIService 还是 Service 类型的进程，每当接收到一个请求(http 或 rpc)，都会创建一个新的协程处理该请求。
+无论是 WSGIService 还是 Service 类型的进程，每当接收到一个请求(http 或 rpc)，都会在线程池中分配一个协程处理该请求，本文主要剖析这两种 Service 的并发，虽然 nova 也会启动某些协程处理其它的任务，但不在本文讨论范围内。
 
 ----------
 
