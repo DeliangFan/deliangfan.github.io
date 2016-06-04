@@ -195,3 +195,55 @@ $ openstack project create test_project
 | name        | test_project                     |
 +-------------+----------------------------------+
 ~~~
+
+----
+
+# More Configuration Options
+
+## Security
+
+LDAP 协议支持 TLS 加密，相关的配置参数为：
+
+~~~ bash
+use_tls = True
+tls_cacertfile = /etc/keystone/ssl/certs/cacert.pem
+tls_cacertdir = /etc/keystone/ssl/certs/
+tls_req_cert = demand
+~~~
+
+## Performance
+
+Keystone 可以通过维护 2 个连接池来提升访问 LDAP server 的性能，其中一个连接池专门用于 authentication 请求，另外一个处理其它类型的请求：
+
+~~~ bash
+use_pool = true
+pool_size = 10
+pool_retry_max = 3
+pool_retry_delay = 0.1
+pool_retry_connection_timeout = -1
+pool_connection_lifetime = 600
+
+use_auth_pool = true
+auth_pool_size = 100
+auth_pool_connection_lifetime = 60
+~~~
+
+## Others
+
+最后介绍一些其它的配置参数
+
+~~~ bash
+debug_level = 0
+
+# 查询时的 filter
+user_filter = "objectCategory=person"
+group_filter = "objectCategory=group"
+
+# 不需要被 mapping 参数
+user_attribute_ignore = ["default_project_id"]
+group_attribute_ignore = []
+
+# 额外需要被 mapping 的参数
+user_additional_attribute_mapping = ["cell_number": "mobileTelephoneNumber"]
+group_additional_attribute_mapping = []
+~~~

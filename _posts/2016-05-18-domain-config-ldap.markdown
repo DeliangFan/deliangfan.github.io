@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Keystone Federation Identity With SAML2"
+title:  "Domain Configuration LDAP"
 categories: OpenStack
 ---
 
