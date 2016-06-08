@@ -29,19 +29,21 @@ Loop 1 的 CPU cache 命中率高，所以它比 Loop 2 约快八倍！
 
 # What is Cache
 
-维基百科是这样定义的：在计算机系统中，[CPU cache（中文简称缓存）](https://zh.wikipedia.org/wiki/CPU%E7%BC%93%E5%AD%98)是用于减少处理器访问内存所需平均时间的部件。在金字塔式存储体系中它位于自顶向下的第二层，仅次于 CPU 寄存器。其容量远小于内存，但速度却可以接近处理器的频率。
+维基百科定义为：在计算机系统中，[CPU cache（中文简称缓存）](https://zh.wikipedia.org/wiki/CPU%E7%BC%93%E5%AD%98)是用于减少处理器访问内存所需平均时间的部件。在金字塔式存储体系中它位于自顶向下的第二层，仅次于 CPU 寄存器。其容量远小于内存，但速度却可以接近处理器的频率。
 
 ![hierarchy](http://7xp2eu.com1.z0.glb.clouddn.com/hierarchy%20cache.png)
 
-CPU 访问内存时，首先查询 cache 是否已缓存该数据。如果有 (hit)，则返回该数据，无需访问内存；如果不存在 (miss)，则需把该数据从内存中载入 cache，最后返回给理器。在处理器看来，缓存是一个透明部件，旨在提高处理器访问数据的速率，所以从逻辑的角度而言，编程时无需关注它，但是从性能的角度而言，理解其原理和机制有助于写出性能更好的程序。Cache 之所以有效，是因为程序对内存的访问存在一种概率上的局部特征：
+原图出处([CS162](cs162.eecs.berkeley.edu))。 Note: 早期的 L2 cache 位于主板，现在 L2 和 L3 cache 均封装于 CPU 芯片。
+
+CPU 访问内存时，首先查询 cache 是否已缓存该数据。如果有，则返回该数据，无需访问内存；如果不存在，则需把该数据从内存中载入 cache，最后返回给理器。在处理器看来，缓存是一个透明部件，旨在提高处理器访问数据的速率，所以从逻辑的角度而言，编程时无需关注它，但是从性能的角度而言，理解其原理和机制有助于写出性能更好的程序。Cache 之所以有效，是因为程序对内存的访问存在一种概率上的局部特征：
 
 - Spatial Locality：对于刚被访问的数据，其相邻的数据在将来被访问的概率高。
 - Temporal Locality：对于刚被访问的数据，其本身在将来被访问的概率高。
 
 从广义的角度而言，cache 可以分为两类：
 
-- 数据(指令) cache: 缓存内存数据，如果 miss，CPU 需访内存获取数据(指令)。 
-- TLB(Translation lookaside buffer): 寻址 cache，缓存进程虚拟机地址和物理地址的映射关系，如果 miss，MMU 需多次访问内存获取多级 page table 才能计算出物理地址。
+- 数据(指令) cache: 缓存内存数据，根据层级又可分为 L1、L2 和 L3，如果 miss，CPU 需访内存获取数据(指令)。 
+- [TLB(Translation lookaside buffer)](https://en.wikipedia.org/wiki/Translation_lookaside_buffer): 寻址 cache，缓存进程虚拟机地址和物理地址的映射关系，如果 miss，MMU 需多次访问内存获取多级 page table 才能计算出物理地址。
 
 比 Macbook 为例，可用 sysctl 查询 cache 信息。
 
@@ -66,28 +68,71 @@ machdep.cpu.tlb.shared: 1024
 
 ![cpu cache](http://7xp2eu.com1.z0.glb.clouddn.com/mac_cpu_cache_info.png)
 
-
 ---
 
 # Why Cache
 
+早期的 CPU 并没有 cache，以起于 1978 年的 [intel x86](https://en.wikipedia.org/wiki/X86) 芯片为例，从 1992 年开始才开始引入 cache：
 
-![history](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_ram_rate.png)
+- 1992: 386 platform 引入 L1 cache
+- 1995: Pentium Pro 引入 L2 cache
+- 2008: Core i3 引入 L3 cache
 
-以上是 20 年来 CPU 和 RAM 主频的增长率
+CPU 和 RAM 主频的增长速率的巨大差距是 cache 引入的直接原因，下图展示了从 1980 年到 2000 年二者的发展状况，CPU 性能的年增长速度约为 60%，而 RAM 仅有约 9%，巨大的差异导致数十年后，CPU 的速度约比 RAM 快数百倍。 
 
+![history](http://7xp2eu.com1.z0.glb.clouddn.com/Part6-CPU-and-RAM-speeds.jpg)
+原图出处: Computer Architecture, A quantitative Approach by Hennessy and Patterson
+
+有人问，为什么不提高 RAM 的速度，因为成本太高！成本因素也是 cache 分为多级的原因。越快的越贵，所以容量小；越慢越廉，容量可很大，它是成本和性能之间的折中方案。CS162 如下两句原话很好的概括了 cache 的作用。
 
 - Present as much memory as in the cheapest technology
 - Provide access at speed offered by the fastest technology
 
-
+----
 
 # Understand Cache With Some Cases
 
+本节采用 [Gallery of Processor Cache Effects](http://igoro.com/archive/gallery-of-processor-cache-effects/) 的例子，加以图文，介绍 cache 的机制。
 
-Loop 1 访问的数据在地址空间上是相邻的，相邻的数据通常一起存放在 cache 中，cache 命中率高，耗时少。
+- Cache line size
+- L1、L2 and L3 cache size
+- Instruction-level parallelism
+- Cache associativity
+- False cache line sharing
+- Hardware complexities
 
+## Cache line size
 
+Cache line 是 cache 和 RAM 交换数据的最小单位，通常为 64 Byte。当 CPU 把内存的数据载入 cache 时，会把临近的共 64 Byte 的数据一起载入，因为临近的数据在将来被访问的可能性大，为 spatial locality 奠定了基础。本文开头的例子中，因为 loop 1 依次访问的数据在地址空间上是相邻的，故 cache 命中率高，耗时少。下列展示了如何测试 cache line 的 size:
 
+~~~ c
+double diff, total_time = 0;
+struct timeval t1, t2;
+char *array, *clear_array;
 
+array = malloc(ARRAY_SIZE * sizeof(char));
+clear_array = malloc(L3_SIZE * sizeof(char));
+
+for(int t = 0; t < TIMES; t++)   //loop for many times
+{
+    gettimeofday(&t1, NULL);
+    for(int i = 0; i < ARRAY_SIZE; i += stride){
+        array[i]++;
+    }
+    gettimeofday(&t2, NULL);
+    diff = time_diff(t1, t2);
+    total_time += diff;
+
+    //clear array data in L1,L2,L3 cache
+    for(int i = 0; i < L3_SIZE; i ++){
+        clear_array[i] ++;
+    }
+}
+~~~
+
+经归一化处理后，本人所测 array[i] ++ 的平均时间与 stride 的关系如下：
+
+![cpu cache line size](http://7xp2eu.com1.z0.glb.clouddn.com/cache_line_size.png)
+
+## L1、L2 and L3 cache size
 
