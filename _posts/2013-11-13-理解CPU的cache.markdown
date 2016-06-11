@@ -45,7 +45,7 @@ CPU 访问内存时，首先查询 cache 是否已缓存该数据。如果有，
 - 数据(指令) cache: 缓存内存数据，根据层级又可分为 L1、L2 和 L3，如果 miss，CPU 需访内存获取数据(指令)。 
 - [TLB(Translation lookaside buffer)](https://en.wikipedia.org/wiki/Translation_lookaside_buffer): 寻址 cache，缓存进程虚拟机地址和物理地址的映射关系，如果 miss，MMU 需多次访问内存获取多级 page table 才能计算出物理地址。
 
-比 Macbook 为例，可用 sysctl 查询 cache 信息。
+比 mac OS 为例，可用 sysctl 查询 cache 信息。
 
 ~~~ bash
 $ sysctl -a
@@ -93,14 +93,7 @@ CPU 和 RAM 主频的增长速率的巨大差距是 cache 引入的直接原因�
 
 # Understand Cache With Some Cases
 
-本节采用 [Gallery of Processor Cache Effects](http://igoro.com/archive/gallery-of-processor-cache-effects/) 的例子，加以图文，介绍 cache 的机制。
-
-- Cache line size: cache line 是 cache 和 RAM 交换数据的最小单位，本小节介绍如何测算其大小。
-- L1、L2 and L3 cache size
-- Instruction-level parallelism: CPU 可在一定程度上并行处理。
-- Cache associativity
-- False cache line sharing
-- Hardware complexities
+本节采用 [Gallery of Processor Cache Effects](http://igoro.com/archive/gallery-of-processor-cache-effects/) 的例子，加以图文，介绍 cache 的机制，其中除了 L1, L2 and L3 cache size 小节的样例外，其它样例在本人的 mac 中均得到很好的复现。  
 
 ## Cache line size
 
@@ -137,16 +130,25 @@ for(int t = 0; t < TIMES; t++)   //loop for many times
 
 ## L1、L2 and L3 cache size
 
-L1, L2 和 L3 cache size 的测试方法如下：
+L1, L2 和 L3 cache size 的测试方法如下，在循环内每隔 64 Byte(cache line) 访问 array 一次：
 
 ~~~
 int steps = 64 * 1024 * 1024; // Arbitrary number of steps
-int lengthMod = arr.Length - 1;
-for (int i = 0; i < steps; i++)
+int length_mod = ARRAY_SIZE - 1;
+
+for (int i = 0; i < steps; i += 64)
 {
-    arr[(i * 16) & lengthMod]++; // (x & lengthMod) is equal to (x % arr.Length)
+    array[i & length_mod]++; // (x & length_mod) is equal to (i % length)
 }
 ~~~
+
+所得结果为：
+
+![cpu l cache](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_l_size.png)
+
+原图出处 [Gallery of Processor Cache Effects](http://igoro.com/archive/gallery-of-processor-cache-effects/)
+
+注：本例在本人 Mac 的效果远远差于原著的效果，故采用原图。
 
 ## Instruction-level parallelism
 
@@ -181,17 +183,22 @@ Loop 1
 
 ![cpu cache loop1](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_para_1.png)
 
+原图出处 [Gallery of Processor Cache Effects](http://igoro.com/archive/gallery-of-processor-cache-effects/)
+
 Loop 2
 
 ![cpu cache loop1](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_para_2.png)
+
+原图出处 [Gallery of Processor Cache Effects](http://igoro.com/archive/gallery-of-processor-cache-effects/)
 
 
 ## Cache associativity
 
 
+
 ## False cache line sharing
 
-以本人 Mac 的 CPU(Intel(R) Core(TM) i5-4258U CPU @ 2.40GHz) 为例，同一个 core 里的两个 cpu thread 共享 L1 和 L2 cache，L3 cache 则是由 2 个 core 共享。但一个 cpu thread 修改 cache 的某处时，该处所在的整个 cache line 都会被置为 invalid，其它的 cpu thread 不能使用该 cache line，直到数据被同步到 RAM 中。
+以本计算机的 CPU(Intel(R) Core(TM) i5-4258U CPU @ 2.40GHz) 为例，同一个 core 里的两个 cpu thread 共享 L1 和 L2 cache，L3 cache 则是由 2 个 core 共享。但一个 cpu thread 修改 cache 的某处时，该处所在的整个 cache line 都会被置为 invalid，其它的 cpu thread 不能使用该 cache line，直到数据被同步到 RAM 中。
 
 ~~~ c
 int counter[1024]; // global variable
@@ -201,7 +208,6 @@ void *update_counter(int position)
     for(int i = 0; i < 1000000000; i ++ ){
         counter[position] ++;
     }
-
 }
 
 int main()
