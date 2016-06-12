@@ -146,9 +146,9 @@ for (int i = 0; i < steps; i += 64)
 
 ![cpu l cache](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_l_size.png)
 
-原图出处 [Gallery of Processor Cache Effects](http://igoro.com/archive/gallery-of-processor-cache-effects/)
+原图出处 [Gallery of Processor Cache Effects](http://igoro.com/archive/gallery-of-processor-cache-effects/) 注：本例在本人 Mac 的效果远远差于原著的效果，故采用原图。
 
-注：本例在本人 Mac 的效果远远差于原著的效果，故采用原图。
+对于当前的个人计算机的 CPU，L1 cache 通常为数十 KB，L2 cache 为数百 KB，L3 cache 可达数 MB，但是 TLB 相对较小，一般只有几百个 entry。
 
 ## Instruction-level parallelism
 
@@ -194,7 +194,43 @@ Loop 2
 
 ## Cache associativity
 
+本节主要介绍内存中的数据在 cache 的存放规则，即对于地址为 A 的数据，它该存放在 cache 的何处？要回答此问题，首先需介绍三种不同的存放规则：
 
+- Direct mapped cache: 数据 A 在 cache 的存放位置只有固定一处。
+- N-way set associative cache: 数据 A 在 cache 的存放位置可以有 N 处。
+- Full associative cache: 数据 A 可存放在 cache 的任意位置。
+
+从硬件的角度出发，direct mapped cache 设计简单，full associative cache 设计复杂，特别当 cache size 很大时，硬件成本非常之高。但是 direct mapped cache 下数据的存放地址是固定唯一的，所以容易产生碰撞，最终降低 cache 的命中率，影响性能。在成本和性能的权衡下，当前的 CPU 都是 N-way set associative cache，N 通常为 4，8 或 16。
+
+以大小为 32 KB，cache line 的大小为 64 Byte 的某 cache 为例，对于不同存放规则，其硬件设计也不同，下列图片依次展示其原理。
+
+Direct mapped cache
+
+![direct mapping](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_direct_mapping.png)
+
+2-way set associative
+
+![two way associative](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_2_way_mapping.png)
+
+Full associative cache
+
+![full associative](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_full_associative.png)
+
+本人的 L2 cache 大小为 256 KB，8-way set associative，cache line 为 64 Byte，所以共有 512 个 set (256 K / 64 / 8)，所以地址间隔 32768  (512 * 64) 个 Byte 的数据都会落在 cache 的同一个 set 中。 
+
+~~~ c
+#define ARRAY_SIZE  64 * 1024 * 1024
+#define STEPS       1024 * 1024 * 1024
+
+for(int i = 0; i < STEPS; i++){
+    array[p] ++;
+    p += STRIDE;
+    if(p >= ARRAY_SIZE)
+        p = 0;
+}
+~~~
+
+当 STRIDE 为 32768 时，所用时间为 18 s，当 STRIDE 为 1 时，所用时间为 3.5 s。
 
 ## False cache line sharing
 
@@ -274,5 +310,31 @@ A++; C++; E++; G++;	   448 ms
 A++; C++;	           518 ms
 ~~~
 
+------
 
+# One more question
 
+下列循环哪个快？
+
+~~~ c
+int array_512[512][512]
+int array_513[513][513]
+
+// Loop 1
+for(int i = 0; i <  512; i++){
+    for(int j = 0; j < 512; j ++){
+        tmp = array_512[i][j];
+        array_512[i][j] = array_512[j][i];
+        array_512[j][i] = tmp;
+    }
+}
+
+// Loop 2
+for(int i = 0; i <  513; i++){
+    for(int j = 0; j < 513; j ++){
+        tmp = array_513[i][j];
+        array_513[i][j] = array_513[j][i];
+        array_513[j][i] = tmp;
+    }
+}
+~~~
