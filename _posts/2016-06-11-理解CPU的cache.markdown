@@ -230,7 +230,7 @@ for(int i = 0; i < STEPS; i++){
 }
 ~~~
 
-当 STRIDE 为 32768 时，所用时间为 18 s，当 STRIDE 为 1 时，所用时间为 3.5 s。
+当 STRIDE 为 32768 时，array[p] 总是访问相同 cache set，造成大量的冲突和置换，所用时间为 18 s，当 STRIDE 为 1 时，所用时间为 3.5 s。
 
 ## False cache line sharing
 
