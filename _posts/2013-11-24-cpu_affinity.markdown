@@ -18,7 +18,7 @@ categories: OpenStack
 
 Linux 从 2.5.8 起支持用于绑定进程和 CPU 的系统调用  sched\_setaffinity，详细介绍请见 [man page](http://man7.org/linux/man-pages/man2/sched_setaffinity.2.html)：
 
-~~~
+~~~ c
 #define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <sched.h>
 
@@ -28,7 +28,7 @@ int sched_setaffinity(pid_t pid, size_t cpusetsize,
 
 我们也可以用 [tastset](http://linux.die.net/man/1/taskset) 命令设置绑定：
 
-~~~
+~~~ bash
 $ tastset -p pid -c cpu_list
 
 pid：即进程的 pid。
@@ -41,7 +41,7 @@ cpu_list：被绑定的 cpu list，如：0,5,7,9-11。
 
 在宿主机看来，基于 KVM 的虚拟机实际上就是一个进程，CPU pinning 同样可以限定虚拟机运行在宿主机上某些特定的 CPU 中，以提升虚拟机的性能。[Libvirt](https://libvirt.org/formatdomain.html#elementsCPUTuning) 对此提供了良好的支持：
 
-~~~xml
+~~~ xml
 <domain>
   ...
   <cputune>
@@ -62,7 +62,7 @@ cpu_list：被绑定的 cpu list，如：0,5,7,9-11。
 
 上述例子中，vcpu 0 运行在物理 cpu 0，vcpu 1 可以运行在物理 cpu (1, 2)，vcpu 2 可以运行在物理 cpu (2, 3)，而 vcpu 3 运行在物理 cpu 7 上。当虚拟机启动后，采用 virsh vcpuinfo 可以查询绑定详情。
 
-~~~
+~~~ bash
 $ # virsh vcpuinfo guest
 
 VCPU:           0
