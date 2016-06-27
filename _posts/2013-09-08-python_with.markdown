@@ -6,7 +6,7 @@ categories: Python
 
 # With Statement
 
-和 if, for, while 等一样，with 也是 python 的关键字，最早于 2.5 版本引入。它封装了 try...except...finally 编码范式，提高了易用性。以读取文件为例，采用 try...except...finally 的代码如下：
+和 if, for, while 等一样，with 也是 python 的关键字，于 2.5 版本引入。它封装了 try...except...finally 编码范式，提高了易用性。以读取文件为例，采用 try...except...finally 的代码如下：
 
 ~~~ python
 try:
@@ -30,11 +30,11 @@ with open('a.txt') as f:
 
 # Context Manager
 
-Context manager 是实现了 [context manager 协议](https://docs.python.org/2/library/stdtypes.html#typecontextmanager)的对象，该对象要实现以下两个方法：
+Context manager 是实现了 [context manager 协议](https://docs.python.org/2/library/stdtypes.html#typecontextmanager)的对象，该对象需要实现以下两个方法：
 
 - object.\_\_enter\_\_(self)
 
-该方法在 with 语句开始的时候执行，返回一个对象，这个对象多为 context manager 对象自身，也可以为其它类型的对象，并赋值给 as 后面的参数。以 open('a.txt') 为例，with 在执行该语句时，调用了 open('a.txt').\_\_enter\_\_() 方法，该方法返回对应的文件描述符，并赋值给 as 后面的参数 f。
+该方法在 with 语句开始的时候执行，返回一个对象，这个对象多为 context manager 对象自身，也可以为其它类型的对象，并赋值给 as 后面的参数。以 open('a.txt') 为例，with 在执行该语句时，调用了 open('a.txt').\_\_enter\_\_() 方法，该方法返回对应的文件描述符，并赋给 as 后面的参数 f。
 
 - object.\_\_exit\_\_(self, exc\_type, exc\_value, traceback)
 
