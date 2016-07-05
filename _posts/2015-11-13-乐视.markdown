@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "乐视--900 个 OpenStack 物理节点"
-categories: 老东家们
+categories: 编程随想
 ---
 &nbsp;&nbsp;&nbsp;
 
