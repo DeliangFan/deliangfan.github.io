@@ -4,7 +4,7 @@ title:  "Ceilemeter 的 sample 和 event"
 categories: OpenStack
 ---
 
-[Ceilemeter](https://wiki.openstack.org/wiki/Telemetry) 为 OpenStack 提供了监控和告警服务，于 Havana 版本成为正式项目。Ceilometer 收集的数据类型有两种，sample 和 event。本文主要以 Icehouse 版本为例，分析这两类数据的差异和作用。
+[Ceilemeter](https://wiki.openstack.org/wiki/Telemetry) 为 OpenStack 提供了监控和告警服务，从 Havana 版本起成为正式项目。Ceilometer 收集的数据类型有两种，sample 和 event。本文主要以版本 Icehouse 为例，分析这两类数据的差异和作用。
 
 - [Sample](http://docs.openstack.org/admin-guide/telemetry-measurements.html): 资源的使用量，比如虚拟机 CPU 的使用率、网卡速率等，它们由 ceilometer\-central\-agent 和 ceilometer\-compute\-agent 采集。
 - [Event](http://docs.openstack.org/admin-guide/telemetry-events.html): 资源的状态变更信息，比如虚拟机创建、关机等信息，它们由 ceilometer\-notification\-agent 采集。 
@@ -23,7 +23,7 @@ categories: OpenStack
 - **Switf**: storage.objects, storage.objects.size, storage.objects.containers。
 
 
-下列是一个虚拟机 cpu 的使用量的 sample。
+下列是虚拟机 cpu 的使用量的一个 sample。
 
 ~~~
 {
@@ -68,7 +68,7 @@ categories: OpenStack
 }
 ~~~
 
-从上可以看出，sample 是云资源使用量的采样值，即资源使用量随着资源的变化，侧重量的变化。下图是根据多个 sample 生成的 cpu 使用量图表。
+总体来说，sample 是云资源使用量的采样值，即资源使用量随时间的变化，侧重量的是变化。下图是根据多个 sample 生成的 cpu 使用量图表。
 
 ![cpu usage](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_usage_sample.png)
 
