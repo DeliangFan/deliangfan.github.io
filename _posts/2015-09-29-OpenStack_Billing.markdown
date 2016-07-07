@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "浅谈如何设计秒级的 OpenStack 计费系统"
+title:  "浅谈如何设计一个秒级的 OpenStack 计费系统"
 categories: OpenStack
 ---
 
