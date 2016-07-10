@@ -4,7 +4,6 @@ title:  "理解 Keystone"
 categories: OpenStack
 ---
 
-----------
 
 # keystone 简介
 

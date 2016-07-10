@@ -4,7 +4,6 @@ title:  "理解 Role, Policy 以及 Role-Based Access Control"
 categories: OpenStack
 ---
 
-----------
 
 本文主要讲解 Keystone 的两类基本服务，如下图蓝色部分：
 
