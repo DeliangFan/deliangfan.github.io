@@ -4,7 +4,6 @@ title:  "Heat 支持查询 Autoscaling Group 下的虚拟机"
 categories: OpenStack
 ---
 
----------------
 
 OpenStack mailing list 有这么一封邮件：
 
