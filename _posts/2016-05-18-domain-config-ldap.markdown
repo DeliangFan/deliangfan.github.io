@@ -4,7 +4,6 @@ title:  "Multiple Domain and LDAP"
 categories: OpenStack
 ---
 
----------------
 
 # Theory
 

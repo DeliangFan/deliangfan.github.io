@@ -4,7 +4,6 @@ title:  "Keystone Federation Identity With SAML2"
 categories: OpenStack
 ---
 
----------------
 
 Keystone federation identity 涉及很多概念，安装配置复杂，官网的文档又不够清晰，下面 4 篇文章在安装配置方面阐述的非常详细。
 

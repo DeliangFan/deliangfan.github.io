@@ -4,7 +4,6 @@ title:  "Keystone 集成 LDAP"
 categories: OpenStack
 ---
 
---------------
 
 得益于 Keystone 优良的架构，它允许 Service 适配多种 Backend。Keystone 目前有 Identity, Resource, Assigment, Token, Policy, Catatlog 等 service，在 K 版本中，Identity, Resource, Assigment 都支持 LDAP 作为其 Backend，但是因为 Resource 和 Assigment 中的某些属性在 LDAP 并不能很好的支持，因此从 M 版本后，只有 Idendity 支持 LDAP 作为 Backend。本文的例子也仅将 Identity 的数据存储在 LDAP 中，其它 Services 的数据依旧存储在 SQL 里。
 

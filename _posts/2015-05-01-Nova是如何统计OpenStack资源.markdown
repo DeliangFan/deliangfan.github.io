@@ -4,7 +4,6 @@ title:  "Nova 是如何统计 OpenStack 资源"
 categories: OpenStack
 ---
 
----------------------
 
 # 引言
 

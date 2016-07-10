@@ -4,7 +4,6 @@ title:  "理解 Deffie-Hellman 密钥交换算法"
 categories: Algorithm
 ---
 
--------------
 &nbsp;&nbsp;&nbsp;&nbsp;
 
 > 再拾此书时，怀念 4 年前阳光明媚的午后，我在浙大紫金港图书馆的三楼，梦回了中学奥数的小伙伴，和那时曾想证明哥德巴尔猜想的情怀！

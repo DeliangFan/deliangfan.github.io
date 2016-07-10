@@ -4,7 +4,6 @@ title:  "Keystone Google Federation With OpenID"
 categories: OpenStack
 ---
 
----------------
 
 本文是 Keystone federation identity 系列的第二篇，主要介基于 OpenID Connect 协议搭建 Keystone 和 Google 单点登录的 demo。Federation Identity 的概念、原理以及基于 SAML2 协议的文章请见[第一篇](http://wsfdl.com/openstack/2016/01/14/Keystone-Federation-Identity-with-SAML2.html)
 

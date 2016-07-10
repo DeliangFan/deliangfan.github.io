@@ -4,7 +4,6 @@ title:  "从 Helion OpenStack 浅谈 OpenStack 的产品化"
 categories: OpenStack
 ---
 
--------------
 
 # Ecosystem VS Product
 
