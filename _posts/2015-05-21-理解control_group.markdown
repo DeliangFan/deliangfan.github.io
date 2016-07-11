@@ -51,10 +51,10 @@ user	0m3.312s
 sys  	0m0.000s
 ~~~
 
-我们在 /sys/fs/cgroup 下新建一个名为 cpu_limit 的 cgroup，并该 cgroup 下的进程只能占用单个 CPU 10% 的使用率。 
+我们在 /sys/fs/cgroup 下新建一个名为 cpu_limit 的 cgroup，并设置该 cgroup 下的进程只能占用单个 CPU 10% 的使用率。 
 
 ~~~
-# cfs_period_us 表示 CPU 总时间片段，cfs_quota_us 表示分配给该 cgroup 下的时间片段。
+# cfs_period_us 表示 CPU 总时间片段，cfs_quota_us 表示分配给该 cgroup 的时间片段。
 # 10000/100000 = 10%
 
 $ mkdir /sys/fs/cgroup/cpu_limit
@@ -62,7 +62,7 @@ $ echo 100000 > /sys/fs/cgroup/cpu_limit/cpu.cfs_period_us
 $ echo 10000 > /sys/fs/cgroup/cpu_limit/cpu.cfs_quota_us
 ~~~
 
-限制后上述代码的执行时间为：
+限制后上述代码的执行时间如下，约为前者的 10 倍：
 
 ~~~
 $ time cgexec -g cpu:cpu_limit  ./a.out
@@ -76,6 +76,7 @@ sys 	0m0.000s
 
 ~~~
 $ top
+
 ......
   PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
 28280 root      20   0    4196    668    592 R  10.0  0.0   0:01.28 a.out
@@ -85,7 +86,7 @@ $ top
 
 # Limit Memory
 
-如图现在 blkio，首先在 /sys/fs/cgroup/memory 下新建一个名为 limit_memory 的 cgroup：
+首先在 /sys/fs/cgroup/memory 下新建一个名为 limit_memory 的 cgroup：
 
 ~~~
 $ mkdir /sys/fs/cgroup/memory/limit_memory
@@ -125,7 +126,7 @@ void main(){
 }
 ~~~
 
-执行结果如下，可知当进程占用的内存超过限制时，将被 kill。
+执行结果如下，当进程占用的内存超过限制时，将被 kill。
 
 ~~~
 $ cgexec -g memory:limit_memory ./a.out
@@ -134,12 +135,11 @@ malloc memory 200 MB
 Killed
 ~~~
 
-
 -------
 
 # Limit Block IO
 
-我们采用 blkio 限制进程访问块设备(磁盘)的速率，未限制前，其写的带宽为：
+我们采用 blkio 限制进程访问块设备的速率，以磁盘为例，未限制前，其读的带宽为：
 
 ~~~
 $ dd if=in.file of=/dev/null count=1000 bs=1M
@@ -168,7 +168,7 @@ $ mkdir /sys/fs/cgroup/limit_blkio
 $ echo "252:0 10485760" > /sys/fs/cgroup/blkio/limit_blkio/blkio.throttle.read_bps_device
 ~~~
 
-再次执行 dd，其平均读速率为 10.5MB/s
+再次执行 dd，其平均读速率为 10.5MB/s。
 
 ~~~
 # 清楚内存的缓存数据
@@ -200,10 +200,16 @@ test\_limit 目录下有多个 blkio 相关的文件，较为常用的是以下�
 
 # Limit Network IO
 
-我们采用 scp 来测试网络速度，未限速时，传输速度为：
+限速时，采用 scp 来测试网络速度，未传输速度为：
 
 ~~~
 $ scp in.file root@15.107.12.110:~/
 in.file                                            100% 1000MB  71.4MB/s   00:14
 ~~~
 
+我们用 net_cls 标记某个 cgroup 下的包，借助 [tc](http://linux.die.net/man/8/tc) 来限制网络速率：
+
+~~~
+$ mkdir /sys/fs/cgroup/net_cls/net_limit
+$ echo 0x10002 > net_cls.classid
+~~~
