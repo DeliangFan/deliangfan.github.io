@@ -76,7 +76,6 @@ sys 	0m0.000s
 
 ~~~ bash
 $ top
-
 ......
   PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
 28280 root      20   0    4196    668    592 R  10.0  0.0   0:01.28 a.out
@@ -200,16 +199,28 @@ test\_limit 目录下有多个 blkio 相关的文件，较为常用的是以下�
 
 # Limit Network IO
 
-限速时，采用 scp 来测试网络速度，未传输速度为：
+未限速时，采用 scp 测试的网络速度为：
 
 ~~~ bash
-$ scp in.file root@15.107.12.110:~/
+$ scp test.file root@10.10.1.180:~/
 in.file                                            100% 1000MB  71.4MB/s   00:14
 ~~~
 
-我们用 net_cls 标记某个 cgroup 下的包，借助 [tc](http://linux.die.net/man/8/tc) 来限制网络速率：
+我们用 net_cls 标记某个 cgroup 下的包，借助 [tc](http://linux.die.net/man/8/tc) 来限制被标记的包的量，从而限制网络带宽：
 
 ~~~ bash
 $ mkdir /sys/fs/cgroup/net_cls/net_limit
-$ echo 0x10002 > net_cls.classid
+$ echo 0x001000001 > net_cls.classid
+
+# 采用 tc 限制 classid 为 10:1 网络带宽为 40Mbit/s
+$ tc qdisc add dev eth0 root handle 10: htb
+$ tc class add dev eth0 parent 10: classid 10:1 htb rate 40mbit
+$ tc filter add dev eth0 parent 10: protocol ip prio 10 handle 1: cgroup
+~~~
+
+限速后，采用 scp 测试的网络速度为 3.6 MB/s，注意到 3.6 MB/s 和 40 Mbit/s(5MB/s) 有较大差距，而 IP 和 TCP 头部额外的开销(共 40 字节头部，每个包的平均大小为 1448 字节)不可能造成如此大的差距，所以本人也、对此深感疑惑，但未能查明原因。
+
+~~~ bash
+$ scp test.file root@10.10.1.180:~/
+in.file                                         100% 1000MB   3.6MB/s   04:39
 ~~~
