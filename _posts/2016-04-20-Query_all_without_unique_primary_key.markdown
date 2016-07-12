@@ -1,7 +1,7 @@
 ---
 layout: post
-title:  "踩雷小记 -- 主键非唯一时 ORM 的 query.all()"
-categories: Database
+title:  "主键非唯一时 ORM 的 query.all()"
+categories: 踩坑杂记
 ---
 
 假定有如下表 user:
