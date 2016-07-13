@@ -24,11 +24,15 @@ en0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
 ...
 
 $ ifconfig eth0
-eth0: flags=8863<UP,BROADCAST,SMART,RUNNING,SIMPLEX,MULTICAST> mtu 1500
+eth0      Link encap:Ethernet  HWaddr ...
+          ... 
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
 ...
 ~~~
 
-Google 大法迅速得出答案，一篇名为 [how-can-the-packet-size-be-greater-than-the-mtu](http://packetbomb.com/how-can-the-packet-size-be-greater-than-the-mtu/) 给出了很好的解释。不仅仅是 linux 下的 TCP，还是 windows 下的 wireshark，均会遇上相同的问题。原因在于系统开启了 [TSO(TCP Segment Offload)](https://en.wikipedia.org/wiki/Large_segment_offload)，TSO 允许 tcpdump 或者 wireshare 抓取的并不是物理网卡层面的包，而是网卡上层的包，虽然网卡最终会把大包分片成多个小于 MTU 的包：
+Google 大法迅速得出答案，一篇名为 [how-can-the-packet-size-be-greater-than-the-mtu](http://packetbomb.com/how-can-the-packet-size-be-greater-than-the-mtu/) 给出了很好的解释。不仅是 linux 下的 tcpdump，还是 windows 下的 wireshark，均会遇上相同的问题。原因在于系统开启了 [TSO(TCP Segment Offload)](https://en.wikipedia.org/wiki/Large_segment_offload)。
+
+为了降低 CPU 的负载，提高网络的出口带宽，TSO 提供一些较大的缓冲区来缓存 TCP 发送的包，然后由物理网卡把缓存的大包拆分成多个小于 MTU 的包。tcpdump 或者 wireshare 抓取的是网卡上层的包，所以我们可能会观察到许多大小超过 MTU 的包：
 
 ~~~
         +---------------+
@@ -36,13 +40,16 @@ Google 大法迅速得出答案，一篇名为 [how-can-the-packet-size-be-great
         +---------------+
         |    TCP/IP     |
         +---------------+
-        |               | <--- tcpdump
+        |  nit_if/PCAP  | <--- tcpdump / wireshare
         +---------------+
-        |      Nic      |
+        |      Nic      | Split the big package into separate packets
         +---------------+
+                |
+                |         Network(Packets size less than MTU)
+                +---------------------------------------------------->
 ~~~
 
-所以如果在交换机处或者目的主机处，抓取的包肯定都是小于 MTU，如下是在目的主机抓取的部分包，其大小多为 1448 Byte：
+如果在交换机处或者目的主机处，抓取的包肯定都是小于 MTU，如下是在目的主机抓取的部分包，其大小多为 1448 Byte：
 
 ~~~
 $ tcpdump -i eth0 src net src_ip and src port 39200
