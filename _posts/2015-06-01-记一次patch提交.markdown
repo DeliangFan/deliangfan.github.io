@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "记一次 patch 提交"
-categories: OpenStack
+categories: 编程随想
 ---
 
 &nbsp;&nbsp;&nbsp;
