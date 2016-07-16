@@ -5,13 +5,13 @@ categories: OpenStack
 ---
 
 
-[Linux Control Group 简介](http://wsfdl.com/linux/2015/05/21/%E7%90%86%E8%A7%A3control_group.html) 一本介绍了如何使用 cgroup 限制进程的资源：cpu，memory，block IO 和 network IO。在宿主机看来，基于 qemu-kvm 的虚拟机就是一个进程，为了避免某些虚拟机占用过多的资源而影响了其它的虚拟机，业界常用 cgroup 来限制虚拟机占用的资源。libvirt 是管理虚拟机的一个重要库，它同样依赖 cgroup 限制虚拟机的资源，本文主要介绍如何使用 libvirt 限制虚拟机的资源。
+[Linux Control Group 简介](http://wsfdl.com/linux/2015/05/21/%E7%90%86%E8%A7%A3control_group.html) 一文介绍了如何使用 cgroup 限制进程的资源：cpu，memory，block IO 和 network IO。在宿主机看来，基于 qemu-kvm 的虚拟机就是一个进程，为了避免某些虚拟机占用过多的资源而影响了其它的虚拟机，业界常用 cgroup 限制虚拟机占用的资源。libvirt 是管理虚拟机的一个重要库，它同样依赖 cgroup 限制虚拟机的资源，本文介绍如何使用 libvirt 限制虚拟机的资源。
 
 ----------
 
 # Limit CPU
 
-~~~
+~~~ xml
 <domain>
   ...
   <cputune>
@@ -25,13 +25,13 @@ categories: OpenStack
 
 - shares：相对权重，share 为 2048 的虚拟机获得的 CPU 时间以比 1024 的多一倍。
 - quota：取值为 [1000, 18446744073709551]，表示 CPU 的总配额 
-- period：取值为 [1000, max(1000000, quota)]，表示在 quota 下，分配虚拟机的 CPU 时间。
+- period：取值为 [1000, max(1000000, quota)]，表示在 quota 下，分配给虚拟机的 CPU 时间。
 
 ----------
 
 # Limit Memory
 
-~~~
+~~~ xml
 <domain>
   ...
   <memtune>
@@ -46,9 +46,9 @@ categories: OpenStack
 
 以下 4 个参数可用于限制虚拟机的内存资源：
 
-- hard_limit：虚拟机的内存的硬上限(KB)，qemu-kvm 强烈建议不设置该参数
-- soft_limit：虚拟机的内存的软上限(KB)，只有当宿主机内存资源不足时才会限制虚拟机的内存
-- swap_hard_limit：虚拟机的 swap 分区上限(KB)
+- hard_limit：虚拟机内存的硬上限(KB)，qemu-kvm 强烈建议不设置该参数
+- soft_limit：虚拟机内存的软上限(KB)，只有当宿主机内存资源不足时才会限制虚拟机的内存
+- swap_hard_limit：虚拟机 swap 分区上限(KB)
 - min_guarantee：虚拟机占用宿主机的最低内存(KB)，该参数仅支持 VMware ESX 和 OpenVZ
 
 ---------
@@ -56,7 +56,7 @@ categories: OpenStack
 # Limit Block IO
 
 
-~~~
+~~~ xml
 <domain>
   ...
   <blkiotune>
@@ -74,10 +74,10 @@ categories: OpenStack
 
 以下 4 个参数可用于[限制 block IO](http://libvirt.org/formatdomain.html#elementsBlockTuning) 资源。
 
-- read_bytes_sec：虚拟机的读带宽上限(Bytes/s)
-- write_bytes_sec：虚拟机的写带宽上限(Bytes/s)
-- read_iops_sec：虚拟机的每秒读取次数上限
-- write_iops_sec：虚拟机的每秒写次数上限
+- read_bytes_sec：虚拟机读带宽上限(Bytes/s)
+- write_bytes_sec：虚拟机写带宽上限(Bytes/s)
+- read_iops_sec：虚拟机每秒读块设备次数上限
+- write_iops_sec：虚拟机每秒写块设备次数上限
 
 Note：非本地存储的虚拟机由于走的是网络 IO，无法用此方法限速，可以采用 dom.setBlockIoTune() 方法限制其 block IO。
 
@@ -85,7 +85,7 @@ Note：非本地存储的虚拟机由于走的是网络 IO，无法用此方法�
 
 # Limit Network IO 
 
-~~~
+~~~ xml
 <domain>
   <devices>
     <interface type='network'>
@@ -105,7 +105,7 @@ Note：非本地存储的虚拟机由于走的是网络 IO，无法用此方法�
 
 - average：平均带宽(KB/s)
 - peak：峰值带宽(KB/s)
-- burst：峰值速率时的接收流量上限(KB)
+- burst：峰值速率时接收流量的上限(KB)
 - floor：能保证的最低流量(KB)
 
 
@@ -113,4 +113,4 @@ Note：非本地存储的虚拟机由于走的是网络 IO，无法用此方法�
 
 - average：平均带宽(KB/s)
 - peak：峰值带宽(KB/s)
-- burst：峰值速率时的发送的流量上限(KB)
+- burst：峰值速率时发送流量的上限(KB)
