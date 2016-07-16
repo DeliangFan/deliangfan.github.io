@@ -11,8 +11,6 @@ categories: OpenStack
 
 # Limit CPU
 
-以下是
-
 ~~~
 <domain>
   ...
@@ -20,12 +18,14 @@ categories: OpenStack
     <shares>2048</shares>
     <period>1000000</period>
     <quota>-1</quota>
-    <emulator_period>1000000</emulator_period>
-    <emulator_quota>-1</emulator_quota>
   </cputune>
   ...
 </domain>
 ~~~
+
+- shares：相对权重，share 为 2048 的虚拟机获得的 CPU 时间以比 1024 的多一倍。
+- quota：取值为 [1000, 18446744073709551]，表示 CPU 的总配额 
+- period：取值为 [1000, max(1000000, quota)]，表示在 quota 下，分配虚拟机的 CPU 时间。
 
 ----------
 
@@ -46,10 +46,10 @@ categories: OpenStack
 
 以下 4 个参数可用于限制虚拟机的内存资源：
 
-- hard_limit
-- soft_limit
-- swap_hard_limit
-- min_guarantee
+- hard_limit：虚拟机的内存的硬上限(KB)，qemu-kvm 强烈建议不设置该参数
+- soft_limit：虚拟机的内存的软上限(KB)，只有当宿主机内存资源不足时才会限制虚拟机的内存
+- swap_hard_limit：虚拟机的 swap 分区上限(KB)
+- min_guarantee：虚拟机占用宿主机的最低内存(KB)，该参数仅支持 VMware ESX 和 OpenVZ
 
 ---------
 
@@ -74,10 +74,12 @@ categories: OpenStack
 
 以下 4 个参数可用于[限制 block IO](http://libvirt.org/formatdomain.html#elementsBlockTuning) 资源。
 
-- read_bytes_sec：虚拟机的读带宽上限
-- write_bytes_sec：虚拟机的写带宽上限
+- read_bytes_sec：虚拟机的读带宽上限(Bytes/s)
+- write_bytes_sec：虚拟机的写带宽上限(Bytes/s)
 - read_iops_sec：虚拟机的每秒读取次数上限
 - write_iops_sec：虚拟机的每秒写次数上限
+
+Note：非本地存储的虚拟机由于走的是网络 IO，无法用此方法限速，可以采用 dom.setBlockIoTune() 方法限制其 block IO。
 
 -----------
 
@@ -98,3 +100,17 @@ categories: OpenStack
   ...
 </domain>
 ~~~
+
+限制入口流量的参数有：
+
+- average：平均带宽(KB/s)
+- peak：峰值带宽(KB/s)
+- burst：峰值速率时的接收流量上限(KB)
+- floor：能保证的最低流量(KB)
+
+
+限制出口流量的参数有：
+
+- average：平均带宽(KB/s)
+- peak：峰值带宽(KB/s)
+- burst：峰值速率时的发送的流量上限(KB)
