@@ -4,12 +4,12 @@ title:  "一起来编个 RPM 包"
 categories: DevOps 
 ---
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![RPM](http://7xp2eu.com1.z0.glb.clouddn.com/yum%20package_0.png?imageView2/1/w/200/q/100)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![RPM](http://7xp2eu.com1.z0.glb.clouddn.com/yum%20package_0.png?imageView2/1/w/200/h/166/q/100)
 
 
 # Overview
 
-[RPM(Redhat Package Manager)](https://en.wikipedia.org/wiki/RPM_Package_Manager) 是由红帽提出的软件包管理器，用于软件包的安装、卸载和升级等，广泛的应用于多种 Linux 发行版。本文简要介绍如何把应用软件打成 RPM 包，打包的关键在于编写一个 SPEC 文件，该文件描述了包的基本信息、安装和卸载前后所需执行的操作等，[fedora](https://fedoraproject.org/wiki/How_to_create_an_RPM_package) 推荐的模板如下：
+[RPM(Redhat Package Manager)](https://en.wikipedia.org/wiki/RPM_Package_Manager) 是由红帽提出的软件包管理器，用于软件的安装、卸载和升级等，广泛的应用于多种 Linux 发行版。本文简要介绍如何把应用软件打成 RPM 包，打包的关键在于编写一个 SPEC 文件，该文件描述了包的基本信息、安装和卸载前后所需执行的操作等，[fedora](https://fedoraproject.org/wiki/How_to_create_an_RPM_package) 推荐的模板如下：
 
 ~~~
 Name:           testprogram
