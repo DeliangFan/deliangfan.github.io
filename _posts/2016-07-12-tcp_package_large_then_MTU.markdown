@@ -32,7 +32,7 @@ eth0      Link encap:Ethernet  HWaddr ...
 
 Google 大法迅速得出答案，一篇名为 [how-can-the-packet-size-be-greater-than-the-mtu](http://packetbomb.com/how-can-the-packet-size-be-greater-than-the-mtu/) 给出了很好的解释。不仅是 linux 下的 tcpdump，还是 windows 下的 wireshark，均会遇上相同的问题。原因在于系统开启了 [TSO(TCP Segment Offload)](https://en.wikipedia.org/wiki/Large_segment_offload)。
 
-为了降低 CPU 的负载，提高网络的出口带宽，TSO 提供一些较大的缓冲区来缓存 TCP 发送的包，然后由物理网卡负责把缓存的大包拆分成多个小于 MTU 的包。tcpdump 或者 wireshare 抓取的是网卡上层的包，所以我们可能会观察到大小超过 MTU 的包：
+为了降低 CPU 的负载，提高网络的出口带宽，TSO 提供一些较大的缓冲区来缓存 TCP 发送的包，然后由网卡负责把缓存的大包拆分成多个小于 MTU 的包。tcpdump 或者 wireshare 抓取的是网卡上层的包，所以我们可能会观察到大小超过 MTU 的包：
 
 ~~~
         +---------------+
@@ -40,7 +40,7 @@ Google 大法迅速得出答案，一篇名为 [how-can-the-packet-size-be-great
         +---------------+
         |    TCP/IP     |
         +---------------+
-        |  nit_if/PCAP  | <--- tcpdump / wireshare
+        |  nit_if/PCAP  | <--- tcpdump / wireshark
         +---------------+
         |      Nic      | Split the big package into separate packets
         +---------------+
