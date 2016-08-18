@@ -4,8 +4,6 @@ title:  "实现一个简单的 SOCK V5 代理服务器 --- 协议"
 categories: Python 
 ---
 
-# SOCK V5 Protocol
-
 [SOCK](https://zh.wikipedia.org/wiki/SOCKS) 基于 TCP 之上，属于会话层协议，最初由 David Koblas 提出，第一个成熟通用的版本是 NEC 开发的 [SOCK V4](http://www.openssh.com/txt/socks4.protocol)，但是它不支持认证，不支持代理 UDP 协议，所以功能更为强大的 [SOCK V5(RFC 1928)](https://www.ietf.org/rfc/rfc1928.txt) 运用而生。 
 
 ~~~
@@ -21,16 +19,16 @@ categories: Python
                            ++
 ~~~
 
-当使用 SOCK V5 代理服务器代理防火墙内的客户端访问外部网络时，客户端首先需要和代理服务器建立连接，协商认证方式，认证通过后将客户端的请求转发至外部的服务器。大体的步骤如下：
+当使用 SOCK V5 代理服务器代理防火墙内的客户端访问外部网络时，客户端首先需要和代理服务器建立连接，协商认证方式，认证通过后将客户端的请求转发至外部服务器。大体的步骤如下：
 
 1. Client 发送请求至 SOCK 服务器，协商认证的方法
 2. SOCK 服务器回复认证方法
 3. 按协商的方法进行认证(略)
 4. Client 发送请求至 SOCK 服务器，告知外部服务器的地址和端口
 5. SOCK 服务器评估后，与外部服务器建立链接，返回自身地址信息
-6. SOCK 服务器把客户端的请求转发至外部服务器，把外部服务器的返回信息转发给 Client
+6. SOCK 服务器把客户端的请求转发至外部服务器，把外部服务器的返回信息转发回 Client
 
-下面以访问 https://twitter.com 为例，讲述每个步骤的细节，第一步请求中，Client 端的报文格式为：
+下面以访问 https://twitter.com 为例，讲述每个步骤的细节，在第一步的请求中，Client 端的报文格式为：
 
 ~~~
 +----+----------+----------+
@@ -50,7 +48,7 @@ METHODS:  the values currently defined for METHOD are
        o  X'FF' NO ACCEPTABLE METHODS
 ~~~
 
-本文实现的 SOCK 服务器暂时不支持认证，所以 METHODS 的值设置为 X'00'，具体的报文为：
+本文实现的 SOCK 服务器暂时不支持认证，所以 METHODS 设置为 X'00'，具体的报文为：
 
 ~~~
 '\x05\x01\x00'
@@ -66,7 +64,7 @@ SOCK 服务器收到请求后，选择一种双方都支持的认证方法(如�
 +----+--------+
 ~~~
 
-具体的报文为：
+本例具体的报文为：
 
 ~~~
 '\x05\x00'
@@ -141,7 +139,7 @@ BND.ADDR:   server bound address
 BND.PORT:   server bound port in network octet order
 ~~~
 
-注意到 REP，如果 SOCK 服务器与 twitter.com 成功建立链接，REP 的返回值为 X'00'，否则为其它类型的错误，如 Network unreachable，Connection refused 等等。本例 SOCK 服务器与 twitter.com 成功建立链接，返回给 Client 的具体报如下：
+注意到 REP，如果 SOCK 服务器与 twitter.com 成功建立链接，REP 的返回值为 X'00'，否则为其它类型的错误，如 Network unreachable，Connection refused 等等。本例 SOCK 服务器与 twitter.com 成功建立链接，返回给 Client 的具体报文如下：
 
 ~~~
 '\x05\x00\x00\x01\xac\x1f\x1c\x8e\x048'
@@ -293,3 +291,8 @@ if '__main__' == __name__:
     sock_v5_server = SockV5Server(1080)
     sock_v5_server.serve_forever()
 ~~~
+
+最后推荐两个 SS5 的开源库：
+
+[SS5](https://github.com/twg/ss5): C 语言版
+[shadowsocks](https://github.com/shadowsocks/shadowsocks): Python 语言版
