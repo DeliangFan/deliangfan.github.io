@@ -4,6 +4,10 @@ title:  "实现一个简单的 SOCK V5 代理服务器 --- 协议"
 categories: Python 
 ---
 
+
+![twitter](http://7xp2eu.com1.z0.glb.clouddn.com/twitter_ss5.png)
+
+
 [SOCK](https://zh.wikipedia.org/wiki/SOCKS) 基于 TCP 之上，属于会话层协议，最初由 David Koblas 提出，第一个成熟通用的版本是 NEC 开发的 [SOCK V4](http://www.openssh.com/txt/socks4.protocol)，但是它不支持认证，不支持代理 UDP 协议，所以功能更为强大的 [SOCK V5(RFC 1928)](https://www.ietf.org/rfc/rfc1928.txt) 运用而生。 
 
 ~~~
@@ -145,11 +149,7 @@ BND.PORT:   server bound port in network octet order
 '\x05\x00\x00\x01\xac\x1f\x1c\x8e\x048'
 ~~~
 
-之后进入第 6 步，SOCK 服务器把客户端的请求转发至外部服务器，把外部服务器的返回信息转发给 Client，效果如下：
-
-![twitter](http://7xp2eu.com1.z0.glb.clouddn.com/twitter_ss5.png)
-
-代码如下：
+之后进入第 6 步，SOCK 服务器把客户端的请求转发至外部服务器，把外部服务器的返回信息转发给 Client。所有代码如下：
 
 ~~~ python
 import gevent
@@ -294,5 +294,5 @@ if '__main__' == __name__:
 
 最后推荐两个 SS5 的开源库：
 
-[SS5](https://github.com/twg/ss5): C 语言版
-[shadowsocks](https://github.com/shadowsocks/shadowsocks): Python 语言版
+- [SS5](https://github.com/twg/ss5): C 语言版
+- [shadowsocks](https://github.com/shadowsocks/shadowsocks): Python 语言版
