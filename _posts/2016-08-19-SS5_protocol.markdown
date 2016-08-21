@@ -266,10 +266,15 @@ class SockV5Server(object):
                         self.recv_and_send_msg(server_sock, client_sock)
             except Exception:
                 self.close_sock_and_exit(client_sock, server_sock)
+
     def recv_and_send_msg(self, recv_sock, send_sock):
-        # recv() is a block I/O, it returns '' when remote has been closed.
+        # recv() is a block I/O in the views of programmer, it returns '' when
+        # remote has been closed.
         msg = recv_sock.recv(BUFFER)
         if msg == '':
+            # NOTE(deliang) there exists a bug here
+            # the thread exits if either of the sockets is closed, which may
+            # lose some packages sometimes.
             self.close_sock_and_exit(recv_sock, send_sock)
 
         send_sock.sendall(msg)
