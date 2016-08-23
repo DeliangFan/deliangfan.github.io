@@ -1,0 +1,37 @@
+---
+layout: post
+title:  "工作三周年"
+categories: 编程随想
+---
+
+![1492](http://7xp2eu.com1.z0.glb.clouddn.com/1492.png)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;原图取自 1492
+
+
+
+立秋之后的上海，似乎天蓝气清些许，初有秋高气爽之意，阳台上眺望红润的夕阳伴着天际的晚霞，张江的天色显得如此宁静祥和。一口茶水下肚，蓦然想起已工作三年，依次经历风格迥异的通信、互联网和外企，辗转杭京沪三地，虽然漂泊，却也精彩。日暮多思绪，感慨油然生，故撰此文，勉励前行。
+
+&nbsp;&nbsp;&nbsp;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;一
+
+通信出身的学生往往欠缺计算机的基础，所以这三年阅读了不少书籍和博客，也发现很多博客和书籍本不该被读：通晓编译原理，就不会被五花八门的语言所迷惑；熟知计算机体系架构，就知道 CPU 大致是如何工作的；掌握网络协议，配置和诊断网络再难成为问题；理解了 IO 和并发，就不会纠结于各种网络框架，明白了操作系统原理，编程的内功将更上一层楼！基础知识精读英文经典之作，工作时遇上所需的算法多看论文，尽量多接触业务，广泛地看看通用的软件和技术，多写代码多调试，多踩坑多反省总结！
+
+&nbsp;&nbsp;&nbsp;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;二
+
+接下来谈谈编程的美感，程序之美是简洁的抽象，优美的架构，精湛的细节，舒适的展现，像数学一样缜密而简洁，像绘画一样和谐而耐看。美是 linux 的一切皆文件，python 的一切皆对象，restful API 的一切皆资源，历史总是淘汰臃肿丑陋的设计，简洁高度的抽象赋予这些技术旺盛的生命力。OpenStack 的架构是优美的，netflix 提倡的微服务也是优美的，模块化和高度的解耦，异步和无状态，所有的服务组成了一首和谐的交响曲。美还是精巧的算法，缜密的逻辑，良好的命名，也是[雷神之锤那个浮点开方函数](https://www.zhihu.com/question/26287650)。
+
+如毕加索所说：good artist copy, greater artist steal。工程师也应当汲取哪些优美的设计，培养美感。
+
+&nbsp;&nbsp;&nbsp;
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;三
+
+艺术源于生活，而高于生活。创造软件的灵感也因源于行业的痛点，再给行业带来价值。工程师需要深入的贴近生活，了解行业的流程和运作，才能发掘大大小小的痛点和低效之处。广告出生的江南春在徐家汇等电梯时是非常无聊枯燥的，敏锐的他迸发了创造分众传媒的灵感。加密学出身的 Max Levchin 编写了一个无人使用的加密库，最终他问自己，到底什么东西需要加密？钱需要加密，Paypal 的灵感由此而生！
+
+当我刚刚学会写几行代码时，曾天马行空的认为很有事情大有可为，阅历的加深为可为之事带来了更多的否定和减法。但是我知道理解的越深刻，方向会越加明确，软件的定位越发清晰。每当一个需求来临时，工程师首先考虑的不应该是能否实现以及如何实现，而是尽可能从全局的角度分析需求的合理性以及带来的价值，把握好取舍，而这一切的前提，都要求我们把 geek 的情结仅留在代码里，多换位思考，尝试站在领导，站在公司，甚至站在市场的角度思考，谦逊包容的去践行代码之外的世界。
+
+前路漫漫，虽生有涯，愿穷尽一生，积累基础，培养美感，践行市场！
