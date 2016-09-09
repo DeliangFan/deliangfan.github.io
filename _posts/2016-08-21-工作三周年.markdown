@@ -22,7 +22,7 @@ categories: 编程随想
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;二
 
-接下来谈谈编程的美感，程序之美是简洁的抽象，优美的架构，精湛的细节，舒适的展现，像数学一样缜密而简洁，像绘画一样和谐而耐看。美是 linux 的一切皆文件，python 的一切皆对象，restful API 的一切皆资源，历史总是淘汰臃肿丑陋的设计，简洁高度的抽象赋予这些技术旺盛的生命力。OpenStack 的架构是优美的，netflix 提倡的微服务也是优美的，模块化和高度的解耦，异步和无状态，所有的服务组成了一首和谐的交响曲。美还是精巧的算法，缜密的逻辑，良好的命名，也是[雷神之锤那个浮点开方函数](https://www.zhihu.com/question/26287650)。
+接下来谈谈编程的美感，程序之美是简洁的抽象，优美的架构，精湛的细节，舒适的展现，像数学一样缜密而简洁，像绘画一样和谐而耐看。美是 linux 的一切皆文件，python 的一切皆对象，restful API 的一切皆资源，历史总是淘汰臃肿丑陋的设计，简洁高度的抽象赋予这些技术旺盛的生命力。网络协议的的分层架构是优美的，OpenStack 的架构是优美的，netflix 提倡的微服务也是优美的，模块化和高度的解耦，异步和无状态，所有的服务组成了一首和谐的交响曲。美还是精巧的算法，缜密的逻辑，良好的命名，也是[雷神之锤那个浮点开方函数](https://www.zhihu.com/question/26287650)。
 
 如毕加索所说：good artist copy, greater artist steal。工程师也应当汲取哪些优美的设计，培养美感。
 
