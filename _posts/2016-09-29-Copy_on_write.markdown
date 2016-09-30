@@ -100,6 +100,8 @@ After Copy-On-Write:
 
 经过多次优化，Qcow2 镜像的性能已经逼近 Raw 格式的镜像，所以 OpenStack 的虚拟机多采用 Qcow2 镜像。
 
+ide 驱动时的性能对比：
+
 ~~~
 cache                      off         writethrough      writeback
 Old qcow2 (0.10.5)         16:52 min   28:58 min         6:02 min
@@ -107,7 +109,8 @@ New qcow2 (0.11.0-rc1)     5:44 min    9:18 min          6:11 min
 raw                        5:41 min    7:24 min          6:03 min
 ~~~
 
-~~~
+virtio 驱动时的性能对比：
+
 ~~~
 cache                      off         writeback
 Old qcow2 (0.10.5)         31:09 min   8:00 min
