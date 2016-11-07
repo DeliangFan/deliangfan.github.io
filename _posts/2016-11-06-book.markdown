@@ -1,0 +1,46 @@
+---
+layout: post
+title:  "赌书消得泼茶香"
+categories: 编程随想
+---
+
+> 我们一拿起一本这样的古书来，即使只读半小时，也会觉得无比的轻松、愉快、清净、超逸，仿佛汲饮清冽的泉水似的舒适。
+> 
+>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  --- 叔本华
+
+本文所记的，正是 IT 领域如叔本华所说的古书。
+
+# 技术类
+
+- Operating System Concepts - 9th edition
+
+曾尝试读过各类 Linux 书籍，无一以失败告终，究其原因，未知原理，先上代码，难免一头雾水。此书高屋建瓴，提纲挈领的勾画操作系统的模型，从进程模型、进程调度、内存管理再到文件系统，每个部分由浅入深的介绍多种实现方式以及各种的优缺点，不仅知其然，而且知其所以然。有此书做基础后，再阅读 Linux/Unix 相关书籍，会轻松许多，若能配合伯克利的公开课 CS162，将事半功倍。
+
+
+- Unix 环境高级编程
+
+- TCP/IP 协议，卷 2
+
+- Unix 网络编程
+
+- Unix 网络编程 卷2 IPC
+
+- Structure and interpreter of computer program 
+
+
+# 思想类
+
+- 人月神话
+
+- 黑客与画家
+
+- 硅谷之火
+
+
+# 经典论文
+
+- Google File System
+
+
+
+
