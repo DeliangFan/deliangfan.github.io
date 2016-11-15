@@ -69,6 +69,8 @@ def count():
 
 ~~~
 >>> a = count()
+>>> dir(a)
+[..., '__iter__', 'close', 'gi_code', 'gi_frame', 'gi_running', 'next', 'send', 'throw']
 >>> a.next()
 1
 >>> a.next()
@@ -77,6 +79,8 @@ def count():
 >>> b.next()
 3
 ~~~
+
+上例不难看出，Generator 还实现了 close(), send(), throw() 等方法。
 
 ------------
 
@@ -105,67 +109,7 @@ def func():
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
 StopIteration
->>> dir(a)
-[..., '__iter__', 'close', 'gi_code', 'gi_frame', 'gi_running', 'next', 'send', 'throw']
 ~~~
 
-除 next() 方法外，Generator 还实现了 close(), send(), throw() 等方法。
 
-- close(): 结束迭代，generator 调用 close() 后如再调用 next() 会报错。
-
-~~~
->>> a = func()
->>> a.next()
-1
->>> a.close()
->>> a.next()
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-StopIteration
-~~~
-
-- throw(): Generator 结束迭代并抛出一个异常。
-
-~~~
->>> a = func()
->>> a.next()
-1
->>> a.throw(Exception)
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-  File "t.py", line 2, in func
-    yield 1
-Exception
->>> a.next()
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-StopIteration
-~~~
-
-- send()：该方法稍微难以理解，介绍该方法前，首先看看如下代码，__该代码表明 yield 不仅能返回结果，还能接收参数__！
-
-~~~
-def foo():
-    while True:
-        in_value = (yield "Please enter something")
-        print in_value
-~~~
-
-运行结果如下：
-
-~~~
->>> a = t.foo()
->>> a.next()
-'Please enter something:'
->>> a.send("hello")
-hello
-'Please enter something:'
->>> a.send("yield")
-yield
-'Please enter something:'
-~~~
-
-注意，当初始化一个生成器对象时，首先需调用 next() 直到遇上 yield，然后调用 send() 方法传入参数，之后生成器继续执行直到遇到下一个 yield。另外 send(None) 和 next() 的功能完全一样，因此从功能的角度上看，next() 相当于 send() 的一个子集。
-
-Yield 不仅可以方便的实现一个 Generator/Iterator，它还提供了 send(), next(), close() 等方法，这些方法允许调用者和 Generator 之间进行强大的通信，每次调用 next() 或者 send()，Genertor 在下一个 yield 处暂停挂起，保存状态！
 
