@@ -6,13 +6,13 @@ categories: Python
 
 # Iterator
 
-Iterator(迭代器) 是一种常见的对象，它允许调用者方便的遍历该对象的元素，广泛的运用于多种编程语言，如 Python, Java 和 Ruby 等。以 Python 为例，Iterator 需要实现两种方法：
+Iterator(迭代器) 是一种常见的对象，它允许调用者方便的遍历该对象中的元素，广泛的运用于多种编程语言，如 Python, Java 和 Ruby 等。以 Python 为例，Iterator 需要实现两种方法：
 
 - \_\_iter\_\_(): 返回一个迭代器对象。
 
 - next(): 返回对象中的下一个元素，如果没有，则抛出 StopIteration 异常（Python 3 为 \_\_next\_\_()）。
 
-Java 还要求它提供 hasNext() 方法：
+Java 还要求实现 hasNext() 方法：
 
 - hasNext()：判断对象是否有下一个元素，如果有，返回 True，否则返回 False。
 
@@ -55,7 +55,7 @@ class Count(object):
  
  - 所有的 Generator 都是 Iterator！
  
- 所以 Generator 只是 Iterator 的一类子集，所以 Generator 也必须实现 \_\_iter\_\_() 和 next() 这两种方法，那么 Generator 到底是什么呢？Generator 就是函数的返回值，但是这个函数必须包含一个或者多个 Yield 关键字。例如：
+所以 Generator 也必须实现 \_\_iter\_\_() 和 next() 这两种方法。那么 Generator 到底是什么呢？Generator 就是某个函数的返回值，但是这个函数必须包含一个或者多个 Yield 关键字。例如：
  
 ~~~
 def count():
@@ -109,7 +109,7 @@ StopIteration
 [..., '__iter__', 'close', 'gi_code', 'gi_frame', 'gi_running', 'next', 'send', 'throw']
 ~~~
 
-除 next() 方法外，Generator 还实现了 close(), send(), throw() 等方法。
+除 next() 方法外，Generator 还实现了 close(), throw(), send() 等方法。
 
 - close(): 结束迭代，generator 调用 close() 后如再调用 next() 会报错。
 
