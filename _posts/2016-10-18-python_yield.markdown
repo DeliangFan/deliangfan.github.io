@@ -82,7 +82,7 @@ def count():
 
 # Yield
 
-Yield 是 Python 的关键字之一，于 Python 2.5 版本引入。通过 yield 表达式，用户可以快速的实现一个迭代器，无需自己实现 \_\_iter\_\_() 和 next() 等方法。当一个函数包含一个或者多个 yield 时，如果调用该函数，则返回一个生成器对象。当该对象第一次调用 next 方法时，生成器才开始执行函数直到遇到 yield 暂停挂起并保留此时状态，并把 yield 后面的参数作(如果 yield 后面没有参数，返回值为 None)为返回值返回给调用者。之后每次调用 next() 方法，生成器从上次挂起出执行，直到遇上下一个 yield，然后挂起并返回 yield 后面的参数。当调用 next() 方法至函数结束也没有遇上 yield 时，此次调用跑出 StopIteration 异常。
+[Yield](https://www.python.org/dev/peps/pep-0342/) 是 Python 的关键字之一，于 [Python 2.5](https://docs.python.org/3/whatsnew/2.5.html) 版本引入。通过 yield 表达式，用户可以快速的实现一个迭代器，无需自己实现 \_\_iter\_\_() 和 next() 等方法。当一个函数包含一个或者多个 yield 时，如果调用该函数，则返回一个生成器对象。当该对象第一次调用 next 方法时，生成器才开始执行函数直到遇到 yield 暂停挂起并保留此时状态，并把 yield 后面的参数作(如果 yield 后面没有参数，返回值为 None)为返回值返回给调用者。之后每次调用 next() 方法，生成器从上次挂起出执行，直到遇上下一个 yield，然后挂起并返回 yield 后面的参数。当调用 next() 方法至函数结束也没有遇上 yield 时，此次调用跑出 StopIteration 异常。
 
 ~~~
 def func():

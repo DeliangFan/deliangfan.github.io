@@ -1,115 +1,103 @@
 ---
 layout: post
-title:  "Iterator, Generator 与 Yield"
+title:  "Yield 和 Coroutine"
 categories: Python 
 ---
 
-# Iterator
+博文 [Iterator, Generator 与 Yield](http://wsfdl.com/python/2016/10/18/python_yield.html) 介绍了 iterator，generator 和 yield，并阐明了三者之间的关系。本文将进一步介绍 yield 和 coroutine，并阐述如果通过 yield 实现简单的 coroutine。
 
-Iterator(迭代器) 是一种常见的对象，它允许调用者方便的遍历该对象的元素，广泛的运用于多种编程语言，如 Python, Java 和 Ruby 等。以 Python 为例，Iterator 需要实现两种方法：
+[Coroutine(协程)](https://en.wikipedia.org/wiki/Coroutine) 最早于 1963 年提出，在之后三四十年里并没有受到广泛关注，但在近些年受到热捧。通俗而言，协程相当于用户态线程，包含了两层意思：
 
-- \_\_iter\_\_(): 返回一个迭代器对象。
+- 协程具有类似线程的功能，它能提供并发。
+- 协程是用户态的，即操作系统对协程不感知，也不负责调度；应用程序负责管理协程的生命周期和调度协程，犹豫协程切换简单，故切换的开销远远小于线程/进程。
 
-- next(): 返回对象中的下一个元素，如果没有，则抛出 StopIteration 异常（Python 3 为 \_\_next\_\_()）。
+为什么协程在近些年越来越火？随着互联网爆炸式增长，服务端对并发能力的需求越来越高。起初工程师采用多进程提供并发，每服务端当收到一个请求，就 fork 一个进程处理请求，apache 是最典型的例子。但是进程很重，占用了的大量 CPU 和内存资源，和进程相比，线程占用更少的资源，所以多线程的并发模型更受欢迎，每当服务端收到一个请求，就创建一个线程处理请求。每个线程维护私有的 stack，Linux 下 stack 的默认大小为 8MB，所以 8G 内存的 Linux 服务器最多能创建 1000 个线程；此外线程的调度由内核负责，调度和切换的开销也不容小觑，以上两个因素限制了多线程模型的并发能力。
 
-Java 还要求它提供 hasNext() 方法：
+为了提升服务端的并发能力，我们需要一种并发模型，这种模型具有以下特点：
 
-- hasNext()：判断对象是否有下一个元素，如果有，返回 True，否则返回 False。
+- 占用更少的资源，如内存和 CPU 周期
+- 避免内核调度带来的额外开销，协程仅在必要的时候才被调度切换，如 IO 操作。
 
-例如，采用 Count 构造的对象就是一个迭代器，它实现了 \_\_iter\_\_() 和 next() 这两个方法。
+而协程作为用户态线程，恰好满足上述要求，首先协程的 stack 比线程的 stack 更小，占用更少的内存空间(KB 级别)，无需通过系统调用来创建和销毁，故消耗更少的 CPU 周期；另外，协程的调度由应用程序负责，仅在必要的时候才切换，和线程相比，减少了切换的次数和每次切换的开销。
 
-~~~
-class Count(object):
+回顾 Yield，我们用它编写一个如下的 Generator。
 
-    def __init__(self):
-        self.count = 0
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        self.count = self.count + 1
-        return self.count
-~~~
-
-运行结果：
-
-~~~
->>> a = Count()
->>> dir(a)
-[..., '__init__', '__iter__', 'count', 'next']
->>> a.next()
-1
->>> a.next()
-2
->>> b = a.__iter__()
->>> b.next()
-3
-~~~
-
---------------
-
-# Generator
- 
- 在介绍 Generator(生成器) 前，首先需要明确一点：
- 
- - 所有的 Generator 都是 Iterator！
- 
- 所以 Generator 只是 Iterator 的一类子集，所以 Generator 也必须实现 \_\_iter\_\_() 和 next() 这两种方法，那么 Generator 到底是什么呢？Generator 就是函数的返回值，但是这个函数必须包含一个或者多个 Yield 关键字。例如：
- 
-~~~
-def count():
-    c = 0
+~~~ python
+def task1():
     while True:
-        c = c + 1
-        yield c
+        # Do something
+        yield "This is task1"
+~~~
+
+运行：
+
+~~~ bash
+>>> t1 = task1()              # Initiate a task
+>>> t1.next()                 # Run task
+>>> This is task1             # Task suspend when meeting next yield
+>>> t1.Send(None)             # Run task
+>>> This is task1             # Task suspend when meeting next yield
+>>> t1.close()                # Delete task
+~~~
+
+当我们调用一个包含 yield 的函数时，相当于初始化了一个 task(即协程)，我们可以调用 next() 或者 send() 让协程运行，每当 task 遇到 yield 则自动暂停，我们也可以调用 close() 结束一个协程。以下进程，线程和上例协程生命周期管理的部分函数。
+
+~~~
+Method          Process         Thread           Coroutine
+----------------------------------------------------------------------
+Create/Run      fork            pthread_create   task1()/next/send
+Delete          exit            pthread_exit     close
+~~~
+
+上例的协程具备基本的生命周期管理的方法，我们现在往其加入调度功能，调度算法为 FIFO。
+
+~~~ python
+class Scheduler(object):
+    def __init__(self):
+        self.queue = []
+        self.task_num = 0
+
+    def new(self, task):
+        self.queue.append(task)
+        self.task_num += 1
+
+    def loop(self):
+        while self.task_num:
+            task = self.queue.pop(0)
+            task.next()
+            self.queue.append(task)
+
+
+def task2():
+    while True:
+        # Do something
+        yield "This is task2"
 ~~~
 
 运行结果：
 
-~~~
->>> a = count()
->>> dir(a)
-[..., '__iter__', 'close', 'gi_code', 'gi_frame', 'gi_running', 'next', 'send', 'throw']
->>> a.next()
-1
->>> a.next()
-2
->>> b = a.__iter__()
->>> b.next()
-3
-~~~
-
-上例不难看出，Generator 还实现了 close(), send(), throw() 等方法。
-
-------------
-
-# Yield
-
-Yield 是 Python 的关键字之一，于 Python 2.5 版本引入。通过 yield 表达式，用户可以快速的实现一个迭代器，无需自己实现 \_\_iter\_\_() 和 next() 等方法。当一个函数包含一个或者多个 yield 时，如果调用该函数，则返回一个生成器对象。当该对象第一次调用 next 方法时，生成器才开始执行函数直到遇到 yield 暂停挂起并保留此时状态，并把 yield 后面的参数作(如果 yield 后面没有参数，返回值为 None)为返回值返回给调用者。之后每次调用 next() 方法，生成器从上次挂起出执行，直到遇上下一个 yield，然后挂起并返回 yield 后面的参数。当调用 next() 方法至函数结束也没有遇上 yield 时，此次调用跑出 StopIteration 异常。
-
-~~~
-def func():
-    yield 1
-    yield 2
-    yield 3
+~~~ bash
+>>> scheduler = Scheduler()
+>>> scheduler.new(task1())
+>>> scheduler.new(task2())
+>>> scheduler.loop()
+This is task1
+This is task2
+This is task1
+This is task2
+......
 ~~~
 
-运行结果：
+流程图如下，每当 Main Loop 调用 next()/send()，执行权交给相应协程，每当协程遇到 yield，则交出执行权给 Main Loop。该流程图和 Linux 的进程调度非常类似，如果把 Main Loop 比作内核，协程如同进程/线程，yield 如同系统调用、硬件中断等。
 
 ~~~
->>> a = func()
->>> a.next()
-1
->>> a.next()
-2
->>> a.next()
-3
->>> a.next()
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-StopIteration
+           Run       Run      Run      Run      Run
+Main Loop  --->      -->      -->      -->      --->
+               |    |   |    |   |    |   |    |
+               |Run |   |    |   |Run |   |    |     ......
+Task1           --->    |    |    --->    |    |
+                        |Run |            |Run |
+Task2                    --->              --->
 ~~~
 
-
-
+本文借用 yield 实现了一个非常简单的协程，调度功能非常简陋，无法处理复杂事务，另推荐 [A Curious Course on Coroutines and Concurrency](http://www.dabeaz.com/coroutines/) 和 Python 协程库 [eventlet](http://eventlet.net/)，[gevent](http://www.gevent.org/) 做进一步的学习。
