@@ -88,7 +88,7 @@ This is task2
 ......
 ~~~
 
-流程图如下，每当 Main Loop 调用 next()/send()，执行权交给相应协程，每当协程遇到 yield，则交出执行权给 Main Loop。该流程图和 Linux 的进程调度非常类似，如果把 Main Loop 比作内核，协程如同进程/线程，yield 如同系统调用、硬件中断等。
+流程图如下，每当 Main Loop 调用 next()/send()，执行权交给相应协程，每当协程遇到 yield，则交出执行权给 Main Loop。该流程图和 Linux 的进程调度非常类似，如果把 Main Loop 比作内核，协程如同进程/线程，yield 如同系统调用、硬件中断等。任何时刻，一个 Python 进程内只有一个协程在执行，即协程是伪并发的。
 
 ~~~
            Run       Run      Run      Run      Run
