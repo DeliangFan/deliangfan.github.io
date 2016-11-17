@@ -4,6 +4,12 @@ title:  "Yield 和 Coroutine"
 categories: Python 
 ---
 
+
+> This PEP proposes some enhancements to the API and syntax of generators, to make them usable as simple coroutines.
+>
+>  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ——— Pep342
+
+
 博文 [Iterator, Generator 与 Yield](http://wsfdl.com/python/2016/10/18/python_yield.html) 介绍了 iterator，generator 和 yield，并阐述三者之间的关系。本文将进一步介绍 yield 和 coroutine，并阐述如何通过 yield 实现一个简单的 coroutine。
 
 [Coroutine(协程)](https://en.wikipedia.org/wiki/Coroutine) 最早于 1963 年提出，在之后的三四十年里并没有受到广泛关注，但在近些年受到热捧。通俗而言：协程相当于用户态线程。这句话包含了两层意思：
@@ -11,7 +17,7 @@ categories: Python
 - 协程具有类似线程的功能，它能提供并发。
 - 协程是用户态的，即操作系统对协程不感知，也不负责调度；应用程序负责管理协程的生命周期和调度协程，由于协程的切换是函数级别的切换，故切换的开销远远小于线程/进程。
 
-为什么协程在近些年越来越火？原因得从并发谈起，随着互联网爆炸式增长，服务端对并发能力的需求越来越大。最初工程师采用多进程提供并发，每服务端当收到一个请求，就 fork 一个进程处理请求，Apache 是最典型的例子。但是进程很重，占用了的大量 CPU 和内存资源，和进程相比，线程占用更少的资源，所以多线程的并发模型更受欢迎，每当服务端收到一个请求，就创建一个线程处理请求，如 Nginx。每个线程维护私有的 stack，Linux 下 stack 的默认大小为 8MB，所以 8G 内存的 Linux 服务器最多能创建 1000 个线程；此外线程的调度由内核负责，调度和切换的开销也不容小觑，以上两个因素限制了多线程模型的并发能力。
+为什么协程在近些年越来越火？原因得从并发谈起，随着互联网爆炸式增长，服务端对并发能力的需求越来越大。最初工程师采用多进程提供并发，每当服务端收到一个请求，就 fork 一个进程处理请求，Apache 是最典型的例子。但是进程很重，占用了的大量 CPU 和内存资源，和进程相比，线程占用更少的资源，所以多线程的并发模型更受欢迎，每当服务端收到一个请求，就创建一个线程处理请求，如 Nginx。每个线程维护私有的 stack，Linux 下 stack 的默认大小为 8MB，所以 8G 内存的 Linux 服务器最多能创建 1000 个线程；此外线程的调度由内核负责，调度和切换的开销也不容小觑，以上两个因素限制了多线程模型的并发能力。
 
 为了提升服务端的并发能力，我们需要一种并发模型，这种模型具有以下特点：
 
@@ -49,7 +55,7 @@ Create/Run      fork            pthread_create   task1()/next/send
 Delete          exit            pthread_exit     close
 ~~~
 
-上例的协程具备基本的生命周期管理的方法，我们现在往其加入调度功能，调度算法为 FIFO。
+上例协程具备基本的生命周期管理的方法，我们现在往其加入调度功能，调度算法为 FIFO。
 
 ~~~ python
 class Scheduler(object):
