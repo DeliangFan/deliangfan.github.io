@@ -58,7 +58,7 @@ print query.count()
 2
 ~~~
 
-之所以出现以上情况，是因为 ORM 会把查询的结果转换为 object，并且 SQLAlchemry 的 Identity Map 记录映射关系，映射依赖 ORM unique primary key。当执行 query.all() 时，第一个数据(id1=1, id2=1) 被转换为对象，并被 Identity Map 所记录，第二个 (id1=1, id2=2)) 被转换为对象时，ORM 发现 unique primary key 为 Sam 的对象已经存在，第二个 Sam 被认为和第一个 Sam 是相同的，所以 query.all() 只返回一个对象。
+之所以出现以上情况，是因为 ORM 会把查询的结果转换为 object，并且 SQLAlchemry 的 Identity Map 记录映射关系，映射依赖 ORM unique primary key(id1)。当执行 query.all() 时，第一个数据(id1=1, id2=1) 被转换为对象，并被 Identity Map 所记录，第二个 (id1=1, id2=2)) 被转换为对象时，ORM 发现该 key 已经存在，所以 query.all() 只返回一个对象。
 
 Stackoverflow 中 [Querying for all results in SQLAlchemy 0.7.10](http://stackoverflow.com/questions/19409278/querying-for-all-results-in-sqlalchemy-0-7-10) 也阐述了类似的问题。[SQLalchemy 的解释](http://docs.sqlalchemy.org/en/rel_0_8/orm/session.html#what-does-the-session-do)如下：
 
