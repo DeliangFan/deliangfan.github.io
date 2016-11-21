@@ -1,0 +1,70 @@
+---
+layout: post
+title:  "大话编程中的 time"
+categories: Algorithm
+---
+
+最近在 time 方面踩坑数个，加上对各类时间名词的含义含糊不清，遂在本文整理时间相关的名称。
+
+# 格林威治天文台与格林威治时间（GMT）
+
+![Royal_Observatory_Greenwich_London.jpg](http://7xp2eu.com1.z0.glb.clouddn.com/Royal_Observatory_Greenwich_London.jpg)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[原图出处](https://commons.wikimedia.org/wiki/File:Royal_Observatory_Greenwich_London.jpg)
+
+[格林威治皇家天文台(Royal Observatory, Greenwich)](https://zh.wikipedia.org/wiki/%E6%A0%BC%E6%9E%97%E5%B0%BC%E6%B2%BB%E7%9A%87%E5%AE%B6%E5%A4%A9%E6%96%87%E5%8F%B0) 是英国国王查理二世于 1675 年在伦敦格林威治建造的一个综合性天文台，那时处于[大航海时代]([大航海时代](https://zh.wikipedia.org/wiki/%E5%9C%B0%E7%90%86%E5%A4%A7%E5%8F%91%E7%8E%B0))，在当时远洋航行意味着冒险：茫茫大洋上无法准确测量船只所在的经度。所以国王建造天文台并设立皇家天文学家的职位：“致力于以最忱治的关心和努力校正天体运动的星表，和恒星的位置，以便能正确的定出经度，使导航成为完美的艺术”。虽然格林威治天文台并没有解决航海经度的测量问题，但其名气之大，一度成为最活跃的天文台，如本初子午线就是就是经过该天文台的 0 度经线。
+
+顾名思义，[格林威治标准时间(Greenwich Mean Time，GMT)](https://zh.wikipedia.org/wiki/%E6%A0%BC%E6%9E%97%E5%B0%BC%E6%B2%BB%E5%B9%B3%E6%97%B6) 即指皇家格林威治天文台的标准时间，自 1924 年 2 月 5 日开始，格林威治天文台每隔一小时会向全世界发放调时信息。理论上来说，格林威治标准时间的正午是指当太阳横穿格林威治子午线的时间。但是地球在它的椭圆轨道里的运动速度不均匀，这个时刻可能与[平太阳时](https://zh.wikipedia.org/wiki/%E5%A4%AA%E9%98%B3%E6%97%A5)有误差，最大误差达16分钟。[所以格林威治天文台连续观测 365 个长短不一的天](http://ajucs.com/2016/06/24/talk-about-time-and-timer.html)，然后求平均值得到一天的长度，称为平太阳日，每一天以格林威治子夜算起，即格林威治采用的是平太阳时间。
+
+由于地球每天的自转是不规则的，而且正在缓慢减速，因此格林威治时间已经不再被作为标准时间使用。现在的标准时间，是由原子钟报时的协调世界时（UTC）。
+
+# 原子时与协调世界时（UTC）
+
+[原子时](https://zh.wikipedia.org/wiki/%E5%8E%9F%E5%AD%90%E9%90%98)是一种基于原子的时间，它以原子共振频率标准来计算和保证时间的准确。原子时是世界上已知最准确的时间测量和频率标准，也是国际时间和频率转换的基准。[1967 年第 13 届国际计量大会上通过一项决议](https://zh.wikipedia.org/wiki/%E5%8E%9F%E5%AD%90%E6%97%B6)，定义一秒(原子时秒)为铯-133 原子基态两个超精细能级间跃迁辐射 9192631770 周所持续的时间。
+
+[协调世界时(Coordinated Universal Time, UTC)](https://en.wikipedia.org/wiki/Coordinated_Universal_Time) 又称世界标准时间或世界协调时间，目前是最主要的世界时间标准。它以原子时的秒为基础，和平太阳时相差不超过 1 秒，在时刻上尽量接近于格林威治标准时间。对于大多数用途来说，UTC时间被认为能与GMT时间互换，但GMT时间已不再被科学界所确定。
+
+协调世界时把时间分为天、小时、分钟和秒，每天包含 24 小时，每小时包含 60 分钟，一分钟通常有 60 秒，但加入了随机的闰秒后，一分钟可能是 61 秒或 59 秒。因此，在 UTC 系统的时间尺度中，秒和比秒小的单位（毫秒、微秒等）其长度是固定的，但是对于分钟和比分还大的单位（小时、天、周等），其长度是可变的。可采用 date -u 获取 UTC 时间。
+
+~~~
+$ date -u
+Mon Nov 20 09:15:20 UTC 2016
+~~~
+
+# Localtime 与夏令时
+
+![Time Zones](http://7xp2eu.com1.z0.glb.clouddn.com/Standard_World_Time_Zones.png)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[原图](https://zh.wikipedia.org/wiki/%E6%97%B6%E5%8C%BA#/media/File:Standard_World_Time_Zones.png)
+
+各个国家分布在地球的不同位置上，因此不同国家的日出、正午、日落时间可能有所偏差，在现实生活中，人们更关注本地时间，因为和 UTC 相比，本地时间更适合用于当地的生产和生活。1863 年，[时区](https://zh.wikipedia.org/wiki/%E6%97%B6%E5%8C%BA)的概念被首次提出，它以区域为范围设定标准时间，某地的本地时间通常指该地所在时区的标准时间。理论时区以被 15 整除的子午线为中心，向东西两侧延伸 7.5 度，即每 15 度划分一个时区，这是理论时区。但是，为了避开国界线，有的时区的形状并不规则，而且比较大的国家以国家内部行政分界线为时区界线，这是实际时区，即法定时区。
+
+北京位于东八区，故其时区为 UTC+8，北京时间比格林威治时间早 8 小时，在不考虑夏令时的情况下，可用以下公式完成本地时间和 UTC 时间之间的转换。
+
+~~~
+UTC + 时区差 = 本地时间
+其中东半球时区威差为正，西半球时区差负。 
+~~~
+
+[夏令时(Summer Time)](https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6) 又称日光节约时制或日光节约时间，是一种为节约能源而人为规定地方时间的制度。一般在天亮较早的夏季人为将时间调快一小时，可以使人早起早睡，减少照明量，以充分利用光照资源，从而节约照明用电。各个采纳夏时制的国家具体规定不同，目前全世界有近 110 个国家每年要实行夏令时，如美国、欧盟等；中国、日本等国家曾经实行过夏令时，但是目前不予实行。
+
+
+# Unix 时间
+
+[Unix 时间](https://zh.wikipedia.org/wiki/UNIX%E6%97%B6%E9%97%B4)又称 Posix 时间，它是 Unix 和 类 Unix 系统使用的表达方式，它指自 UTC 时间 1970 年 1 月 1 日 0 时 0 分 0 秒起值现在的总秒数，可用 date +%s 查看 Unix 时间：
+
+~~~
+$ date +%s
+1479655113
+$
+$ date -r 1479655113
+Sun Nov 20 15:18:33 UTC 2016
+~~~
+
+由上可知，Unix 时间 1479655113 表示的日期为 Sun Nov 20 15:18:33 UTC 2016。
+
+现在有些系统采用 32 位有符号整数保持 Unix 时间，所以它可以表示最大 136 年，即：1901 年12 月 13 星期五 20 时 45 分 52 秒至 2038 年 1 月 19 日 3 时 14 分 07 秒。和 [千年虫问题](https://zh.wikipedia.org/wiki/2000%E5%B9%B4%E9%97%AE%E9%A2%98) 类似，32 位 Unix/Linux 的系统在 2038 年可能会发生故障。
+
+我们常用 [NTP 协议](https://en.wikipedia.org/wiki/Network_Time_Protocol)校准计算机时间。
+
+一点感想：软件开发中，最好采用 UTC，分布式跨时区系统一定请用 UTC！
