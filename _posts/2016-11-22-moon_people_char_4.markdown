@@ -8,9 +8,17 @@ categories: 编程随想
 >&nbsp;&nbsp;&nbsp;    
 >  
 >It was Jean d'Orbais who undoubtedly conceived the general plan of the building, a plan which was respected, at least in its essential elements, by his successors. This is one of the reasons for the extreme coherence and unity of the edifice.
+>&nbsp;&nbsp;&nbsp;
 >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ———《人月神话》贵族专制和民主政治章节序
 
-大型的软件往往非常复杂，概念之多，功能之多，模块之多，代码之多。如果把大型软件比作成为一座城市，这座城市应该是大而有序，繁而不乱，美观和谐，而不是城中有村，村中有城，建筑风格，囊括中外，道路交通，曲值相交！和构建一个美观有序的大城市一样，软件开发也应当适当的追求一致性，化繁为简，整理归纳，概念应当通俗易懂，功能应当简洁易用，整体布局得当，模块之间和谐共生，研发遵守一定的规则和工具。适当的最求一致性具有多种优点：
+大型的软件往往非常复杂，概念之多，功能之多，模块之多，代码之多。如果把大型软件比作成为一座城市，这座城市应该是大而有序，繁而不乱，美观和谐，而不是城中有村，村中有城，建筑风格，囊括中外，道路交通，曲值相交！和构建一个美观有序的大城市一样，软件开发也应当适当的追求完整性和一致性，化繁为简，整理归纳，追求易用性：
+
+> 功能与概念的复杂度的比值才是系统设计的最终测试标准。
+> &nbsp;&nbsp;&nbsp; 
+> 
+> 每个部分必须反应相同的原理需求的一致平衡。在语法上，每个部分应使用相同的技巧；在语义上，应具有同样的相似性。
+
+具体来说，本人的理解是概念应当通俗易懂，功能应当易用，多而不乱。整体布局得当，模块之间和谐共生，研发遵守一定的规则和工具。适当的最求完整性具有多种优点：
 
 - 产品易懂
 - 功能易用
@@ -18,15 +26,13 @@ categories: 编程随想
 - 提升研发效率
 - 降低维护成本，减少不可预知的问题
 
-在追求一致性和产品规模之间应当有所取舍，规模越小，一致性要求降低；规模越大，一致性的要求越高。
+至于如何获取概念的完整性，作者只是给了一个非常 high-level 的答案：“概念的完整性要求设计必须由一个人，或者非常少数互有默契的人员来实现。”至于更详细的操作，本人认为可以从产品和研发两个角度出发分析，当然，在追求一致性和产品规模之间应当有所取舍，规模越小，一致性要求降低；规模越大，一致性的要求越高。
 
 从产品的角度降低复杂度
 
-- 类比，贴近生活
-- 规律，纲举目张
-- 高度抽象的概念
-- 功能划分
-
+- 提高产品概念的易懂性，一个产品的概念应该是易于理解的，最好能类比到生活中，盲目的创造各种新词可能并非一个好的选择。
+- 提高产品功能的易用性，功能之间应当具有操作的相似性。
+- 提高产品的美感性，好的设计是美感大方的，布局、色彩、字体之间应当相衬相托。
 
 从研发的角度降低复杂度
 
