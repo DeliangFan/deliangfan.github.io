@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>大话编程中的 time</title>
+  <meta name="description" content="最近在 time 方面踩坑数个，加上对各类时间名词的含义含糊不清，遂在本文整理时间相关的名词。">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/algorithm/2016/11/18/%E7%90%86%E8%A7%A3time.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">大话编程中的 time</h1>
+    <p class="post-meta"><time datetime="2016-11-18T00:00:00+08:00" itemprop="datePublished">Nov 18, 2016</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>最近在 time 方面踩坑数个，加上对各类时间名词的含义含糊不清，遂在本文整理时间相关的名词。</p>
+
+<h1 id="id-gmt">格林威治天文台与格林威治时间（GMT）</h1>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/Royal_Observatory_Greenwich_London.jpg" alt="Royal_Observatory_Greenwich_London.jpg" /></p>
+
+<p>                                                                           <a href="https://commons.wikimedia.org/wiki/File:Royal_Observatory_Greenwich_London.jpg">原图出处</a></p>
+
+<p><a href="https://zh.wikipedia.org/wiki/%E6%A0%BC%E6%9E%97%E5%B0%BC%E6%B2%BB%E7%9A%87%E5%AE%B6%E5%A4%A9%E6%96%87%E5%8F%B0">格林威治皇家天文台(Royal Observatory, Greenwich)</a> 是英国国王查理二世于 1675 年在伦敦格林威治建造的一个综合性天文台，那时处于<a href="[大航海时代](https://zh.wikipedia.org/wiki/%E5%9C%B0%E7%90%86%E5%A4%A7%E5%8F%91%E7%8E%B0)">大航海时代</a>，在当时远洋航行意味着冒险：茫茫大洋上无法准确测量船只所在的经度。所以国王建造天文台并设立皇家天文学家的职位：“致力于以最忱治的关心和努力校正天体运动的星表，和恒星的位置，以便能正确的定出经度，使导航成为完美的艺术”。虽然格林威治天文台并没有解决航海经度的测量问题，但其名气之大，一度成为最活跃的天文台，如<a href="https://zh.wikipedia.org/wiki/%E6%9C%AC%E5%88%9D%E5%AD%90%E5%8D%88%E7%B7%9A">本初子午线</a>就是经过该天文台的 0 度经线。</p>
+
+<p>顾名思义，<a href="https://zh.wikipedia.org/wiki/%E6%A0%BC%E6%9E%97%E5%B0%BC%E6%B2%BB%E5%B9%B3%E6%97%B6">格林威治标准时间(Greenwich Mean Time，GMT)</a> 即指皇家格林威治天文台的标准时间，自 1924 年 2 月 5 日开始，格林威治天文台每隔一小时会向全世界发放调时信息。理论上说，格林威治标准时间的正午是指当太阳横穿格林威治子午线的时间，但是地球在椭圆轨道里运动速度不均匀，这个时刻可能与<a href="https://zh.wikipedia.org/wiki/%E5%A4%AA%E9%98%B3%E6%97%A5">平太阳时</a>有误差，最大误差达16分钟。<a href="http://ajucs.com/2016/06/24/talk-about-time-and-timer.html">所以格林威治天文台连续观测 365 个长短不一的天</a>，然后求平均值得到一天的长度，称为平太阳日，即格林威治标准时间采用的是平太阳时间。</p>
+
+<p>由于地球每天的自转是不规则的，而且正在缓慢减速，因此格林威治时间已经不再被作为标准时间使用。现在的标准时间，是由原子钟报时的协调世界时（UTC）。</p>
+
+<h1 id="id-utc">原子时与协调世界时（UTC）</h1>
+
+<p><a href="https://zh.wikipedia.org/wiki/%E5%8E%9F%E5%AD%90%E9%90%98">原子时</a>是一种基于原子的时间，它以原子共振频率标准来计算和保证时间的准确。原子时是世界上已知最准确的时间测量和频率标准，也是国际时间和频率转换的基准。<a href="https://zh.wikipedia.org/wiki/%E5%8E%9F%E5%AD%90%E6%97%B6">1967 年第 13 届国际计量大会上通过一项决议</a>，定义一秒(原子时秒)为铯-133 原子基态两个超精细能级间跃迁辐射 9192631770 周所持续的时间。</p>
+
+<p><a href="https://en.wikipedia.org/wiki/Coordinated_Universal_Time">协调世界时(Coordinated Universal Time, UTC)</a> 又称世界标准时间或世界协调时间，是目前最主要的世界时间标准。它以原子时的秒为基础，和平太阳时相差不超过 1 秒，在时刻上尽量接近于格林威治标准时间。对于大多数用途来说，UTC 时间被认为能与 GMT 时间互换，但 GMT 时间已不再被科学界所确定。</p>
+
+<p>协调世界时把时间分为天、小时、分钟和秒，每天包含 24 小时，每小时包含 60 分钟，一分钟通常有 60 秒，但是分钟加入了闰秒，所以一分钟也可能是 61 秒或 59 秒。在 UTC 系统的时间尺度中，秒和比秒小的单位（毫秒、微秒等）其长度是固定的，但是对于分钟和比分还大的单位（小时、天、周等），其长度是可变的。可采用 date -u 获取 UTC 时间。</p>
+
+<pre><code>$ date -u
+Mon Nov 20 09:15:20 UTC 2016
+</code></pre>
+
+<h1 id="id-localtime-">Localtime 与夏令时</h1>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/Standard_World_Time_Zones.png" alt="Time Zones" /></p>
+
+<p>                                                                           <a href="https://zh.wikipedia.org/wiki/%E6%97%B6%E5%8C%BA#/media/File:Standard_World_Time_Zones.png">原图</a></p>
+
+<p>各个国家分布在地球的不同位置上，因此不同国家的日出、正午、日落时间可能有所偏差，在现实生活中，人们更关注本地时间，因为和 UTC 相比，本地时间更适合用于当地的生产和生活。1863 年，<a href="https://zh.wikipedia.org/wiki/%E6%97%B6%E5%8C%BA">时区</a>的概念被首次提出，它以区域为范围设定标准时间，某地的本地时间通常指该地所在时区的标准时间。理论时区以被 15 整除的子午线为中心，向东西两侧延伸 7.5 度，即每 15 度划分一个时区，这是理论时区。但是，为了避开国界线，有的时区的形状并不规则，而且比较大的国家以国家内部行政分界线为时区界线，这是实际时区，即法定时区。</p>
+
+<p>北京位于东八区，故其时区为 UTC+8，北京时间比格林威治标准时间早 8 小时，在不考虑夏令时的情况下，可用以下公式完成本地时间和 UTC 时间之间的转换。</p>
+
+<pre><code>UTC + 时区差 = 本地时间
+其中东半球时区威差为正，西半球时区差负。 
+</code></pre>
+
+<p><a href="https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6">夏令时(Summer Time)</a> 又称日光节约时制或日光节约时间，是一种为节约能源而人为规定地方时间的制度。一般在天亮较早的夏季人为将时间调快一小时，可以使人早起早睡，减少照明量，以充分利用光照资源，从而节约照明用电。各个采纳夏时制的国家具体规定不同，目前全世界有近 110 个国家每年要实行夏令时，如美国、欧盟等；中国、日本等国家曾经实行过夏令时，但是目前不予实行。</p>
+
+<h1 id="id-unix-">Unix 时间</h1>
+
+<p><a href="https://zh.wikipedia.org/wiki/UNIX%E6%97%B6%E9%97%B4">Unix 时间</a>又称 Posix 时间，它是 Unix 和 类 Unix 系统使用的表达方式，它指自 UTC 时间 1970 年 1 月 1 日 0 时 0 分 0 秒起值现在的总秒数，可用 date +%s 查看 Unix 时间：</p>
+
+<pre><code>$ date +%s
+1479655113
+$
+$ date -r 1479655113
+Sun Nov 20 15:18:33 UTC 2016
+</code></pre>
+
+<p>由上可知，Unix 时间 1479655113 表示的日期为 Sun Nov 20 15:18:33 UTC 2016。</p>
+
+<p>现在有些系统采用 32 位有符号整数保存 Unix 时间，所以它最多只能表示 136 年，即：1901-12-13 20:45:52 至 2038-1-19 3:14:07。和 <a href="https://zh.wikipedia.org/wiki/2000%E5%B9%B4%E9%97%AE%E9%A2%98">千年虫问题</a> 类似，32 位 Unix/Linux 的系统在 2038 年可能会发生故障。</p>
+
+<p>我们常用 <a href="https://en.wikipedia.org/wiki/Network_Time_Protocol">NTP 协议</a>校准计算机时间。</p>
+
+<p>一点感想：软件开发中，最好采用 UTC，分布式跨时区系统一定请用 UTC！</p>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

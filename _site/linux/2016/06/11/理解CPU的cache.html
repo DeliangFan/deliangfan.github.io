@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解 CPU Cache</title>
+  <meta name="description" content="下列两个循环哪个快？">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/linux/2016/06/11/%E7%90%86%E8%A7%A3CPU%E7%9A%84cache.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解 CPU Cache</h1>
+    <p class="post-meta"><time datetime="2016-06-11T00:00:00+08:00" itemprop="datePublished">Jun 11, 2016</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>下列两个循环哪个快？</p>
+
+<pre><code class="language-c">int array[1024][1024]
+
+// Loop 1
+for(int i = 0; i &lt; 1024; i ++)
+    for(int j = 0; j &lt; 1024; j ++)
+        array[i][j] ++;
+
+// Loop 2
+for(int i = 0; i &lt; 1024; i ++)
+    for(int j = 0; j &lt; 1024; j ++)
+        array[j][i] ++;
+</code></pre>
+
+<p>Loop 1 的 CPU cache 命中率高，所以它比 Loop 2 约快八倍！</p>
+
+<p><a href="http://igoro.com/archive/gallery-of-processor-cache-effects/">Gallery of Processor Cache Effects</a> 用 7 个源码示例生动的介绍 cache 原理，深入浅出！但是可能因操作系统的差异、编译器是否优化，以及近些年 cache 性能的提升，第 3 个样例在 Mac 的效果与原文相差较大。另外 Berkeley 公开课 <a href="cs162.eecs.berkeley.edu">CS162</a> 图文并茂，非常推荐。本文充当搬运工的角色，集二者之精华科普 CPU cache 知识。</p>
+
+<hr />
+
+<h1 id="id-what-is-cache">What is Cache</h1>
+
+<p>维基百科定义为：在计算机系统中，<a href="https://zh.wikipedia.org/wiki/CPU%E7%BC%93%E5%AD%98">CPU cache（中文简称缓存）</a>是用于减少处理器访问内存所需平均时间的部件。在金字塔式存储体系中它位于自顶向下的第二层，仅次于 CPU 寄存器。其容量远小于内存，但速度却可以接近处理器的频率。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/hierarchy%20cache.png" alt="hierarchy" /></p>
+
+<p><em>原图出处(<a href="cs162.eecs.berkeley.edu">CS162</a>)。 Note: 早期的 L2 cache 位于主板，现在 L2 和 L3 cache 均封装于 CPU 芯片。</em></p>
+
+<p>CPU 访问内存时，首先查询 cache 是否已缓存该数据。如果有，则返回数据，无需访问内存；如果不存在，则需把数据从内存中载入 cache，最后返回给理器。在处理器看来，缓存是一个透明部件，旨在提高处理器访问内存的速率，所以从逻辑的角度而言，编程时无需关注它，但是从性能的角度而言，理解其原理和机制有助于写出性能更好的程序。Cache 之所以有效，是因为程序对内存的访问存在一种概率上的局部特征：</p>
+
+<ul>
+  <li>Spatial Locality：对于刚被访问的数据，其相邻的数据在将来被访问的概率高。</li>
+  <li>Temporal Locality：对于刚被访问的数据，其本身在将来被访问的概率高。</li>
+</ul>
+
+<p>从广义的角度而言，cache 可以分为两类：</p>
+
+<ul>
+  <li>数据(指令) cache: 缓存内存数据，根据层级又可分为 L1、L2 和 L3，如果 miss，CPU 需访内存获取数据(指令)。</li>
+  <li><a href="https://en.wikipedia.org/wiki/Translation_lookaside_buffer">TLB(Translation lookaside buffer)</a>: 寻址 cache，缓存进程的虚拟机地址和物理地址之间的映射关系，如果 miss，MMU 需多次访问内存获取多级 page table 才能计算出物理地址。</li>
+</ul>
+
+<p>比 mac OS 为例，可用 sysctl 查询 cache 信息。</p>
+
+<pre><code class="language-bash">$ sysctl -a
+
+hw.cachelinesize: 64
+hw.l1icachesize: 32768
+hw.l1dcachesize: 32768
+hw.l2cachesize: 262144
+hw.l3cachesize: 3145728
+machdep.cpu.cache.L2_associativity: 8
+machdep.cpu.core_count: 2
+machdep.cpu.thread_count: 4
+machdep.cpu.tlb.inst.large: 8
+machdep.cpu.tlb.data.small: 64
+machdep.cpu.tlb.data.small_level1: 64
+machdep.cpu.tlb.shared: 1024
+</code></pre>
+
+<p>如下图：</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/mac_cpu_cache_info.png" alt="cpu cache" /></p>
+
+<hr />
+
+<h1 id="id-why-cache">Why Cache</h1>
+
+<p>早期的 CPU 并没有 cache，以起于 1978 年的 <a href="https://en.wikipedia.org/wiki/X86">intel x86</a> 芯片为例，它从 1992 年开始才开始引入 cache：</p>
+
+<ul>
+  <li>1992: 386 platform 引入 L1 cache</li>
+  <li>1995: Pentium Pro 引入 L2 cache</li>
+  <li>2008: Core i3 引入 L3 cache</li>
+</ul>
+
+<p>CPU 和 RAM 主频的增长速率的巨大差距是 cache 引入的直接原因，下图展示了从 1980 年到 2010 年二者的发展状况，CPU 性能的年增长速度约为 60%，而 RAM 仅有约 9%，巨大的差异导致数十年后，CPU 的速度约比 RAM 快数百倍。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/Part6-CPU-and-RAM-speeds.jpg" alt="history" /></p>
+
+<p><em>原图出处: Computer Architecture, A quantitative Approach by Hennessy and Patterson</em></p>
+
+<p>有人问，为什么不提高 RAM 的速度，因为成本太高！成本因素也是 cache 分为多级的原因。越快的越贵，所以容量小；越慢越廉，容量可很大，它是成本和性能之间的折中方案。CS162 如下两句原话很好的概括了 cache 的作用。</p>
+
+<ul>
+  <li>Present as much memory as in the cheapest technology</li>
+  <li>Provide access at speed offered by the fastest technology</li>
+</ul>
+
+<hr />
+
+<h1 id="id-understand-cache-with-some-cases">Understand Cache With Some Cases</h1>
+
+<p>本节采用 <a href="http://igoro.com/archive/gallery-of-processor-cache-effects/">Gallery of Processor Cache Effects</a> 的例子，加以图文，介绍 cache 的机制，其中除了 L1, L2 and L3 cache size 小节的样例外，其它样例在本人的 mac 中均得到很好的复现。</p>
+
+<h2 id="id-cache-line-size">Cache line size</h2>
+
+<p>Cache line 是 cache 和 RAM 交换数据的最小单位，通常为 64 Byte。当 CPU 把内存的数据载入 cache 时，会把临近的共 64 Byte 的数据也一同载入，因为临近的数据在将来被访问的可能性大，这为 spatial locality 奠定了基础。本文开头的例子中，因为 loop 1 依次访问的数据在地址空间上是相邻的，故 cache 命中率高，耗时少。下列展示了如何测试 cache line 的 size:</p>
+
+<pre><code class="language-c">double diff, total_time = 0;
+struct timeval t1, t2;
+char *array, *clear_array;
+
+array = malloc(ARRAY_SIZE * sizeof(char));
+clear_array = malloc(L3_SIZE * sizeof(char));
+
+for(int t = 0; t &lt; TIMES; t++)   //loop for many times
+{
+    gettimeofday(&amp;t1, NULL);
+    for(int i = 0; i &lt; ARRAY_SIZE; i += stride){
+        array[i]++;
+    }
+    gettimeofday(&amp;t2, NULL);
+    diff = time_diff(t1, t2);
+    total_time += diff;
+
+    //clear array data in L1,L2,L3 cache
+    for(int i = 0; i &lt; L3_SIZE; i ++){
+        clear_array[i] ++;
+    }
+}
+</code></pre>
+
+<p>经归一化处理后，本人所测 array[i] ++ 的平均时间与 stride 的关系如下(如果关闭 hardware prefetch，效果可能会更好)：</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/cache_line_size.png" alt="cpu cache line size" /></p>
+
+<h2 id="id-l1l2-and-l3-cache-size">L1、L2 and L3 cache size</h2>
+
+<p>L1, L2 和 L3 cache size 的测试方法如下，在循环内每隔 64 Byte(cache line) 访问 array 一次：</p>
+
+<pre><code>int steps = 64 * 1024 * 1024; // Arbitrary number of steps
+int length_mod = ARRAY_SIZE - 1;
+
+for (int i = 0; i &lt; steps; i += 64)
+{
+    array[i &amp; length_mod]++; // (x &amp; length_mod) is equal to (i % length)
+}
+</code></pre>
+
+<p>所得结果为：</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_l_size.png" alt="cpu l cache" /></p>
+
+<p>原图出处 <a href="http://igoro.com/archive/gallery-of-processor-cache-effects/">Gallery of Processor Cache Effects</a> 注：本例在本人 Mac 的效果远远差于原著的效果，故采用原图。</p>
+
+<p>对于当前个人计算机的 CPU，L1 cache 通常为数十 KB，L2 cache 为数百 KB，L3 cache 可达数 MB，但是 TLB 相对较小，一般只有几百个 entry。</p>
+
+<h2 id="id-instruction-level-parallelism">Instruction-level parallelism</h2>
+
+<p>下列循环哪个快？</p>
+
+<pre><code class="language-c"># Loop 1
+gettimeofday(&amp;t1, NULL);
+for(int i = 0; i &lt; ARRAY_SIZE - 1; i++){
+    array[0] ++;
+    array[0] ++;
+}
+
+# Loop 2
+gettimeofday(&amp;t2, NULL);
+for(int i = 0; i &lt; ARRAY_SIZE - 1; i++){
+    array[0] ++;
+    array[1] ++;
+}
+
+gettimeofday(&amp;t3, NULL);
+
+loop1_time = time_diff(t1, t2);
+loop2_time = time_diff(t2, t3);
+</code></pre>
+
+<p>Loop 2 的速度比 Loop 1 接近快一倍。</p>
+
+<p>目前 CPU 可以实现一定程度上的并行，比如在同一个时间点访问 L1 Cache 上的两处数据，也可以在同一个时间点执行两条算术运算指令。对于 Loop 2，它并行的运行 array[0] ++ 和 array[1] ++。</p>
+
+<p>Loop 1</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_para_1.png" alt="cpu cache loop1" /></p>
+
+<p>原图出处 <a href="http://igoro.com/archive/gallery-of-processor-cache-effects/">Gallery of Processor Cache Effects</a></p>
+
+<p>Loop 2</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_para_2.png" alt="cpu cache loop1" /></p>
+
+<p>原图出处 <a href="http://igoro.com/archive/gallery-of-processor-cache-effects/">Gallery of Processor Cache Effects</a></p>
+
+<h2 id="id-cache-associativity">Cache associativity</h2>
+
+<p>本节主要介绍内存中的数据在 cache 的存放规则，即对于给定地址的数据 A，它该存放在 cache 的何处？要回答此问题，首先需介绍三种不同的存放规则：</p>
+
+<ul>
+  <li>Direct mapped cache: 数据 A 在 cache 的存放位置只有固定一处。</li>
+  <li>N-way set associative cache: 数据 A 在 cache 的存放位置可以有 N 处。</li>
+  <li>Full associative cache: 数据 A 可存放在 cache 的任意位置。</li>
+</ul>
+
+<p>从硬件的角度出发，direct mapped cache 设计简单，full associative cache 设计复杂，特别当 cache size 很大时，硬件成本非常之高。但是在 direct mapped cache 下数据的存放地址是固定唯一的，所以容易产生碰撞，最终降低 cache 的命中率，影响性能。在成本和性能的权衡下，当前的 CPU 都是 N-way set associative cache，N 通常为 4，8 或 16。</p>
+
+<p>以大小为 32 KB，cache line 的大小为 64 Byte 的某 cache 为例，对于不同存放规则，其硬件设计也不同，下列图片依次展示其原理。</p>
+
+<p>Direct mapped cache</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_direct_mapping.png" alt="direct mapping" /></p>
+
+<p>2-way set associative</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_2_way_mapping.png" alt="two way associative" /></p>
+
+<p>Full associative cache</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_full_associative.png" alt="full associative" /></p>
+
+<p>本人的 L2 cache 大小为 256 KB，8-way set associative，cache line 为 64 Byte，所以共有 512 个 set (256 K / 64 / 8)，所以地址间隔 32768  (512 * 64) 个 Byte 的数据都会落在 cache 的同一个 set 中。</p>
+
+<pre><code class="language-c">#define ARRAY_SIZE  64 * 1024 * 1024
+#define STEPS       1024 * 1024 * 1024
+
+for(int i = 0; i &lt; STEPS; i++){
+    array[p] ++;
+    p += STRIDE;
+    if(p &gt;= ARRAY_SIZE)
+        p = 0;
+}
+</code></pre>
+
+<p>当 STRIDE 为 32768 时，array[p] 总是访问相同 cache set，造成大量的冲突和置换，所用时间为 18 s，当 STRIDE 为 1 时，所用时间为 3.5 s。</p>
+
+<h2 id="id-false-cache-line-sharing">False cache line sharing</h2>
+
+<p>以本计算机的 CPU(Intel(R) Core(TM) i5-4258U CPU @ 2.40GHz) 为例，同一个 core 里的两个 cpu thread 共享 L1 和 L2 cache，L3 cache 则是由 2 个 core 共享。但一个 cpu thread 修改 cache 的某处时，该处所在的整个 cache line 都会被置为 invalid，其它的 cpu thread 不能使用该 cache line，直到数据被同步到 RAM 中。</p>
+
+<pre><code class="language-c">int counter[1024]; // global variable
+
+void *update_counter(int position)
+{
+    for(int i = 0; i &lt; 1000000000; i ++ ){
+        counter[position] ++;
+    }
+}
+
+int main()
+{
+    double diff;
+    struct timeval t1, t2;
+    pthread_t tid1, tid2, tid3, tid4;
+
+    // Sharing
+    gettimeofday(&amp;t1, NULL);
+    pthread_create(&amp;tid1, NULL, update_counter, (void *)1);
+    pthread_create(&amp;tid2, NULL, update_counter, (void *)2);
+    pthread_create(&amp;tid3, NULL, update_counter, (void *)3);
+    pthread_create(&amp;tid4, NULL, update_counter, (void *)4);
+
+    pthread_join(tid1, NULL);
+    pthread_join(tid2, NULL);
+    pthread_join(tid3, NULL);
+    pthread_join(tid4, NULL);
+    gettimeofday(&amp;t2, NULL);
+    diff = time_diff(t1, t2);
+    printf("%f\n", diff);
+
+    // False Sharing
+    gettimeofday(&amp;t1, NULL);
+    pthread_create(&amp;tid1, NULL, update_counter, (void *)16);
+    pthread_create(&amp;tid2, NULL, update_counter, (void *)32);
+    pthread_create(&amp;tid3, NULL, update_counter, (void *)48);
+    pthread_create(&amp;tid4, NULL, update_counter, (void *)64);
+
+    pthread_join(tid1, NULL);
+    pthread_join(tid2, NULL);
+    pthread_join(tid3, NULL);
+    pthread_join(tid4, NULL);
+
+    gettimeofday(&amp;t2, NULL);
+    diff = time_diff(t1, t2);
+    printf("%f\n", diff);
+}
+</code></pre>
+
+<p>并行创建 4 个线程执行上述函数，当 position 值分别为 1，2，3，4 时，所用总时间为 13.1 s，当值为 16，32，48，64 时，所用总时间为 3.4 s。</p>
+
+<h2 id="id-hardware-complexities">Hardware complexities</h2>
+
+<p>上述例子为我们介绍了 Cache 的基本原理，但是 CPU 还是非常复杂多样。例如：</p>
+
+<pre><code class="language-c">int A, B, C, D, E, F, G;
+
+for (int i = 0; i &lt; 200000000; i++)
+{
+    &lt;something&gt; // do something
+}
+</code></pre>
+
+<p>结果为：</p>
+
+<pre><code class="language-bash">&lt;something&gt;	           Time
+
+A++; B++; C++; D++;	   719 ms
+A++; C++; E++; G++;	   448 ms
+A++; C++;	           518 ms
+</code></pre>
+
+<hr />
+
+<h1 id="id-one-more-question">One more question</h1>
+
+<p>下列循环哪个快？</p>
+
+<pre><code class="language-c">int array_512[512][512]
+int array_513[513][513]
+
+// Loop 1
+for(int i = 0; i &lt;  512; i++){
+    for(int j = 0; j &lt; 512; j ++){
+        tmp = array_512[i][j];
+        array_512[i][j] = array_512[j][i];
+        array_512[j][i] = tmp;
+    }
+}
+
+// Loop 2
+for(int i = 0; i &lt;  513; i++){
+    for(int j = 0; j &lt; 513; j ++){
+        tmp = array_513[i][j];
+        array_513[i][j] = array_513[j][i];
+        array_513[j][i] = tmp;
+    }
+}
+</code></pre>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解 heap --- 实现一个简单的 malloc</title>
+  <meta name="description" content="理解 Heap">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/linux/2015/05/05/%E7%90%86%E8%A7%A3heap-malloc.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解 heap --- 实现一个简单的 malloc</h1>
+    <p class="post-meta"><time datetime="2015-05-05T00:00:00+08:00" itemprop="datePublished">May 5, 2015</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <h1 id="id-heap">理解 Heap</h1>
+
+<pre><code>  high address   +---------------+
+                 |               |
+                 |     Stack     |
+                 |               |
+                 +---------------+
+                 |       |       |
+                 |       v       |
+                 |               |
+                 |               |
+                 +---------------+
+                 |      Mmap     |
+                 +---------------+
+                 |               |
+                 |               |
+                 |       ^       |
+                 |       |       |
+                 +---------------+
+                 |               |
+                 |     Heap      |
+                 |               |
+                 +---------------+
+                 |     Data      | 
+                 +---------------+
+                 |     Code      |
+  low address    +---------------+
+</code></pre>
+
+<p>上图是 Linux 进程的<a href="https://en.wikipedia.org/wiki/Address_space">地址空间</a>，从低位到高位地址分别为：</p>
+
+<ul>
+  <li>Code Segment: 程序的代码，CPU 执行的指令部分，共享只读。</li>
+  <li>Data Segment: 可细分为初始化数据段和未初始化数据段，常用于存储全局变量等。</li>
+  <li>Stack: 函数以及自动变量(未加 static 的自动变量又称为局部变量)。</li>
+  <li>Mmap: mmap 调用分配的地址空间。</li>
+  <li>Heap: 动态分配内存，如 malloc() 分配的内存。</li>
+</ul>
+
+<p>本文主要讲解 heap，从上图可知，进程的堆是一段连续的空间，它分为三个区域:</p>
+
+<ul>
+  <li>Mapped region: 该区域的空间已经在物理地址上分配，可以直接被程序使用。</li>
+  <li>Unmapped region: 该区域的空间未在物理地址上分配，需分配后才可以使用。</li>
+  <li>Unusable region: 不可使用的地址空间，超出 rlimit 的空间都是不可使用的，不同的硬件和操作系统下，rlimit 可能各不相同。</li>
+</ul>
+
+<p>其中 break 和 rlimit 是三个区域的分界线：</p>
+
+<ul>
+  <li>break: mapped region 和 unmapped region 的分界线，可调用 sbrk(0) 返回当前的 break。</li>
+  <li>rlimit: 堆能分配的最大地址空间，getrlimit(2) 可获取 rlimit。</li>
+  <li>start of heap: 堆的起始地址，当堆上从未开辟空间时，sbrk(0) 返回的就是堆的起始地址，也可在 /proc/{proc_id}/mapping 获取堆的起始地址。</li>
+</ul>
+
+<pre><code>                         Heap
+
+   high address  +-------------------+
+                 |                   |
+                 |  Unusable Region  |
+                 |                   |
+                 +-------------------+  &lt;--- rlimit
+                 |                   |
+                 |                   |
+                 |  Unmapped Region  |
+                 |                   |
+                 |                   |
+                 +-------------------+  &lt;--- break
+                 |                   |
+                 |   Mapped Region   |
+                 |                   |
+   low address   +-------------------+  &lt;--- start of heap
+</code></pre>
+
+<p>根据运行的需要，程序可以向堆动态的申请和释放空间，当程序所需要的空间超过 mapped region 时，就需要向操作系统申请扩展堆的空间，即把 break 移动到更高的地址，linux 提供了两个系统调用用于调整堆的大小。</p>
+
+<ul>
+  <li><a href="http://man7.org/linux/man-pages/man2/sbrk.2.html">brk(const void *addr)</a>: 直接把 break 移动到 addr 地址处。</li>
+  <li><a href="http://linux.die.net/man/2/sbrk">sbrk(int incr)</a>: 把 break 移动 incr 个字节。</li>
+</ul>
+
+<p>除此以外，当程序申请较大(比如大于 128 KB)的空间时，linux 还提供了 <a href="http://man7.org/linux/man-pages/man2/mmap.2.html">mmap()</a> 系统调用分配空间，严格来讲，mmap 分配的地址空间并不属于 heap，它介于 heap 和 stack 之间。</p>
+
+<p>当程序不再需要某块内存时，通常使用 free() 释放它，释放这块内存时，并不会告知操作系统，它由<a href="https://en.wikipedia.org/wiki/Runtime_library">运行库(runtime library)</a>管理起来，并标志为空闲状态，我们用资源池表示这些处于空闲状态的内存块的集合。当程序再次申请空间时，运行库首先搜索资源池，如果找到满足要求的内存块，则直接将这块内存供给程序使用，如果资源池没有满足要求的内存块，则调用 sbrk() 向操作系统分配内存。采用资源池的方式管理堆空间，避免每次分配和释放内存时都需要告知操作系统，减少了系统调用的开销。如何按需分配、高效的管理堆空间，这就是堆分配算法。它通常由运行库实现，malloc 和 free 等组成了堆的分配算法的一种实现。</p>
+
+<pre><code>                                                system call
+
+   +-----------+               +--------------+             +------------+
+   |           |    malloc     |   Runtime    |    sbrk     |            |
+   | Programme |   --------&gt;   |   library    |  --------&gt;  |     OS     |
+   |           |    free       |              |     brk     |            |
+   +-----------+               +--------------+             +------------+
+</code></pre>
+
+<hr />
+
+<h1 id="id-malloc">实现一个简单的 malloc</h1>
+
+<p>本节主要介绍如何实现一个简单的 malloc，malloc 属于运行库的一个函数，它管理着已向操作系统申请好的堆空间。比如，它必须记录 mapped region 里有多少空间，哪些块已经被分配，哪些块处于空闲状态，以及它们的地址和大小信息。管理这些块的方法有多种，比如链表、位图等。本节采用列表的方式管理这些内存块：</p>
+
+<pre><code>                     Mapped Region
+
+   high address  +-------------------+  &lt;--- break
+                 |                   |
+                 |      Block N      |
+                 |                   |
+                 +-------------------+
+                 |  Block N metadata |
+                 +-------------------+
+                 |                   |
+                 |      ......       |
+                 |                   |
+                 +-------------------+  
+                 |                   |
+                 |      Block 1      |
+                 |                   |
+                 +-------------------+
+                 |  Block 1 metadata |
+   low address   +-------------------+  &lt;--- start of heap
+</code></pre>
+
+<p>如上图所示，每块内存包含两部分，block 和 block metadata，其中 block 用于存放程序的数据，block metadata 用于描述该 block 的基本信息，如大小、状态等:</p>
+
+<pre><code>                     Block Metadata
+
+                 +-------------------+ 
+                 |       size        |
+                 +-------------------+
+                 |       free        |
+                 +-------------------+ 
+                 |       next        |
+                 +-------------------+
+                 |       prev        |
+                 +-------------------+  
+</code></pre>
+
+<p>综上，一个 malloc 的样例为：</p>
+
+<pre><code class="language-c">#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+
+#define BLOCK_SIZE sizeof(struct block_meta)
+
+void *heap_start_addr = NULL;
+
+struct block_meta {
+    struct block_meta *prev;
+    struct block_meta *next;
+    int free;
+    size_t size;
+};
+
+void get_heap_start_addr(){
+    if(!heap_start_addr)
+        heap_start_addr = sbrk(0);
+}
+
+void *get_last_block(){
+    struct block_meta *blk_meta;
+
+    blk_meta = heap_start_addr;
+    while(blk_meta-&gt;next){
+        blk_meta = blk_meta-&gt;next;
+    }
+    return blk_meta;
+}
+
+void *find_block(size_t size){
+    struct block_meta *blk_meta;
+
+    blk_meta = heap_start_addr;
+    while(blk_meta){
+        if(blk_meta-&gt;free)
+            if(blk_meta-&gt;size &gt;= size)
+                break;
+        blk_meta = blk_meta-&gt;next;
+    }
+    return blk_meta;
+}
+
+void *extend_heap(void *prev, size_t size){
+    void *cur_brk;
+    struct block_meta *cur_blk_meta, *prev_blk_meta;
+
+    cur_brk = sbrk(size + BLOCK_SIZE);
+    if(!cur_brk){
+        return NULL;
+    }
+    else{
+        cur_blk_meta = cur_brk;
+        cur_blk_meta-&gt;free = 0;
+        cur_blk_meta-&gt;size = size;
+        cur_blk_meta-&gt;prev = prev;
+        cur_blk_meta-&gt;next = NULL;
+
+        if(prev){
+            prev_blk_meta = prev;
+            prev_blk_meta-&gt;next = cur_blk_meta;
+        }
+
+        return cur_brk + BLOCK_SIZE;
+    }
+}
+
+void split_block(struct block_meta *blk_meta, size_t size){
+    struct block_meta *free_blk_meta;
+
+    if(size + BLOCK_SIZE &lt; blk_meta-&gt;size){
+        free_blk_meta = blk_meta + size + BLOCK_SIZE;
+        free_blk_meta-&gt;prev = blk_meta;
+        free_blk_meta-&gt;next = blk_meta-&gt;next;
+        free_blk_meta-&gt;size = blk_meta-&gt;size - size - BLOCK_SIZE;
+        free_blk_meta-&gt;free = 1;
+
+        blk_meta-&gt;size = size;
+        blk_meta-&gt;free = 0;
+        blk_meta-&gt;next = free_blk_meta;
+    }
+    else{
+        blk_meta-&gt;free = 0;
+    }
+}
+
+void *malloc(size_t size) {
+    void *split_blk, *cur_brk, *ptr;
+    struct block_meta *last_blk;
+
+    if(!size)
+        return NULL;
+
+    // align with 8 bytes.
+    if(size &amp; 0x7){
+        size = ((size &gt;&gt; 3) + 1) &lt;&lt; 3
+    }
+
+    get_heap_start_addr();
+    cur_brk = sbrk(0);
+    if(heap_start_addr == cur_brk){
+        // First malloc, just extend the brk.
+        ptr = extend_heap(NULL, size);
+        if(ptr)
+            return ptr;
+        else
+            return NULL;
+    }
+    else{
+        split_blk = find_block(size);
+        if(split_blk){
+            // There is a free block, and we split it.
+            split_block(split_blk, size);
+            ptr = split_blk + BLOCK_SIZE;
+            return ptr;
+        }
+        else{
+            // No block is valid, extend the heap.
+            last_blk = get_last_block();
+            ptr = extend_heap(last_blk, size);
+            if(ptr)
+                return ptr;
+            else
+                return NULL;
+        }
+    }
+}
+</code></pre>
+
+<p>类似的，free 的实现如下：</p>
+
+<pre><code class="language-c">void free(void *ptr) {
+    struct block_meta *cur_blk_meta, *prev_blk_meta, *next_blk_meta;
+
+    if(!ptr)
+        return ;
+
+    cur_blk_meta = ptr - BLOCK_SIZE;
+    cur_blk_meta-&gt;free = 1;
+
+    next_blk_meta = cur_blk_meta-&gt;next;
+    if(next_blk_meta){
+        if(next_blk_meta-&gt;free){
+            cur_blk_meta-&gt;next = next_blk_meta-&gt;next;
+            cur_blk_meta-&gt;size += next_blk_meta-&gt;size + BLOCK_SIZE;
+        }
+    }
+
+    prev_blk_meta = cur_blk_meta-&gt;prev;
+    if(prev_blk_meta){
+        if(prev_blk_meta-&gt;free){
+            prev_blk_meta-&gt;next = cur_blk_meta-&gt;next;
+            prev_blk_meta-&gt;size += cur_blk_meta-&gt;size + BLOCK_SIZE;
+        }
+    }
+}
+</code></pre>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

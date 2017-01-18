@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Nova 中的协程 -- 同步 (二)</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2014/09/26/Nova%E4%B8%AD%E7%9A%84%E5%8D%8F%E7%A8%8Bsynchronize.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">Nova 中的协程 -- 同步 (二)</h1>
+    <p class="post-meta"><time datetime="2014-09-26T00:00:00+08:00" itemprop="datePublished">Sep 26, 2014</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/synchronize.png" alt="synchronize" /></p>
+
+<p>                                                                      <a href="http://blog.takipi.com/5-things-you-didnt-know-about-synchronization-in-java-and-scala/">图片来源请见</a></p>
+
+<ul>
+  <li>Nova 版本：Icehouse</li>
+  <li>Eventlet 版本：0.18.2</li>
+</ul>
+
+<hr />
+
+<h1 id="id-overview">Overview</h1>
+
+<p>同步是一个与并发相随的永恒话题，也是编程的一个难题。对 <a href="https://en.wikipedia.org/wiki/Race_condition">race condition</a> 处理不当，轻者影响性能，重则死锁。协程被称为用户态的线程，为系统提供并发；但是只要有并发，就可能存在竞态条件，所以和线程一样，协程也必须要有处理竞态条件的能力。</p>
+
+<p>线程常用的同步方式为：</p>
+
+<ul>
+  <li>Lock: 确保同一时间只有一个线程访问数据。其中互斥锁最为常用</li>
+  <li>Semaphore: 信号量，值为 1 时，相当于 lock。</li>
+  <li>Condition Variable: 条件变量，允许线程按照特性顺序执行</li>
+</ul>
+
+<p>与线程类似，eventlet 为协程提供如下同步方式：</p>
+
+<ul>
+  <li>Lock: eventlet.semaphore.Semaphore(value=1)</li>
+  <li>Semaphore: <a href="http://eventlet.net/doc/modules/semaphore.html">eventlet.semaphore.Semaphore</a></li>
+  <li>Condition Variable: <a href="http://eventlet.net/doc/modules/event.html">eventlet.event.Event</a></li>
+</ul>
+
+<hr />
+
+<h1 id="id-synchronization-in-nova">Synchronization in Nova</h1>
+
+<p>Nova 使用的同步方式是互斥锁，它支持两种类型的锁：</p>
+
+<ul>
+  <li>协程锁: semaphore.Semaphore() 实现</li>
+  <li>进程锁: Nova 在 semaphore.Semaphore() 基础之上自身实现的跨进程的文件锁</li>
+</ul>
+
+<p>这两种锁由 lock(nova/openstack/common/lockutils.py) 函数实现，其中 external 参数决定该锁是协程锁还是进程锁：</p>
+
+<pre><code class="language-python">def lock(name, lock_file_prefix=None, external=False, lock_path=None):
+    """Context based lock
+
+    This function yields a `threading.Semaphore` instance (if we don't use
+    eventlet.monkey_patch(), else `semaphore.Semaphore`) unless external is
+    True, in which case, it'll yield an InterProcessLock instance.
+
+    :param lock_file_prefix: The lock_file_prefix argument is used to provide
+    lock files on disk with a meaningful prefix.
+
+    :param external: The external keyword argument denotes whether this lock
+    should work across multiple processes. This means that if two different
+    workers both run a a method decorated with @synchronized('mylock',
+    external=True), only one of them will execute at a time.
+
+    :param lock_path: The lock_path keyword argument is used to specify a
+    special location for external lock files to live. If nothing is set, then
+    CONF.lock_path is used as a default.
+    """
+    with _semaphores_lock:
+        try:
+            sem = _semaphores[name]
+        except KeyError:
+            sem = threading.Semaphore()
+            _semaphores[name] = sem
+
+    with sem:
+        LOG.debug(_('Got semaphore "%(lock)s"'), {'lock': name})
+
+        # NOTE(mikal): I know this looks odd
+        if not hasattr(local.strong_store, 'locks_held'):
+            local.strong_store.locks_held = []
+        local.strong_store.locks_held.append(name)
+
+        try:
+            if external and not CONF.disable_process_locking:
+                LOG.debug(_('Attempting to grab file lock "%(lock)s"'),
+                          {'lock': name})
+
+                # We need a copy of lock_path because it is non-local
+                local_lock_path = lock_path or CONF.lock_path
+                if not local_lock_path:
+                    raise cfg.RequiredOptError('lock_path')
+
+                if not os.path.exists(local_lock_path):
+                    fileutils.ensure_tree(local_lock_path)
+                    LOG.info(_('Created lock path: %s'), local_lock_path)
+
+                def add_prefix(name, prefix):
+                    if not prefix:
+                        return name
+                # NOTE(mikal): the lock name cannot contain directory
+                # separators
+                lock_file_name = add_prefix(name.replace(os.sep, '_'),
+                                            lock_file_prefix)
+
+                lock_file_path = os.path.join(local_lock_path, lock_file_name)
+
+                try:
+                    lock = InterProcessLock(lock_file_path)
+                    with lock as lock:
+                        LOG.debug(_('Got file lock "%(lock)s" at %(path)s'),
+                                  {'lock': name, 'path': lock_file_path})
+                        yield lock
+                finally:
+                    LOG.debug(_('Released file lock "%(lock)s" at %(path)s'),
+                              {'lock': name, 'path': lock_file_path})
+            else:
+                yield sem
+
+        finally:
+            local.strong_store.locks_held.remove(name)
+</code></pre>
+
+<hr />
+
+<h1 id="id-lock-usage-in-nova">Lock Usage in Nova</h1>
+
+<p>nova 还基于上节的 lock 函数定义许多其它和锁相关的函数，这些函数的原理和功能大抵相同：</p>
+
+<ul>
+  <li>synchronized(name, lock_file_prefix=None, external=False, lock_path=None)，见 nova/openstack/common/lockutils.py</li>
+  <li>synchronized_with_prefix(lock_file_prefix)，见 nova/openstack/common/lockutils.py</li>
+  <li>synchronized = lockutils.synchronized_with_prefix(‘nova-‘)，见 nova/utils.py</li>
+</ul>
+
+<p>例如协程锁，多用于虚拟机生命周期的管理中：</p>
+
+<pre><code class="language-python">def run_instance(self, context, instance, request_spec,
+                 filter_properties, requested_networks,
+                 injected_files, admin_password,
+                 is_first_time, node, legacy_bdm_in_spec):
+
+    if filter_properties is None:
+        filter_properties = {}
+
+    @utils.synchronized(instance['uuid'])
+    def do_run_instance():
+        self._run_instance(context, request_spec,
+                filter_properties, requested_networks, injected_files,
+                admin_password, is_first_time, node, instance,
+                legacy_bdm_in_spec)
+    do_run_instance()
+</code></pre>
+
+<p>例如进程锁，它多用于镜像文件处理过程中：</p>
+
+<pre><code class="language-python">def create_image(self, prepare_template, base, size, *args, **kwargs):
+    filename = os.path.split(base)[-1]
+
+    @utils.synchronized(filename, external=True, lock_path=self.lock_path)
+    def create_lvm_image(base, size):
+        base_size = disk.get_disk_size(base)
+        self.verify_base_size(base, size, base_size=base_size)
+        resize = size &gt; base_size
+        size = size if resize else base_size
+        libvirt_utils.create_lvm_image(self.vg, self.lv,
+                                       size, sparse=self.sparse)
+        images.convert_image(base, self.path, 'raw', run_as_root=True)
+        if resize:
+            disk.resize2fs(self.path, run_as_root=True)
+        ......
+</code></pre>
+
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

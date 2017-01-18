@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>LVM 扩展逻辑卷</title>
+  <meta name="description" content="Overview">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/devops/2016/12/10/LVM_extend_directory.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">LVM 扩展逻辑卷</h1>
+    <p class="post-meta"><time datetime="2016-12-10T00:00:00+08:00" itemprop="datePublished">Dec 10, 2016</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <h1 id="id-overview">Overview</h1>
+
+<p>对于早期 Linux 用户，如何准确地评估分区的大小以及分配合适的空间一直是安装系统时的难题，因为在普通磁盘分区的管理下，分区划分后无法在不影响数据和系统运行的条件下改变其大小，当某个分区的存储空间消耗殆尽时，往往需要更换磁盘并迁移数据，如此可能会影响业务的正常运行。</p>
+
+<p><a href="https://en.wikipedia.org/wiki/Logical_Volume_Manager_(Linux)">LVM(Logical Volume Management)</a> 的出现完美的解决上述问题，它是建立在硬盘和文件系统之间的一个逻辑层，支持动态的调整文件系统的大小，增添硬盘等，提高了存储空间管理的灵活性。LVM 大有先破后立之感，它把多块硬盘组成一个资源池，再按需从资源池划分虚拟分区，并且可以动态调整虚拟分区的大小和数量，它有以下三个重要概念。</p>
+
+<ul>
+  <li><a href="https://www.centos.org/docs/5/html/Cluster_Logical_Volume_Manager/physical_volumes.html">Physical Volume(PV)</a>：建立在物理分区之上，每个分区可以创建一个 PV。</li>
+  <li><a href="https://www.centos.org/docs/5/html/Cluster_Logical_Volume_Manager/volume_group_overview.html">Volume Group(VG)</a>：建立在 PV 之上，由一个或者多个 PV 组成，每个 PV 只能加入到一个 VG 中。</li>
+  <li><a href="https://www.centos.org/docs/5/html/Cluster_Logical_Volume_Manager/lv_overview.html">Logical Volume(LV)</a>：它是从 VG 划分的一块虚拟分区，可动态调整大小，一个 VG 可划分出多个 LV，这些 LV 可被格式化成文件系统并挂载在相关目录下。</li>
+</ul>
+
+<pre><code>                   +-----------+ +------------+ +------+
+File System        |  / (ext4) | | /var (xfs) | |  ... |
+                   +-----------+ +------------+ +------+
+                -------------------------------------------
+                   +-----------+ +------------+ +------+
+Logical Volume     |  lv-root  | |   lv-var   | |  ... |
+                   +-----------+ +------------+ +------+
+                -------------------------------------------
+                   +-----------------------------------+
+Volume Group       |                 vg                |
+                   +-----------------------------------+
+                ------------------------------------------- 
+                   +---------------+   +---------------+
+Physical Volume    |      pvsda1   |   |    pvsdb1     |
+                   +---------------+   +---------------+
+                -------------------------------------------
+                   +---------------+   +---------------+
+Disk partitions    |      sda1     |   |      sdb1     |
+                   +---------------+   +---------------+
+                -------------------------------------------
+                   +---------------+   +---------------+
+Disk               |      sda      |   |      sdb      |
+                   +---------------+   +---------------+
+</code></pre>
+
+<hr />
+
+<h1 id="id-guide">Guide</h1>
+
+<p>以本人 Linux 机器为例，根目录的空间使用率已达到 83%，扩容步骤如下。</p>
+
+<pre><code class="language-shell">root@ubuntu:~# df -T
+Filesystem                  Type     1K-blocks     Used Available Use% Mounted on
+/dev/mapper/ubuntu--vg-root ext4      18180876 14265152   2969140  83% /
+none                        tmpfs            4        0         4   0% /sys/fs/cgroup
+...
+</code></pre>
+
+<p>它仅有一块磁盘 sda，分区 sda5 是最主要的分区，占据绝大多数存储空间，该分区属于一个名为 ubuntu-vg 的 VG，该 VG 包含两个 LV，分别是挂载在根目录的 ubuntu-vg-root 和用作 swap 的 ubuntu-vg-swap_1。该 VG 已无剩余空间，如果要扩展根目录的空间，就必须先增加磁盘，再扩展 ubuntu-vg VG，最后扩展 ubuntu-vg-root LV。</p>
+
+<pre><code class="language-shell">root@ubuntu:~# pvdisplay
+  --- Physical volume ---
+  PV Name               /dev/sda5
+  VG Name               ubuntu-vg
+  PV Size               19.76 GiB / not usable 2.00 MiB
+  
+root@ubuntu:~# vgdisplay
+  --- Volume group ---
+  VG Name               ubuntu-vg
+  ...
+  Alloc PE / Size       5053 / 19.74 GiB
+  Free  PE / Size       5 / 20.00 MiB
+
+root@ubuntu:~# lvdisplay
+  --- Logical volume ---
+  LV Path                /dev/ubuntu-vg/root
+  VG Name                ubuntu-vg
+  LV Size                17.74 GiB
+  ...
+
+  --- Logical volume ---
+  LV Path                /dev/ubuntu-vg/swap_1
+  VG Name                ubuntu-vg
+  LV Size                2.00 GiB
+  ...
+</code></pre>
+
+<p>首先增加一块磁盘 sdb，利用 <a href="https://linux.die.net/man/8/fdisk">fdisk</a> 在该磁盘创建一个名为 sdb1 的扩展分区，分区的大小和磁盘相当。</p>
+
+<pre><code class="language-shell">root@ubuntu:~# fdisk /dev/sdb
+...
+Command (m for help): n
+Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p): p
+Partition number (1-4, default 1): 1
+First sector (2048-41943039, default 2048):
+Using default value 2048
+Last sector, +sectors or +size{K,M,G} (2048-41943039, default 41943039):
+Using default value 41943039
+
+Command (m for help): t
+Selected partition 1
+Hex code (type L to list codes): 8e
+Changed system type of partition 1 to 8e (Linux LVM)
+
+Command (m for help): w
+The partition table has been altered!
+
+Calling ioctl() to re-read partition table.
+Syncing disks.
+</code></pre>
+
+<p>利用 <a href="https://linux.die.net/man/8/pvcreate">pvcreate</a> 在分区 sdb1 上创建一个名为 sdb1 的 PV：</p>
+
+<pre><code class="language-shell">root@ubuntu:~# pvcreate /dev/sdb1
+  Physical volume "/dev/sdb1" successfully created
+</code></pre>
+
+<p>把刚刚创建的 sdb1 PV 加入到 VG 中：</p>
+
+<pre><code class="language-shell">root@ubuntu:~# vgextend ubuntu-vg /dev/sdb1
+ Volume group "ubuntu-vg" successfully extended
+</code></pre>
+
+<p>这时 ubuntu-vg 总容量为 39.74 GB，可用空间为 20 GB：</p>
+
+<pre><code class="language-shell">root@ubuntu:~# vgdisplay
+  --- Volume group ---
+  VG Name               ubuntu-vg
+  VG Size               39.75 GiB
+  PE Size               4.00 MiB
+  Total PE              15296
+  Alloc PE / Size       5053 / 19.74 GiB
+  Free  PE / Size       5124 / 20.02 GiB
+</code></pre>
+
+<p>接下来扩展 /dev/ubuntu-vg/root LV，本次增加 10GB 的空间。</p>
+
+<pre><code class="language-shell">root@ubuntu:~# lvextend -L+10G /dev/ubuntu-vg/root
+  Extending logical volume root to 27.74 GiB
+  Logical volume root successfully resized
+</code></pre>
+
+<p>扩展了逻辑卷后，还需要更新文件系统，因为 /dev/ubuntu-vg/root 上的文件系统类型为 ext4，所以 resize2fs 命令扩展。</p>
+
+<pre><code class="language-shell">root@ubuntu:~# resize2fs /dev/mapper/ubuntu--vg-root
+</code></pre>
+
+<p>扩展后效果如下：</p>
+
+<pre><code class="language-shell">root@ubuntu:~# df -T
+Filesystem                  Type     1K-blocks     Used Available Use% Mounted on
+/dev/mapper/ubuntu--vg-root ext4      28502156 14265156  12871324  53% /
+none                        tmpfs            4        0         4   0% /sys/fs/cgroup
+</code></pre>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

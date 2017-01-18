@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>如何优雅地运行一个 Daemon</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/linux/2015/10/18/%E5%A6%82%E4%BD%95%E4%BC%98%E9%9B%85%E7%9A%84%E8%BF%90%E8%A1%8C%E4%B8%80%E4%B8%AAdaemon.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">如何优雅地运行一个 Daemon</h1>
+    <p class="post-meta"><time datetime="2015-10-18T00:00:00+08:00" itemprop="datePublished">Oct 18, 2015</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <hr />
+
+<p><a href="https://en.wikipedia.org/wiki/Daemon_(computing)">Daemon</a> 是运行在后台的进程，俗称守护进程，常见的 apache, nginx 和 mysql 等都是以守护进程的形式运行。本文主要介绍其的原理以及如何优雅地运行一个 daemon。</p>
+
+<h1 id="id-the-theory">The theory</h1>
+
+<p><a href="https://en.wikipedia.org/wiki/Advanced_Programming_in_the_Unix_Environment">Advanced Programming in the Unix Environmen</a> 第三版本的 13 章详细的介绍了 daemon 的原理、特征和编程规则。它通常具有以下特点：</p>
+
+<ul>
+  <li>父进程多数为 1，父进程为 0 的进程通常是内核进程</li>
+  <li>无控制终端，即不受终端的控制</li>
+  <li>多数以超级用户特权运行</li>
+</ul>
+
+<p>创建 daemon 的过程如下：</p>
+
+<ul>
+  <li>设置 umask 为 0，避免因父进程权限小而引起权限相关问题</li>
+  <li>调用 fork 创建子进程，之后父进程退出，子进程继续运行</li>
+  <li>调用 setsid 创建新会话并成为新进程组组长和新会话首进程，同时失去控制终端</li>
+  <li>把工作目录改为根目录</li>
+  <li>关闭不需要的文件描述符</li>
+  <li>把标准输出和错误重定向到 /dev/null，并且以 /dev/null 作为标准输入，隔绝与终端的交互。</li>
+</ul>
+
+<hr />
+
+<h1 id="id-the-simple-way">The simple way</h1>
+
+<p>以下是一种运行 daemon 简单的方法：</p>
+
+<pre><code>nohup COMMAND &gt;/dev/null 2&gt;&amp;1 &amp;
+</code></pre>
+
+<h2 id="id-devnull-21">&gt;/dev/null 2&gt;&amp;1</h2>
+
+<p>先介绍 Linux shell 的一些基本概念，如<a href="https://en.wikipedia.org/wiki/File_descriptor">文件描述符</a>和<a href="https://en.wikipedia.org/wiki/Redirection_(computing)">重定向</a>：</p>
+
+<ul>
+  <li>0: <a href="https://en.wikipedia.org/wiki/Standard_streams#Standard_input_.28stdin.29">标准输入</a>的文件描述符</li>
+  <li>1: <a href="https://en.wikipedia.org/wiki/Standard_streams#Standard_output_.28stdout.29">标准输出</a>的文件描述符，如果没有明确指出，那么通常 1 为默认值，即标准输出</li>
+  <li>2: <a href="https://en.wikipedia.org/wiki/Standard_streams#Standard_error_.28stderr.29">标准错误输出</a>的文件描述符</li>
+  <li>&gt;: 重定向符</li>
+  <li><a href="https://en.wikipedia.org/wiki/Null_device">/dev/null</a>: 空设备文件，它丢弃一切写入其中的数据，但会报告写入成功</li>
+</ul>
+
+<p>所以 &gt;/dev/null 2&gt;&amp;1 的含义如下：</p>
+
+<ul>
+  <li>&gt;/dev/null 因没有明确指出文件描述符，所以默认为标准输出，即把标准输出重定向到 /dev/null</li>
+  <li>2&gt;&amp;1，标准错误重定向到标准输入，因标准输出被重定向到 /dev/null，所以标准错误最终也会被重定向到 /dev/null</li>
+</ul>
+
+<pre><code>+---------+                    +------------+   &gt;   +-----------+
+|         | ----------------   | standout 1 | ----&gt; | /dev/null |
+|         |            +---&gt;   +------------+       +-----------+
+| Program |            | &gt;
+|         |            |
+|         |      +------------+
+|         | ---- | standerr 2 |
++---------+      +------------+
+</code></pre>
+
+<p>以下是一些功能等价的命令，都是把标准输出和标准错误重定向到 /dev/null 中，更多的细节请参考 <a href="http://unix.stackexchange.com/questions/70963/difference-between-2-2-dev-null-dev-null-and-dev-null-21">Adanced Bash-Scripting Guide</a>。</p>
+
+<ul>
+  <li>&gt;/dev/null 2&gt;/dev/null</li>
+  <li>&amp;&gt;/dev/null</li>
+  <li>&gt;/dev/null 2&gt;&amp;-</li>
+</ul>
+
+<h2 id="id-section">&amp;</h2>
+
+<p>如果某个 Command 以 &amp; 结尾，shell 会在后台执行该命令并且立马返回，不需要等到命令执行完。</p>
+
+<h2 id="id-nohup">nohup</h2>
+
+<p>忽略 <a href="https://en.wikipedia.org/wiki/SIGHUP">SIGHUP</a> 信号，避免因父 shell 退出而导致 COMMAND 启动的子进程被杀死。</p>
+
+<hr />
+
+<h1 id="id-the-better-way">The better way</h1>
+
+<p>优秀从模仿开始，欲知如何优雅的运行一个 daemon，我们应该分析 linux 的做法，linux 环境下通常用 service 启动各种 daemon：</p>
+
+<pre><code class="language-bash">service apache start
+service sshd start
+service nginx start
+
+......
+</code></pre>
+
+<p>Service 最终调用 /etc/inti.d/ 目录下的脚本启动相应的服务，这些脚本就是我们的学习样本，以 nginx 为例，精简版的脚本如下：</p>
+
+<pre><code class="language-bash">. /lib/lsb/init-functions
+
+case "$1" in
+  start)
+    start-stop-daemon --start --quiet --pidfile /run/nignx.pid --exec /usr/sbin/nginx 2&gt;/dev/null
+    ;;
+  stop)
+    start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile /run/nignx.pid --name nginx
+    ;;
+esac
+
+exit 0
+</code></pre>
+
+<p>和上节的方法相比，通过 service 命令具有以下优点：</p>
+
+<ul>
+  <li>操作简洁，友好规范</li>
+  <li>完整的生命周期管理，支持 start/stop/restart/status 操作</li>
+  <li>可在脚本中做前置工作检查、后置清理等</li>
+</ul>
+
+<p>另一件很有趣的事情就是绝大多数 /etc/init.d 下的守护进程都是以 start-stop-daemon 命令启动，和 nohup 相比，它的功能更为丰富，支持启动和杀死 daemon，支持后台运行，支持以某个用户的身份运行等等，更多信息请见 <a href="http://man7.org/linux/man-pages/man8/start-stop-daemon.8.html">man start-stop-daemon</a>。</p>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

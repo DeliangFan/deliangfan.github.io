@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解 Time-based One-Time Password Algorithm</title>
+  <meta name="description" content="     ">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/algorithm/2016/04/14/%E7%90%86%E8%A7%A3TOTP.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解 Time-based One-Time Password Algorithm</h1>
+    <p class="post-meta"><time datetime="2016-04-14T00:00:00+08:00" itemprop="datePublished">Apr 14, 2016</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>     </p>
+
+<p>                                        <img src="http://7xp2eu.com1.z0.glb.clouddn.com/otp1.png" alt="" /></p>
+
+<p>     </p>
+
+<h1 id="id-totp">TOTP</h1>
+
+<p>本文主要介绍基于时间的一次性密码生成算法 TOTP，它由 <a href="https://tools.ietf.org/html/rfc6238">RFC 6238</a> 定义。和基于事件的一次性密码生成算法不同 <a href="http://tools.ietf.org/pdf/rfc4226">HOTP</a>，TOTP 是基于时间的，它和 HOTP 具有如下关系：</p>
+
+<pre><code>TOTP = HOTP(K, T)
+
+HOTP(K,C) = Truncate(HMAC-SHA-1(K,C))
+</code></pre>
+
+<p>其中：</p>
+
+<ul>
+  <li>T：T = (Current Unix time - T0) / X， T0 = 0，X = 30</li>
+  <li>K：客户端和服务端的共享密钥，不同的客户端的密钥各不相同。</li>
+  <li>HOTP：该算法请参考 RFC，也可参考博文 <a href="http://wsfdl.com/algorithm/2016/04/05/%E7%90%86%E8%A7%A3HOTP.html">理解 HMAC-Based One-Time Password Algorithm</a></li>
+</ul>
+
+<p>例如：</p>
+
+<pre><code>&gt;&gt;&gt; import datatime
+&gt;&gt;&gt; import time
+&gt;&gt;&gt;
+&gt;&gt;&gt; current_time = datetime.datetime.now()
+&gt;&gt;&gt; print current_time
+2016-04-16 22:11:38.508616
+&gt;&gt;&gt; time.mktime(current_time.timetuple())
+1460815898.0  # Current Unix Time
+</code></pre>
+
+<p>当前时间为 2016-04-16 22:11:38.508616 的 Unix Time 为 1460815898.0，所以 T 为:</p>
+
+<pre><code>T = (1460815898.0 - 0) / 30 = 48693863
+</code></pre>
+
+<p>对于 HOTP，客户端和服务端需要同步移动因子 C；而对于 TOTP，只需客户端和服务器端采用相同的时区，不存在同步的问题，提高了便利性和通用性。</p>
+
+<hr />
+
+<h1 id="id-python-demo">Python Demo</h1>
+
+<pre><code class="language-python">import hashlib
+import hmac
+
+
+def get_hotp_passcode(secret, count):
+    data = bytearray([int(hex(count &gt;&gt; i &amp; 0xff), 16) for i in (56, 48, 40, 32 ,24, 16, 8, 0)])
+    hs = hmac.new(secret, data, hashlib.sha1).hexdigest()
+    offset = int(hs[-1], 16)
+    sbits = int(hs[offset * 2: offset * 2 + 8], 16) &amp; 0x7fffffff
+    return sbits % 1000000
+
+
+def get_totp_passcode(secret, unix_time):
+    return get_totp_passcode(secret, int(unix_time) / 30)
+</code></pre>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

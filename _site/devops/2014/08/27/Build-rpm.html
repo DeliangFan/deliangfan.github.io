@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>一起来编个 RPM 包</title>
+  <meta name="description" content="                                                ">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/devops/2014/08/27/Build-rpm.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">一起来编个 RPM 包</h1>
+    <p class="post-meta"><time datetime="2014-08-27T00:00:00+08:00" itemprop="datePublished">Aug 27, 2014</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>                                                <img src="http://7xp2eu.com1.z0.glb.clouddn.com/yum%20package_0.png?imageView2/1/w/200/h/166/q/100" alt="RPM" /></p>
+
+<h1 id="id-overview">Overview</h1>
+
+<p><a href="https://en.wikipedia.org/wiki/RPM_Package_Manager">RPM(Redhat Package Manager)</a> 是由红帽提出的软件包管理器，用于软件的安装、卸载和升级等，广泛的应用于多种 Linux 发行版。本文简要介绍如何把应用软件打成 RPM 包，打包的关键在于编写一个 SPEC 文件，该文件描述了包的基本信息、安装和卸载前后所需执行的操作等，<a href="https://fedoraproject.org/wiki/How_to_create_an_RPM_package">fedora</a> 推荐的模板如下：</p>
+
+<pre><code>Name:           testprogram
+Version:        
+Release:        1%{?dist}
+Summary:        
+
+License:        
+URL:            
+Source0:        
+
+BuildRequires:  
+Requires:       
+
+%description
+
+%prep
+%setup -q
+
+%build
+%configure
+make %{?_smp_mflags}
+
+%install
+rm -rf $RPM_BUILD_ROOT
+%make_install
+
+%files
+%doc
+
+%changelog
+* Sun Apr  3 2014 makerpm
+</code></pre>
+
+<p>SPEC 文件可分为六部分：</p>
+
+<ul>
+  <li>基本信息：如 Name, Version, Release, Version 等</li>
+  <li>%prep：预处理阶段执行的命令，比如解压软件包。</li>
+  <li>build：编译软件包时执行的命令，比如 make。</li>
+  <li>%install：安装软件包时执行的命令，比如 make install。</li>
+  <li>%files：定义软件包所包含的三类文件，配置文件、执行程序和说明文档。</li>
+  <li>%changelog：记录了软件的每次修改，以便查询。</li>
+</ul>
+
+<hr />
+
+<h1 id="id-example">Example</h1>
+
+<p>根据 <a href="https://access.redhat.com/sites/default/files/attachments/rpm_building_practice_10082013.pdf">Redhat 文档</a>，以常用的命令 tree 为例，我们将其源码编成 RPM，首先下载源码：</p>
+
+<pre><code class="language-bash">$ wget ftp://mama.indstate.edu/linux/tree/tree-1.5.3.tgz
+$ tar xvf tree-1.5.3.tgz
+</code></pre>
+
+<p>安装编包的必要软件：</p>
+
+<pre><code class="language-bash">$ yum install rpm-build rpmdevtools
+</code></pre>
+
+<p>创建必要目录：</p>
+
+<pre><code class="language-bash">$ mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+</code></pre>
+
+<p>把解压后的 tree 移动至 SOURCES 目录：</p>
+
+<pre><code class="language-bash">$ move tree  ~/rpmbuild/SOURCES
+</code></pre>
+
+<p>在 SPECS 目录创建 tree.spec 文件，内容如下：</p>
+
+<pre><code>Summary: File system tree viewer
+Name: tree
+Version: 1.5.3
+Release: 2%{?dist}
+Group: Applications/File
+License: GPLv2+
+Url: http://mama.indstate.edu/users/ice/tree/
+Source: ftp://mama.indstate.edu/linux/tree/tree-%{version}.tgz
+Patch1: tree-1.2-carrot.patch
+Patch2: tree-1.2-no-strip.patch
+Patch3: tree-preserve-timestamps.patch
+Patch4: tree-no-color-by-default.patch
+
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+%description
+The tree utility recursively displays the contents of directories in a treelike
+format. Tree is basically a UNIX port of the DOS tree utility.%prep
+%setup -q
+# Fixed spelling mistake in man page.
+%patch1 -p1 -b .carrot
+# Don't strip binary in the Makefile -- let rpmbuild do it.
+%patch2 -p1 -b .no-strip
+# Preserve timestamp on man page.
+%patch3 -p1 -b .preserve-timestamps
+# Disable color output by default.
+%patch4 -p1 -b .no-color-by-default
+
+%build
+make CFLAGS="$RPM_OPT_FLAGS" "CPPFLAGS=$(getconf LFS_CFLAGS)" %{?_smp_mlags}
+
+%install
+rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT%{_bindir}
+make BINDIR=$RPM_BUILD_ROOT%{_bindir} \
+ MANDIR=$RPM_BUILD_ROOT%{_mandir}/man1 \
+ install
+chmod -x $RPM_BUILD_ROOT%{_mandir}/man1/tree.1
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+%files
+%defattr(-,root,root)
+%{_bindir}/tree
+%{_mandir}/man1/tree.1*
+%doc README LICENSE
+
+%changelog
+   ...
+</code></pre>
+
+<p>最后编包：</p>
+
+<pre><code class="language-bash">$ rpmbuild -ba ~/rpmbuild/SPECS/tree.spec
+</code></pre>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

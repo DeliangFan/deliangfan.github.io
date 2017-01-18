@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Nova 中的协程 -- 并发 (一)</title>
+  <meta name="description" content="  Nova 版本：Icehouse  Eventlet 版本：0.18.2  Oslo.messaging 版本：1.3.0">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2014/09/24/Nova%E4%B8%AD%E7%9A%84%E5%8D%8F%E7%A8%8Bconcurrency.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">Nova 中的协程 -- 并发 (一)</h1>
+    <p class="post-meta"><time datetime="2014-09-24T00:00:00+08:00" itemprop="datePublished">Sep 24, 2014</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <ul>
+  <li>Nova 版本：Icehouse</li>
+  <li>Eventlet 版本：0.18.2</li>
+  <li>Oslo.messaging 版本：1.3.0</li>
+</ul>
+
+<hr />
+
+<h1 id="id-overview">Overview</h1>
+
+<p>OpenStack 由 python 语言编写，主要依赖<a href="http://docs.openstack.org/developer/nova/threading.html">协程处理并发事务</a>。协程(<a href="http://www.dabeaz.com/coroutines/Coroutines.pdf">Coroutine</a>)又称为用户态线程，完全由应用程序负责调度，其上下文切换的开销远远小于线程；由于多线程的效率因<a href="https://wiki.python.org/moin/GlobalInterpreterLock">全局解释锁(Global Interpreter Lock)</a> 而大打折扣，所以 python 多用协程而非线程处理并发。</p>
+
+<p><a href="http://eventlet.net/">Eventlet</a> 是一个高性能的网络库，它依赖两个关键的库：</p>
+
+<ul>
+  <li>greenlet: 协程库，提供并发能力</li>
+  <li>epoll/kqueue: 基于事件驱动的网络库，处理网络请求</li>
+</ul>
+
+<p>Eventlet 常用的 API 如下：</p>
+
+<ul>
+  <li>eventlet.spawn(func, *args, **kw)：启动一个协程并获取其返回值</li>
+  <li>eventlet.spawn_n(func, *args, **kw)：启动一个协程，但不获取返回值</li>
+  <li>eventlet.spawn_after(seconds, func, *args, **kw)：过段时间启动一个协程并获取返回值</li>
+  <li>eventlet.sleep(seconds=0)：切换运行中的协程，进入 sleep 状态</li>
+</ul>
+
+<p>Nova 依赖 evenlet 完成各种并发任务，它的进程可分为两类：</p>
+
+<ul>
+  <li>WSGIService: 接收和处理 http 请求，依赖 eventlet.wsgi 的 wsgi server 处理 http 请求，nova-api 是唯一的 WSGIService 类型的进程</li>
+  <li>Service: 接收和处理 rpc 请求，非 nova-api 以外的其它 nova 进程，如 nova-scheduler，nova-compute 和 nova-conductor 等</li>
+</ul>
+
+<p>无论是 WSGIService 还是 Service 类型的进程，每当接收到一个请求(http 或 rpc)，都会在线程池中分配一个协程处理该请求，本文主要剖析这两种 Service 的并发，虽然 nova 也会启动某些协程处理其它的任务，但不在本文讨论范围内。</p>
+
+<hr />
+
+<h1 id="id-wsgiservice">WSGIService</h1>
+
+<p>Nova-api 由 nova/cmd/api.py 启动，它初始化一个 WSGIService(由 nova/service.py 定义) 对象。</p>
+
+<pre><code class="language-python">def main():
+    ...
+    launcher = service.process_launcher()
+    for api in CONF.enabled_apis:
+        should_use_ssl = api in CONF.enabled_ssl_apis
+        if api == 'ec2':
+            server = service.WSGIService(api, use_ssl=should_use_ssl,
+                                         max_url_len=16384)
+        else:
+            # Initiate a WSGI server.
+            server = service.WSGIService(api, use_ssl=should_use_ssl)
+        launcher.launch_service(server, workers=server.workers or 1)
+    launcher.wait()
+</code></pre>
+
+<p>WSGIService 最终调用 nova/wsgi.py 中 Server 类的 start 方法，启动一个 WSGI application，监听和处理 http 请求：</p>
+
+<pre><code class="language-python">    def start(self):
+        """Start serving a WSGI application.
+
+        :returns: None
+        """
+
+        wsgi_kwargs = {
+            'func': eventlet.wsgi.server,
+            'sock': self._socket,
+            'site': self.app,
+            'protocol': self._protocol,
+            'custom_pool': self._pool,
+            'log': self._wsgi_logger,
+            'log_format': CONF.wsgi_log_format,
+            'debug': False
+            }
+
+        if self._max_url_len:
+            wsgi_kwargs['url_length_limit'] = self._max_url_len
+
+        self._server = eventlet.spawn(**wsgi_kwargs)
+</code></pre>
+
+<p>注意 wsgi_kwargs 中的参数 func，它的值为 eventlet.wsgi.server，在 eventlet/wsgi.py 的定义如下：</p>
+
+<pre><code class="language-python">def server(sock, site,
+           ......,
+           capitalize_response_headers=True):
+    """Start up a WSGI server handling requests from the supplied server
+    socket.  This function loops forever.  The *sock* object will be
+    closed after server exits, but the underlying file descriptor will
+    remain open, so if you have a dup() of *sock*, it will remain usable.
+
+    :param sock: Server socket, must be already bound to a port and listening.
+    :param site: WSGI application function.
+
+    ......
+    """
+
+    ......
+
+    try:
+        serv.log.info("(%s) wsgi starting up on %s" % (
+            serv.pid, socket_repr(sock)))
+        while True:
+            try:
+                client_socket = sock.accept()
+                client_socket[0].settimeout(serv.socket_timeout)
+                serv.log.debug("(%s) accepted %r" % (
+                    serv.pid, client_socket[1]))
+                try:
+                    pool.spawn_n(serv.process_request, client_socket)
+                    ......
+    finally:
+        pool.waitall()
+        ......
+</code></pre>
+
+<p>看，是不是看到熟悉的一幕了！sock.accept() 监听请求，每当接收到一个新请求，调用 pool.spawn_n() 启动一个协程处理该请求，精简版的逻辑如下：</p>
+
+<pre><code class="language-python">while True:
+	client_socket = sock.accept()
+	pool.spawn_n(serv.process_request, client_socket)
+</code></pre>
+
+<hr />
+
+<h1 id="id-service">Service</h1>
+
+<p>Service 类型的进程同样由 nova/cmd/* 目录下某些文件创建：</p>
+
+<ul>
+  <li>nova-compute: nova/cmd/compute.py</li>
+  <li>nova-scheduler: nova/cmd/scheduler.py</li>
+  <li>nova-conductor: nova/cmd/conductor.py</li>
+  <li>……</li>
+</ul>
+
+<p>作为消息中间件的消费者，它们监听各自的 queue，每当有 rpc 请求来临时，它们创建一个新的协程处理 rpc 请求。以 nova-compute 为例，启动时初始化一个 Server(由 nova/service.py 定义) 对象。</p>
+
+<pre><code class="language-python">def main():
+    ......
+    server = service.Service.create(binary='nova-compute',
+                                    topic=CONF.compute_topic,
+                                    db_allowed=CONF.conductor.use_local)
+    service.serve(server)
+    service.wait()
+</code></pre>
+
+<p>在 Icehouse 版本时，nova 的各个组件依赖 oslo.messaging 访问消息服务器，通过 oslo/messaging/server.py 初始化一个 MessageHandlingServer 的对象，监听消息队列。</p>
+
+<pre><code class="language-python">class MessageHandlingServer(object):
+    """Server for handling messages.
+
+    Connect a transport to a dispatcher that knows how process the
+    message using an executor that knows how the app wants to create
+    new tasks.
+    """
+
+    ......
+
+    def start(self):
+        """Start handling incoming messages.
+
+        This method causes the server to begin polling the transport for
+        incoming messages and passing them to the dispatcher. Message
+        processing will continue until the stop() method is called.
+
+        The executor controls how the server integrates with the applications
+        I/O handling strategy - it may choose to poll for messages in a new
+        process, thread or co-operatively scheduled coroutine or simply by
+        registering a callback with an event loop. Similarly, the executor may
+        choose to dispatch messages in a new thread, coroutine or simply the
+        current thread. An RPCServer subclass is available for each I/O
+        strategy supported by the library, so choose the subclass appropriate
+        for your program.
+        """
+        if self._executor is not None:
+            return
+        try:
+            listener = self.dispatcher._listen(self.transport)
+        except driver_base.TransportDriverError as ex:
+            raise ServerListenError(self.target, ex)
+
+        self._executor = self._executor_cls(self.conf, listener,
+                                            self.dispatcher)
+        self._executor.start()
+
+    def wait(self):
+        """Wait for message processing to complete.
+
+        After calling stop(), there may still be some some existing messages
+        which have not been completely processed. The wait() method blocks
+        until all message processing has completed.
+        """
+        if self._executor is not None:
+            self._executor.wait()
+
+    ....
+</code></pre>
+
+<p>上述的对象又初始化一个 EventletExecutor(由 oslo/messaging/_executors/impl_eventlet.py) 类型的 excuete 对象，它调用 self.listener.poll() 监听 rpc 请求，每当接收到一个请求，创建一个协程处理该请求。</p>
+
+<pre><code class="language-python">class EventletExecutor(base.ExecutorBase):
+
+    """A message executor which integrates with eventlet.
+
+    This is an executor which polls for incoming messages from a greenthread
+    and dispatches each message in its own greenthread.
+
+    The stop() method kills the message polling greenthread and the wait()
+    method waits for all message dispatch greenthreads to complete.
+    """
+
+    ......
+
+    def start(self):
+        if self._thread is not None:
+            return
+
+        @excutils.forever_retry_uncaught_exceptions
+        def _executor_thread():
+            try:
+                while True:
+                    incoming = self.listener.poll()
+                    spawn_with(ctxt=self.dispatcher(incoming),
+                               pool=self._greenpool)
+            except greenlet.GreenletExit:
+                return
+
+        self._thread = eventlet.spawn(_executor_thread)
+</code></pre>
+
+<p>简化版的逻辑如下：</p>
+
+<pre><code class="language-python">while True:
+    incoming = self.listener.poll()
+    spawn_with(ctxt=self.dispatcher(incoming),
+               pool=self._greenpool)
+</code></pre>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

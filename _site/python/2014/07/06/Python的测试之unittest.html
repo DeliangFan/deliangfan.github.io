@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Python 的单元测试之 unittest</title>
+  <meta name="description" content="   ">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/python/2014/07/06/Python%E7%9A%84%E6%B5%8B%E8%AF%95%E4%B9%8Bunittest.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">Python 的单元测试之 unittest</h1>
+    <p class="post-meta"><time datetime="2014-07-06T00:00:00+08:00" itemprop="datePublished">Jul 6, 2014</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>   </p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/pythontesttools.png" alt="testtools" /></p>
+
+<p>   </p>
+
+<hr />
+
+<h1 id="id-overview">Overview</h1>
+
+<h2 id="id-basic-example">Basic example</h2>
+
+<p>随着项目的不断扩大，单元测试在保证开发效率、可维护性和软件质量等方面的地位越发举足轻重，是一本万利的举措。Python 常用 <a href="https://docs.python.org/2/library/unittest.html">unittest</a> module 编写单元测试，它包含四个概念：</p>
+
+<ul>
+  <li>test fixture：初始化和清理测试环境，比如创建临时的数据库，文件和目录等，其中 <a href="https://docs.python.org/2/library/unittest.html#unittest.TestCase.setUp">setUp()</a> 和 <a href="https://docs.python.org/2/library/unittest.html#unittest.TestCase.tearDown">setDown()</a> 是最常用的方法</li>
+  <li>test case：单元测试用例，<a href="https://docs.python.org/2/library/unittest.html#unittest.TestCase">TestCase</a> 是编写单元测试用例最常用的类</li>
+  <li>test suite：单元测试用例的集合，<a href="https://docs.python.org/2/library/unittest.html#unittest.TestSuite">TestSuite</a> 是最常用的类</li>
+  <li>test runner：执行单元测试</li>
+</ul>
+
+<p>例如：</p>
+
+<pre><code class="language-python">import unittest
+
+class TestStringMethods(unittest.TestCase):
+
+    def test_upper(self):
+        self.assertEqual('foo'.upper(), 'FOO')
+
+    def test_isupper(self):
+        self.assertTrue('FOO'.isupper())
+        self.assertFalse('Foo'.isupper())
+
+if __name__ == '__main__':
+    unittest.main()
+</code></pre>
+
+<p>执行结果如下：</p>
+
+<pre><code class="language-bash">$ python testdemo.py
+..
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+OK
+</code></pre>
+
+<h2 id="id-add-fixture">Add fixture</h2>
+
+<p><a href="https://docs.python.org/2/library/unittest.html#unittest.TestCase.setUp">setUp()</a> 和 <a href="https://docs.python.org/2/library/unittest.html#unittest.TestCase.tearDown">setDown()</a> 允许执行每个测试用例前分别初始化和清理测试环境，用法如下：</p>
+
+<pre><code class="language-python">import unittest
+
+class TestStringMethods(unittest.TestCase):
+
+    def setUp(self):
+        # Do something to initiate the test environment here.
+        pass
+
+    def tearDown(self):
+        # Do something to clear the test environment here.
+        pass
+
+    def test_upper(self):
+        self.assertEqual('foo'.upper(), 'FOO')
+
+    def test_isupper(self):
+        self.assertTrue('FOO'.isupper())
+        self.assertFalse('Foo'.isupper())
+
+if __name__ == '__main__':
+    unittest.main()
+</code></pre>
+
+<h2 id="id-ignore-some-testcases">Ignore some testcases</h2>
+
+<p>有时希望某些用例不被执行，unittest.skip() 提供了忽略某个测试用例的功能，用法如下：</p>
+
+<pre><code class="language-python">import unittest
+
+class TestStringMethods(unittest.TestCase):
+
+    def test_upper(self):
+        self.assertEqual('foo'.upper(), 'FOO')
+
+    @unittest.skip('skip is upper.')
+    def test_isupper(self):
+        self.assertTrue('FOO'.isupper())
+        self.assertFalse('Foo'.isupper())
+
+if __name__ == '__main__':
+    unittest.main()
+</code></pre>
+
+<p>执行结果如下：</p>
+
+<pre><code class="language-bash">$ python testdemo.py
+test_isupper (testdemo.TestStringMethods) ... skipped 'skip is upper.'
+test_upper (testdemo.TestStringMethods) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+OK (skipped=1)
+</code></pre>
+
+<hr />
+
+<h1 id="id-run-your-tests">Run your tests</h1>
+
+<h2 id="id-command-line-interface">Command Line Interface</h2>
+
+<p>unittest 提供了丰富的命令行入口，可以根据需要执行某些特定的用例。有了命令行的支持，上述例子的最后两行代码就显得冗余，应当被移除：</p>
+
+<pre><code class="language-python">...
+
+# 删除以下代码
+if __name__ == '__main__':
+    unittest.main()
+</code></pre>
+
+<p>执行 testdemo.py 文件所有的测试用例：</p>
+
+<pre><code class="language-bash">$ python -m unittest testdemo
+</code></pre>
+
+<p>执行 testdemo.py 文件的 TestStringMethods 类的所有测试用例：</p>
+
+<pre><code class="language-bash">$ python -m unittest test_demo.TestStringMethods
+</code></pre>
+
+<p>执行 testdemo.py 文件 TestStringMethods 类的 test_upper：</p>
+
+<pre><code class="language-bash">$ python -m unittest test_demo.TestStringMethods.test_upper
+</code></pre>
+
+<h2 id="id-test-discovery">Test Discovery</h2>
+
+<p>unittest 提供了自动匹配发现并执行测试用例的功能，随着项目代码结构越发庞大，势必有多个测试文件，自动匹配发现并测试用例的功能在此就显得非常有用，只要满足 <a href="https://docs.python.org/2/library/unittest.html#load-tests-protocol">load_tests protocol</a> 的测试用例都会被 unittest 发现并执行，测试用例文件的默认匹配规则为 test*.py。<strong>通过一条命令即可执行所有的测试用例，如此就很容易被 tox 等测试工具所集成</strong>。使用如下：</p>
+
+<pre><code class="language-bash">python -m unittest discover
+</code></pre>
+
+<p>参数如下：</p>
+
+<pre><code class="language-bash">-v, --verbose
+Verbose output
+
+-s, --start-directory directory
+Directory to start discovery (. default)
+
+-p, --pattern pattern
+Pattern to match test files (test*.py default)
+
+-t, --top-level-directory directory
+Top level directory of project (defaults to start directory)
+</code></pre>
+
+<p>假设现在要被测试的代码目录如下：</p>
+
+<pre><code class="language-bash">$ tree demo
+demo
+├── testdemo.py
+└── testdemo1.py
+</code></pre>
+
+<pre><code class="language-bash">$ python -m unittest discover -s demo -v
+test_isupper (testdemo.TestStringMethods) ... ok
+test_upper (testdemo.TestStringMethods) ... ok
+test_is_not_prime (testdemo1.TestPrimerMethods) ... ok
+test_is_prime (testdemo1.TestPrimerMethods) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK
+</code></pre>
+
+<hr />
+
+<h1 id="id-a-collection-of-assertion">A Collection of Assertion</h1>
+
+<pre><code>+--------------------------------+-------------------------------------------------------+-------+
+| Method                         |Checks that                                            |New in |
++--------------------------------+-------------------------------------------------------+-------+
+| assertEqual(a, b)              | a == b                                                |       |
+| assertNotEqual(a, b)           | a != b                                                |       |
+| assertTrue(x)                  | bool(x) is True                                       |       |
+| assertFalse(x)                 | bool(x) is False                                      |       |
+| assertIs(a, b)                 | a is b                                                | 2.7   |
+| assertIsNot(a, b)              | a is not b                                            | 2.7   |
+| assertIsNone(x)                | x is None                                             | 2.7   |
+| assertIsNotNone(x)             | x is not None                                         | 2.7   |
+| assertIn(a, b)                 | a in b                                                | 2.7   |
+| assertNotIn(a, b)              | a not in b                                            | 2.7   |
+| assertIsInstance(a, b)         | isinstance(a, b)                                      | 2.7   |
+| assertNotIsInstance(a, b)      | not isinstance(a, b)                                  | 2.7   |
+| assertAlmostEqual(a, b)        | round(a-b, 7) == 0                                    |       |
+| assertNotAlmostEqual(a, b)     | round(a-b, 7) != 0                                    |       |
+| assertGreater(a, b)            | a &gt; b                                                 | 2.7   |
+| assertGreaterEqual(a, b)       | a &gt;= b                                                | 2.7   |
+| assertLess(a, b)               | a &lt; b                                                 | 2.7   |
+| assertLessEqual(a, b)          | a &lt;= b                                                | 2.7   |
+| assertRegexpMatches(s, r)      | r.search(s)                                           | 2.7   |
+| assertNotRegexpMatches(s, r)   | not r.search(s)                                       | 2.7   |
+| assertItemsEqual(a, b)         | sorted(a) == sorted(b) and works with unhashable objs | 2.7   |
+| assertDictContainsSubset(a, b) | all the key/value pairs in a exist in b               | 2.7   |
+| assertMultiLineEqual(a, b)     | strings                                               | 2.7   |
+| assertSequenceEqual(a, b)      | sequences                                             | 2.7   |
+| assertListEqual(a, b)          | lists                                                 | 2.7   |
+| assertTupleEqual(a, b)         | tuples                                                | 2.7   |
+| assertSetEqual(a, b)           | sets or frozensets                                    | 2.7   |
+| assertDictEqual(a, b)          | dicts                                                 | 2.7   |
++--------------------------------+-------------------------------------------------------+-------+
+</code></pre>
+
+<hr />
+
+<h1 id="id-testtools">Testtools</h1>
+
+<blockquote>
+  <p>testtools is a set of extensions to the Python standard library’s unit testing framework.</p>
+</blockquote>
+
+<p><a href="https://pypi.python.org/pypi/testtools">testtools</a> 是一个功能类似 unittest 的库，它集合众家标准测试库之所长，和 unittest 相比，功能更为强大，使用更为简单，OpenStack 广泛的利用它编写单元测试。由于在用法上 testtools 和 unittest 类似，所以本节简要介绍 testtols 的特点：</p>
+
+<ul>
+  <li>Better assertion methods: 支持 assertIn, assertIs, assertIsInstance 等 assertion</li>
+  <li>More debugging info: 更为详细的 debug 信息</li>
+  <li>Extend unittest, but stay compatible and re-usable: 兼容 unittest</li>
+  <li>Cross-Python compatibility: 支持多种 Python 版本 2.7, 3.3, 3.4, 3.5</li>
+</ul>
+
+<p>更为详细的说明和用法请见 <a href="http://testtools.readthedocs.org/en/latest/overview.html">testtools: tasteful testing for Python</a>。</p>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

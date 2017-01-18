@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>vim 养成记</title>
+  <meta name="description" content="   ">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/devops/2014/07/12/vim%E5%85%BB%E6%88%90%E8%AE%B0.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">vim 养成记</h1>
+    <p class="post-meta"><time datetime="2014-07-12T00:00:00+08:00" itemprop="datePublished">Jul 12, 2014</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>   </p>
+
+<blockquote>
+  <p>Better, Stronger, Faster</p>
+</blockquote>
+
+<p>学习 vim 犹如攀登高峰，过程曲折，登顶舒爽。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/horrorstories.jpg" alt="learning ied" /></p>
+
+<hr />
+
+<h1 id="id-section">推荐学习资源</h1>
+
+<p><strong>Game</strong></p>
+
+<ul>
+  <li><a href="http://vim-adventures.com/">VIM advantrue</a></li>
+</ul>
+
+<p><strong>Resource</strong></p>
+
+<ul>
+  <li><a href="http://yannesposito.com/Scratch/en/blog/Learn-Vim-Progressively/">Learn-Vim-Progressively</a></li>
+  <li><a href="http://coolshell.cn/?s=vim+%E5%AD%A6%E4%B9%A0">VIM 简明攻略</a></li>
+</ul>
+
+<hr />
+
+<h1 id="id-options">Options</h1>
+
+<p>Vim 的参数非常之多，详情请见 <a href="http://vimcdoc.sourceforge.net/doc/quickref.html#Q_op">QUICKREF</a>，<a href="http://platinhom.github.io/2015/06/08/Vim-Setup/">vim-setup</a> 列出以下常用参数。</p>
+
+<pre><code class="language-bash">set backspace=indent,eol,start  #使vi可以用退格键删除,默认不能删旧的.
+                               #indent是指可以删除字段缩进,eol是可以通过退格键合并两行,
+                               #start则是可以删除插入前的输入(bs)
+set nocompatible    #缺省vi兼容模式,不能用退格.设置为不兼容模式(cp)
+set number          #行号显示(nu)
+set ruler           #底部的行号等显示
+set showmatch       #当输入一个左括号时自动匹配右括号
+set whichwrap=&gt;     #默认时,右键不能转到下一行.ww可以开启自动折向
+                    #下行.&lt;&gt;分别代表左右,=后是指定可以换行的.(ww)
+set autoindent      #开启自动缩进   (ai)
+set smartindent     #智能选择对齐方式,类似C语言.换行时自动学会缩进.
+set tabstop=4       #一个tab等于多少空格(ts)
+set shiftwidth=4    #自动缩进时缩进为4格(sw)
+set expandtab       #编辑时可以将tab替换为空格(et)
+set cindent         #c缩进
+set incsearch   #很聪明的查找,输入一个字符马上自动匹配,而不是输入完再查找
+set highlight       #寻找时匹配高亮显示(hls)
+set softtabstop     #
+set nobackup        #不备份(讨厌的~文件)
+set cursorline      #高亮当前行(青色)
+set guioptions-=T   #关闭GUI版工具栏
+set t_vb            #当vim进行编辑时，如果命令错误，会发出一个响声，该设置去掉响声
+set autowrite       #自动保存
+set autochdir       #自动切换当前目录为当前文件所在的目录
+set nowrapscan      #关闭扫描到文件两端时重新搜索
+set background=dark/light    #设置背景颜色与syntax对应     
+</code></pre>
+
+<hr />
+
+<h1 id="id-plugins">Plugins</h1>
+
+<p>Vim 的 plugin 非常之多，<a href="http://vimawesome.com/">vim awesome</a> 列出各个 plugin 的功能和受欢迎程度。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/vimplugins.png" alt="vim plugin" /></p>
+
+<hr />
+
+<h1 id="id-my-vim">My vim</h1>
+
+<p>本人的 vimr 配置如下：</p>
+
+<pre><code class="language-bash">syntax on
+
+set tabstop=4
+set expandtab
+set hlsearch
+set incsearch
+set autochdir
+set tags=./tags,tags;$HOME
+
+nmap &lt;F5&gt; :silent! Tlist&lt;CR&gt;
+nmap &lt;F3&gt; :vertical resize +3&lt;CR&gt;
+nmap &lt;F4&gt; :vertical resize -3&lt;CR&gt;
+nmap &lt;F6&gt; :resize +3&lt;CR&gt;
+nmap &lt;F7&gt; :resize -3&lt;CR&gt;
+
+let Tlist_Show_One_File=1
+let Tlist_Auto_Open=1
+let Tlist_Ctags_Cmd='ctags'
+let Tlist_Use_Right_Window=1
+let Tlist_File_Fold_Auto_Close=1
+let Tlist_Exit_OnlyWindow=1
+let Tlist_Process_File_Always=0
+let Tlist_Inc_Winwidth=0
+</code></pre>
+
+<p>使用的插件如下：</p>
+
+<ul>
+  <li>NERD_tree.vim</li>
+  <li>taglist.vim</li>
+</ul>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

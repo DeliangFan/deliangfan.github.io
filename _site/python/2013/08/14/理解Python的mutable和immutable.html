@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解 Python object 的 mutable 和 immutable</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/python/2013/08/14/%E7%90%86%E8%A7%A3Python%E7%9A%84mutable%E5%92%8Cimmutable.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解 Python object 的 mutable 和 immutable</h1>
+    <p class="post-meta"><time datetime="2013-08-14T00:00:00+08:00" itemprop="datePublished">Aug 14, 2013</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/pythonobjectmutable.png" alt="object" /></p>
+
+<p>在 Python 的世界里，一切皆对象，每个对象各包含一个 idendity、type 和 value。</p>
+
+<ul>
+  <li>identity: 可理解为 object 的内存地址空间，其值可由 id() 函数获取，一旦 object 被创建，其 identity 将不可改变。</li>
+  <li>type: 可理解为 object 的类型，其值可由 type() 函数获取，一旦 object 被创建，其 type 也不可该变。</li>
+  <li>value: 可理解为 object 的值，和 identity 与 type 不同，有些 object 的 value 可变，有些 object 的 value 永不可变。我们把 value 可变动的 object 称为 mutable object，把 value 不可变动的 object 称为 immutable object。</li>
+</ul>
+
+<p>常见的 immutable objects:</p>
+
+<ul>
+  <li>Numeric types: int, float, complex</li>
+  <li>string</li>
+  <li>tuple</li>
+  <li>frozen set</li>
+</ul>
+
+<p>常见的 mutable objects:</p>
+
+<ul>
+  <li>list</li>
+  <li>dict</li>
+  <li>set</li>
+  <li>byte array</li>
+</ul>
+
+<h1 id="id-case-one">Case One</h1>
+
+<pre><code class="language-bash">&gt;&gt;&gt; a = [1, 2, 3]
+&gt;&gt;&gt; id(a)
+4317018016
+&gt;&gt;&gt; a[1] = 10
+&gt;&gt;&gt; id(a)
+4317018016
+&gt;&gt;&gt; a
+[1, 10, 3]
+</code></pre>
+
+<p>不难理解，列表的值在 a[1] = 10 执行后被改变，但是其地址空间没有改变。</p>
+
+<h1 id="id-case-two">Case Two</h1>
+
+<pre><code class="language-bash">&gt;&gt;&gt; a = 1
+&gt;&gt;&gt; id(a)
+140207626202088
+&gt;&gt;&gt; a = 2
+&gt;&gt;&gt; id(a)
+140207626202064
+</code></pre>
+
+<p>和 C 语言不同，Python 的运算符 = 是引用，而非赋值运算，所以 a = 2 的含义是创建一个值为 2 的 int 对象，再将 a 指向该对象的地址，所以上例的 1 和 2 这两个 int 对象的值并没有改变。</p>
+
+<h1 id="id-case-three">Case Three</h1>
+
+<pre><code class="language-bash">&gt;&gt;&gt; a = (1, 2, [3])
+&gt;&gt;&gt; id(a)
+4317137728
+&gt;&gt;&gt; a[0] = 1
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+TypeError: 'tuple' object does not support item assignment
+&gt;&gt;&gt;
+&gt;&gt;&gt; a[2][0] = 100
+&gt;&gt;&gt; id(a)
+4317137728
+&gt;&gt;&gt; a
+(1, 2, [100])
+</code></pre>
+
+<p>从上例可看出，immutable 不能理解为绝对的不可变，对于某些 container 类型的 object，如果它包含了一个 mutable 的 object，那么 mutable object 的值是可变的。因为 tuple 所含 list 改变的只是 value 而非 identity，所以 tuple 依旧被称为 immutable object。</p>
+
+<pre><code class="language-bash">&gt;&gt;&gt; a = (1, 2, [3])
+&gt;&gt;&gt; id(a[2])
+4317018016
+&gt;&gt;&gt; a[2][0] = 100
+&gt;&gt;&gt; id(a[2])
+4317018016
+</code></pre>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

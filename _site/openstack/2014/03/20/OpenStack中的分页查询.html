@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>OpenStack 的分页查询</title>
+  <meta name="description" content="Heat 在 Havana 版本首次成为正式模块，为 OpenStack 提供了令人兴奋的资源编排功能，但是和成熟项目相比，它缺失了某些小特性，比如不支持分页查询。随着用户的 instance、volume 和 stack 等资源的数量越来越多，分页查询的功能越发显得重要，而且在很多其它的场景，分页查询的功能也非...">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2014/03/20/OpenStack%E4%B8%AD%E7%9A%84%E5%88%86%E9%A1%B5%E6%9F%A5%E8%AF%A2.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">OpenStack 的分页查询</h1>
+    <p class="post-meta"><time datetime="2014-03-20T00:00:00+08:00" itemprop="datePublished">Mar 20, 2014</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p>Heat 在 Havana 版本首次成为正式模块，为 OpenStack 提供了令人兴奋的资源编排功能，但是和成熟项目相比，它缺失了某些小特性，比如不支持分页查询。随着用户的 instance、volume 和 stack 等资源的数量越来越多，分页查询的功能越发显得重要，而且在很多其它的场景，分页查询的功能也非常实用。本文以 Nova 为例，介绍 OpenStack 是如何实现分页查询的功能，用于学习和借鉴。</p>
+
+<p>以查询 <a href="http://developer.openstack.org/api-ref-compute-v2.1.html#listServers">list instance</a> 为例，注意如下两个 Request parameters：</p>
+
+<pre><code>+-------------------+-------+---------+--------------------------------------------+
+| Parameter         | Style | Type    | Description                                |
++-------------------+-------+---------+--------------------------------------------+
+| limit (Optional)  | query | xsd:int | Requests a page size of items. Returns a   |
+|                   |       |         | number of items up to a limit value. Use   |
+|                   |       |         | the limit parameter to make an initial     |
+|                   |       |         | limited request and use the ID of the      |
+|                   |       |         | last-seen item from the response as the    |
+|                   |       |         | marker parameter value in a subsequent     |
+|                   |       |         | limited request.                           |
++-------------------+-------+---------+--------------------------------------------+
+| marker (Optional) | query | xsd:int | The ID of the last-seen item. Use the      |
+|                   |       |         | limit parameter to make an initial limited |
+|                   |       |         | request and use the ID of the last-seen    |
+|                   |       |         | item from the response as the marker       |
+|                   |       |         | parameter value in a subsequent limited    |
+|                   |       |         | request.                                   |
++-------------------+-------+---------+--------------------------------------------+
+</code></pre>
+
+<p>通俗的说，limit 表示返回的 instance 数量，marker 表示起始的 instance id(查询结果不包含该 instance)，用法如下：</p>
+
+<pre><code>/v2.1/​{tenant_id}​/servers?limit=10&amp;marker=a291599e-6de2-41a6-88df-c443ddcef70d
+</code></pre>
+
+<p>接下以 havana 版本的 nova 为例介绍分页查询的原理：</p>
+
+<p>nova/api/openstack/common.py 中如下函数定义从 http url 中获取 limit 和 marker 的函数：</p>
+
+<pre><code class="language-python">def get_limit_and_marker(request, max_limit=CONF.osapi_max_limit):
+    """get limited parameter from request."""
+    params = get_pagination_params(request)
+    limit = params.get('limit', max_limit)
+    limit = min(max_limit, limit)
+    marker = params.get('marker')
+
+    return limit, marker
+
+
+def limited_by_marker(items, request, max_limit=CONF.osapi_max_limit):
+    """Return a slice of items according to the requested marker and limit."""
+    limit, marker = get_limit_and_marker(request, max_limit)
+
+    limit = min(max_limit, limit)
+    start_index = 0
+    if marker:
+        start_index = -1
+        for i, item in enumerate(items):
+            if 'flavorid' in item:
+                if item['flavorid'] == marker:
+                    start_index = i + 1
+                    break
+            elif item['id'] == marker or item.get('uuid') == marker:
+                start_index = i + 1
+                break
+        if start_index &lt; 0:
+            msg = _('marker [%s] not found') % marker
+            raise webob.exc.HTTPBadRequest(explanation=msg)
+    range_end = start_index + limit
+    return items[start_index:range_end]
+</code></pre>
+
+<p>nova/api/openstack/compute/servers.py 中的 _get_servers 函数调用了以上函数，获取 limit 和 marker 参数，并传入所调用的查询函数：</p>
+
+<pre><code class="language-python">def _get_servers(self, req, is_detail):
+    ......
+    limit, marker = common.get_limit_and_marker(req)
+    try:
+        instance_list = self.compute_api.get_all(context,
+                                                 search_opts=search_opts,
+                                                 limit=limit,
+                                                 marker=marker,
+                                                 want_objects=True)
+    ......
+</code></pre>
+
+<p>self.compute_api.get_all 最终调用 nova/db/sqlalchemy/api.py 进行分页查询：</p>
+
+<pre><code class="language-python">@require_context
+def instance_get_all_by_filters(context, filters, sort_key, sort_dir,
+                                limit=None, marker=None, columns_to_join=None):
+......
+    # paginate query
+    if marker is not None:
+        try:
+            marker = _instance_get_by_uuid(context, marker, session=session)
+        except exception.InstanceNotFound:
+            raise exception.MarkerNotFound(marker)
+    query_prefix = sqlalchemyutils.paginate_query(query_prefix,
+                           models.Instance, limit,
+                           [sort_key, 'created_at', 'id'],
+                           marker=marker,
+                           sort_dir=sort_dir)
+......
+</code></pre>
+
+<p>而 sqlalchemyutils 又是调用 nova/openstack/common/db/sqlalchemy/utils.py 的 paginate_query 实现分页查询：</p>
+
+<pre><code class="language-python"># copy from glance/db/sqlalchemy/api.py
+def paginate_query(query, model, limit, sort_keys, marker=None,
+                   sort_dir=None, sort_dirs=None):
+    """Returns a query with sorting / pagination criteria added.
+
+    Pagination works by requiring a unique sort_key, specified by sort_keys.
+    (If sort_keys is not unique, then we risk looping through values.)
+    We use the last row in the previous page as the 'marker' for pagination.
+    So we must return values that follow the passed marker in the order.
+    With a single-valued sort_key, this would be easy: sort_key &gt; X.
+    With a compound-values sort_key, (k1, k2, k3) we must do this to repeat
+    the lexicographical ordering:
+    (k1 &gt; X1) or (k1 == X1 &amp;&amp; k2 &gt; X2) or (k1 == X1 &amp;&amp; k2 == X2 &amp;&amp; k3 &gt; X3)
+
+    We also have to cope with different sort_directions.
+
+    Typically, the id of the last row is used as the client-facing pagination
+    marker, then the actual marker object must be fetched from the db and
+    passed in to us as marker.
+
+    :param query: the query object to which we should add paging/sorting
+    :param model: the ORM model class
+    :param limit: maximum number of items to return
+    :param sort_keys: array of attributes by which results should be sorted
+    :param marker: the last item of the previous page; we returns the next
+                    results after this value.
+    :param sort_dir: direction in which results should be sorted (asc, desc)
+    :param sort_dirs: per-column array of sort_dirs, corresponding to sort_keys
+
+    :rtype: sqlalchemy.orm.query.Query
+    :return: The query with sorting/pagination added.
+    """
+
+    if 'id' not in sort_keys:
+        # TODO(justinsb): If this ever gives a false-positive, check
+        # the actual primary key, rather than assuming its id
+        LOG.warn(_('Id not in sort_keys; is sort_keys unique?'))
+
+    assert(not (sort_dir and sort_dirs))
+
+    # Default the sort direction to ascending
+    if sort_dirs is None and sort_dir is None:
+        sort_dir = 'asc'
+
+    # Ensure a per-column sort direction
+    if sort_dirs is None:
+        sort_dirs = [sort_dir for _sort_key in sort_keys]
+
+    assert(len(sort_dirs) == len(sort_keys))
+
+    # Add sorting
+    for current_sort_key, current_sort_dir in zip(sort_keys, sort_dirs):
+        sort_dir_func = {
+            'asc': sqlalchemy.asc,
+            'desc': sqlalchemy.desc,
+        }[current_sort_dir]
+
+        try:
+            sort_key_attr = getattr(model, current_sort_key)
+        except AttributeError:
+            raise InvalidSortKey()
+        query = query.order_by(sort_dir_func(sort_key_attr))
+
+    # Add pagination
+    if marker is not None:
+        marker_values = []
+        for sort_key in sort_keys:
+            v = getattr(marker, sort_key)
+            marker_values.append(v)
+
+        # Build up an array of sort criteria as in the docstring
+        criteria_list = []
+        for i in range(0, len(sort_keys)):
+            crit_attrs = []
+            for j in range(0, i):
+                model_attr = getattr(model, sort_keys[j])
+                crit_attrs.append((model_attr == marker_values[j]))
+
+            model_attr = getattr(model, sort_keys[i])
+            if sort_dirs[i] == 'desc':
+                crit_attrs.append((model_attr &lt; marker_values[i]))
+            elif sort_dirs[i] == 'asc':
+                crit_attrs.append((model_attr &gt; marker_values[i]))
+            else:
+                raise ValueError(_("Unknown sort direction, "
+                                   "must be 'desc' or 'asc'"))
+
+            criteria = sqlalchemy.sql.and_(*crit_attrs)
+            criteria_list.append(criteria)
+
+        f = sqlalchemy.sql.or_(*criteria_list)
+        query = query.filter(f)
+
+    if limit is not None:
+        query = query.limit(limit)
+
+    return query
+</code></pre>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>浅谈如何设计一个秒级的 OpenStack 计费系统</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2015/09/29/OpenStack_Billing.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">浅谈如何设计一个秒级的 OpenStack 计费系统</h1>
+    <p class="post-meta"><time datetime="2015-09-29T00:00:00+08:00" itemprop="datePublished">Sep 29, 2015</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/openstack_billing.jpg" alt="" /></p>
+
+<p>经历了五年的成长，OpenStack 的 IaaS 服务愈发成熟，在私有云和公有云领域得到较为广泛的应用，与此同时，相应的计费方案也呼之欲出，特别对于公有云。但是纵观社区的计费项目，它们在功能、成熟度等方面有待提升，加上不同场景下的计费方式差异较大，所以社区的计费项目有时可能无法很好的满足需求。按需按量是云计算的一大重要特点，如果计费系统能够提供更为精细的时间粒度，比如秒级，将有助于提升云平台的弹性。本文浅谈如何设计一个计费系统，并给出一个简单的 demo —— <a href="https://github.com/DeliangFan/koala">koala</a>。</p>
+
+<hr />
+
+<h1 id="id-section">计费资源</h1>
+
+<p>在设计计费系统前，首先需要明白哪些资源需要计费，以及这些资源的特点。OpenStack 的服务覆盖了多个领域，从 IaaS 到 PaaS，例如：</p>
+
+<ul>
+  <li>IaaS
+    <ul>
+      <li>Compute: instance</li>
+      <li>Network: floating ip, router, load balance</li>
+      <li>Storage: volume, snapshot, image, instance snapshot, object storage.</li>
+      <li>Alarm</li>
+    </ul>
+  </li>
+  <li>PaaS
+    <ul>
+      <li>Database</li>
+      <li>Big Data</li>
+      <li>Redis</li>
+    </ul>
+  </li>
+</ul>
+
+<p>本文重点关注 IaaS 计算、存储和网络资源的计费，它们的计费规则通常可以抽象为：</p>
+
+<pre><code>费用 = 时间 * 规格单价
+
+例如：
+虚拟机 = 时间 * 规格单价
+存储 = 时间 * (容量 * 每GB单价)
+路由器 = 时间 * 规格单价
+</code></pre>
+
+<p>但是 floating ip 是一种比较特殊的资源，因为它的计费方式多样：按流量或按带宽计费。如果按带宽计费，可用上述公式。在按流量计费的场景下，它的计费规则为：</p>
+
+<pre><code>费用 = 流量 * 流量单价 
+</code></pre>
+
+<hr />
+
+<h1 id="id-section-1">理想的计费系统</h1>
+
+<p>凡是和钱挂钩的系统，在设计上都必需小心翼翼，三思而后行，这类系统对高可靠、准确和安全性有着严格的要求，OpenStack 的计费系统也不例外。本人认为，一个理想的计费系统必须满足以下需求：</p>
+
+<ul>
+  <li>准确性：准确的记录资源的使用状况，并生成账单。</li>
+  <li>高可靠性：计费系统需设计成高可靠，避免单点故障。</li>
+  <li>安全性：全方位保证计费系统的安全，比如采用 HTTPS，ACL 等。</li>
+</ul>
+
+<p>也应该尽可能满足以下需求：</p>
+
+<ul>
+  <li>实时性</li>
+  <li>支持多 region</li>
+  <li>可扩展性：每当有新的云服务上线，这些服务应当可方便地接入到计费系统。</li>
+  <li>秒级计费：精确到秒级计费，提升云平台的弹性。</li>
+  <li>容错能力：本着宁可漏计，不可多计的原则，合理的处理数据的采集异常、发送异常等场景。</li>
+  <li>子账户：支持子账户。</li>
+</ul>
+
+<p>社区主要有两个计费项目，<a href="https://wiki.openstack.org/wiki/CloudKitty">cloudkitty</a> 和 <a href="https://readthedocs.org/projects/stacktach/">stacktach</a>。Cloudkitty 依赖 ceilometer 的 sample 计费，只能提供分钟级别的粒度，无法记录资源状态的变更时间点，实时性弱，并且受限于 ceilometer 的性能，支持的资源有限，扩展性差。Stacktach 的计费功能基本不可用。</p>
+
+<p>所以，本文提出另外一种计费系统，它依赖 ceilometer 的 event 信息进行计费。</p>
+
+<hr />
+
+<h1 id="id-event-">基于 event 的计费系统</h1>
+
+<p>博文 <a href="http://wsfdl.com/openstack/2015/09/12/Ceilometer_event_meters.html">ceilometer 的 sample 和 event</a> 分析了 sample 和 event 这两类数据的特点。</p>
+
+<p>sample 数据虽然为计费提供了一定的信息，但是并不能提供完整的信息，如：无法提供虚拟机的状态，shut off 和 running 状态的计费价格不一致；无法提供虚拟机准确的创建时间，关机时间，即无法提供秒级的计费等。</p>
+
+<p>event 类型数据同样记录了资源的重要信息，event 的数据类型可分为两类：</p>
+
+<ul>
+  <li>状态变更类型 event：所有的资源，每当其被创建、更新或者删除等时，会及时发出 notification 事件。</li>
+  <li>audit 类型 event：nova, cinder 和 neutron 等服务会周期性(每小时)统计各个资源的状态，并发出 notification 事件。</li>
+</ul>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/instance_state.png" alt="instance_event" /></p>
+
+<p>从全局出发，和 event 相比，sample 具有如下缺点，如：</p>
+
+<ul>
+  <li>计费指标不全面，没有 volume、floatingIP、snapshot、router 相关的计量数据。</li>
+  <li>无法提供虚拟机的状态，shutoff 和 running 状态的计费价格不一致。</li>
+  <li>无法提供虚拟机准确的创建时间，关机时间，即无法提供秒级的计费。</li>
+  <li>数据量太大问题，sample 一般为数分钟采集一次，其中诸多数据对计费而言，毫无意义。</li>
+</ul>
+
+<p>而采用 event 计费，可有如下优点：</p>
+
+<ul>
+  <li>准确性：因为 event 记录了资源的状态变更，所以具有高准确性。</li>
+  <li>秒级计费</li>
+  <li>实时性高：秒级的实时性。</li>
+  <li>高扩展性：OpenStack 各个服务基本上都支持 notification。</li>
+</ul>
+
+<p>下图展示一个基于 event 的计费系统样例的架构：</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/billing_koala.png" alt="koala" /></p>
+
+<p>从上可以看出，该计费系统全局唯一，每当各个 region 下的 ceilometer-notification-agent 收集到 event 时，会把这些 event 先过滤，然后做一定处理后经 https 发送至计费系统。如下发给计费系统的一个 event 样例：</p>
+
+<pre><code class="language-json">{
+    "region": "bj",
+    "resource_id": "ca9ef7fe-889d-462e-91e4-f05a60abc739",
+    "resource_name": "lg",
+    "resource_type": "volume",
+    "tenant_id": "33294fe9cd6c4150b43b38cd92ea17c5",
+    "event_type": "create",
+    "event_time": "2015-09-25T07:54:38.235522"
+    "content": {"size": 100}
+}
+</code></pre>
+
+<p>每当计费系统接收到请求后，生成账单信息。如果计费信息发送失败，ceilometer 可标志该 event。如下是根据上述 event 生成的账单信息。</p>
+
+<pre><code class="language-json">[
+    {
+        "consumption": 0.0022200000000000002,
+        "description": "Resource has been deleted",
+        "end_at": "2015-09-25T08:01:48.629053",
+        "resource_id": "723566f3-db38-4e37-bdc7-fb0d33856468",
+        "start_at": "2015-09-25T08:01:39.504316",
+        "unit_price": 0.88800000000000001
+    }
+]
+</code></pre>
+
+<p>在上述架构下，计费系统有如下优点：</p>
+
+<ul>
+  <li>支持多 region</li>
+  <li>低耦合：计费系统和 OpenStack 的组件解耦，仅通过 https 协议通信，低耦合下计费系统可以不关心 OpenStack 的版本。</li>
+</ul>
+
+<p>这种架构要求 ceilometer 发送计费信息，势必需往 ceilometer 增添代码，这是其中的一个缺点。计费系统本身在实现和部署上还需要注意以下问题：</p>
+
+<ul>
+  <li>高可靠：koala 就是按照高可靠标准设计的，它只有一个进程 koala-api，可以部署在多个节点。</li>
+  <li>高容错性：它依赖处理计费时具体的逻辑实现。</li>
+  <li>安全性</li>
+</ul>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

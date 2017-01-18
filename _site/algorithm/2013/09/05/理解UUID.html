@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解 UUID</title>
+  <meta name="description" content="  根据生日悖论，若每秒产生 10 亿笔 UUID，100 年后只产生一次重复的概率是 50%。如果地球上每个人都各有 6 亿笔 UUID，发生一次重复的概率是 50%。产生重复UUID 并造成错误的情况非常低，是故大可不必考虑此问题。">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/algorithm/2013/09/05/%E7%90%86%E8%A7%A3UUID.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解 UUID</h1>
+    <p class="post-meta"><time datetime="2013-09-05T00:00:00+08:00" itemprop="datePublished">Sep 5, 2013</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <blockquote>
+  <p>根据生日悖论，若每秒产生 10 亿笔 UUID，100 年后只产生一次重复的概率是 50%。如果地球上每个人都各有 6 亿笔 UUID，发生一次重复的概率是 50%。产生重复UUID 并造成错误的情况非常低，是故大可不必考虑此问题。</p>
+</blockquote>
+
+<h1 id="id-overview">Overview</h1>
+
+<p><a href="https://en.wikipedia.org/wiki/Universally_unique_identifier">UUID(Universally Unique Identifier)</a> 是长为 128 bits 的通用唯一识别码，它由 <a href="https://www.ietf.org/rfc/rfc4122.txt">RFC 4122</a> 定义，最早被用于阿波罗网络计算系统(Apollo Network Computing System) 和微软的 Windows 平台，如今 OpenStack 也广泛的使用它来标志计算、存储和网络等资源。UUID 的目的，是让分布式系统中的所有元素，都能有唯一的辨识信息，而不需要通过中央控制端来做辨识信息。本文主要介绍 UUID 的生成算法，并且解释它为什么能保证全局唯一。</p>
+
+<p>为便于表示，UUID 标准型式包含 32 个 16 进制数字，以连字号分为五段，形式为 8-4-4-4-12 的 32 个字符，例如：</p>
+
+<pre><code>f81d4fae-7dec-11d0-a765-00a0c91e6bf6
+</code></pre>
+
+<p>详细的结构如下：</p>
+
+<pre><code> 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                          time_low                             |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       time_mid                |         time_hi_and_version   |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|clk_seq_hi_res |  clk_seq_low  |         node (0-1)            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                         node (2-5)                            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+</code></pre>
+
+<p>它由六类参数构成：</p>
+
+<ul>
+  <li>time_low: 4 Bytes，timestamp 数据的低位部分</li>
+  <li>time_mid: 2 Bytes，timestamp 数据的中位部分</li>
+  <li>time_hi_and_version: 2 Bytes，timestamp 数据的高位部分和 version 信息</li>
+  <li>clk_seq_hi_res: 1 Byte，clock sequence 数据的高位部分和 type 信息</li>
+  <li>clk_seq_low: 1 Byte，clock sequence 数据的低位部分</li>
+  <li>node: 6 Bytes，node 的 MAC 地址信息</li>
+</ul>
+
+<p>首先注意到 time_hi_and_version 包含的 version 信息和 clk_seq_hi_res 包含的 variant 表示的类型信息，它们在 UUID 的位置分别如下：</p>
+
+<pre><code>xxxxxxxx-xxxx-Vxxx-Txxx-xxxxxxxxxxxx
+
+V: version，即版本号，共 4 bits，V 的取值为 1、2、3、4 和 5。
+T: variant，即类型信息，常见的为 2  bits，值为 10，故 T 的取值通常为 8、9、A 和 B。
+</code></pre>
+
+<p><strong>注</strong>：不同 version 的 UUID 的取值来源不同，本文只讲述 version 为 1，variant 为 10 的 UUID 的生成算法。</p>
+
+<hr />
+
+<h1 id="id-format">Format</h1>
+
+<p>从上节的结构图表可知，UUID 的信息主要来源于三部分：</p>
+
+<ul>
+  <li>timestamp：时间戳</li>
+  <li>node：主机上的 IEEE 802 MAC 地址</li>
+  <li>clock sequence：避免因某些异常场景而生成重复的 UUID</li>
+</ul>
+
+<h2 id="id-timestamp">Timestamp</h2>
+
+<p>Timestamp 是一个 60 bits 的无符号数，对于 version 为 1 的 UUID，它从 1582-10-15 00:00:000000000 起到当前 UTC 时间，每隔 100 纳秒加一。对于无法获取 UTC 时间的系统，可以采用 localtime。</p>
+
+<p>虽然采用 60 bit 的时间戳存在溢出的问题，但是需要长达 3400 年才会出现溢出，所以 timestamp 保证了同一台主机不会生成相同的 UUID。</p>
+
+<h2 id="id-node">Node</h2>
+
+<p>Node 是一个 48 bits 的无符号数，对于 version 为 1 的 UUID，它选取 IEEE 802 MAC 地址，即网卡的 MAC 地址。当系统有多块网卡时，任何一块有效的网卡都可被做 Node 数据；对于没有网卡的系统，取值为随机数。</p>
+
+<pre><code class="language-bash">➜  ~  ifconfig en0
+en0: flags=8823&lt;UP,BROADCAST,SMART,SIMPLEX,MULTICAST&gt; mtu 1500
+	ether b8:e8:56:2f:95:3e
+	nd6 options=1&lt;PERFORMNUD&gt;
+	media: autoselect (&lt;unknown type&gt;)
+	status: inactive
+</code></pre>
+
+<p>生成的 uuid 如下，该 uuid 的 node 字段为 b8e8562f953e， 和网卡 en0 完全一致。</p>
+
+<pre><code class="language-bash">&gt;&gt;&gt; import uuid
+&gt;&gt;&gt; print uuid.uuid1()
+a31f74d1-10da-11e6-8453-b8e8562f953e
+</code></pre>
+
+<p>MAC 地址由 IEEE 和厂家决定，它们保证了唯一性，所以不同的主机在任何时刻生成的 UUID 均不相同。</p>
+
+<h2 id="id-clock-sequence">Clock Sequence</h2>
+
+<p>Clock sequence 是一个 14 bits 的无符号数，它的出现是为了避免因某些特殊情况而生成重复的 UUID，比如：</p>
+
+<ul>
+  <li>主机往回调整时间</li>
+  <li>主机更换网卡</li>
+</ul>
+
+<p>每当以上特殊情况发生时，通常的做法是：</p>
+
+<ul>
+  <li>如果之前的 clock sequence 存在，则增大 clock sequence 的值</li>
+  <li>如果之前不存在 clock sequence，则随机生成一个 clock sequence</li>
+</ul>
+
+<hr />
+
+<h1 id="id-algorithem">Algorithem</h1>
+
+<p>下面阐述 version 为 1 的 UUID 的生成算法，它具有简单、准确但是低效的特点：</p>
+
+<ol>
+  <li>从数据表读取(读取需加锁)曾经被用于生成 UUID 的 timestamp, clock sequence 和 node 等信息</li>
+  <li>获取当前的 timestamp</li>
+  <li>获取当前的 node 信息</li>
+  <li>如果第 1 步读取信息失败，或者读取的 node 与当前的 node 不一致，生成一个随机的 clock sequence</li>
+  <li>如果 timestamp 比当前的 timestamp 小，clock sequence 调大</li>
+  <li>把当前 timestamp，node 和 clock sequence 存入数据表</li>
+  <li>根据当前的 timestamp，node 和 clock sequence 生成 UUID，细节如下：
+    <ul>
+      <li>time_low 为 timestamp[28:59]</li>
+      <li>time_mid 为 timestamp[12:27]</li>
+      <li>time_hi_and_version[4:15] 为 timestamp[0]…timestamp[11]</li>
+      <li>time_hi_and_version[0:3] 为 0001</li>
+      <li>clock_seq_low 为 clock_sequence[6:13]</li>
+      <li>clock_seq_hi_and_reserved[2:7] 为 clock_sequence[0:5]</li>
+      <li>clock_seq_hi_and_reserved[0:1] 为 10</li>
+      <li>node 为 MAC[0:47]</li>
+    </ul>
+  </li>
+</ol>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

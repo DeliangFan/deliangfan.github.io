@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解 stack --- 函数是如何调用的</title>
+  <meta name="description" content="理解 Stack">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/linux/2015/05/16/%E7%90%86%E8%A7%A3stack-func.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解 stack --- 函数是如何调用的</h1>
+    <p class="post-meta"><time datetime="2015-05-16T00:00:00+08:00" itemprop="datePublished">May 16, 2015</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <h1 id="id-stack">理解 Stack</h1>
+
+<pre><code>  high address   +---------------+
+                 |               |
+                 |     Stack     |
+                 |               |
+                 +---------------+
+                 |       |       |
+                 |       v       |
+                 |               |
+                 |               |
+                 +---------------+
+                 |      Mmap     |
+                 +---------------+
+                 |               |
+                 |               |
+                 |       ^       |
+                 |       |       |
+                 +---------------+
+                 |               |
+                 |     Heap      |
+                 |               |
+                 +---------------+
+                 |     Data      | 
+                 +---------------+
+                 |     Code      |
+  low address    +---------------+
+</code></pre>
+
+<p>上图是 Linux 进程的地址空间，笼统的说，进程的空间可以分为两个大类：指令和数据，指令即是上图的 code 段，其它的均属于数据。根据数据在生命周期以及作用范围的特点，又可分为 data, heap 和 stack，data 通常用于存放全局变量，它伴随着程序的整个生命周期，可被所有的线程共享；动态分配的数据通常存放在 heap，同样可被所有的线程共享；stack 存放的是函数以及函数的局部变量，它们被动态的分配和释放，但是不被其它线程共享。</p>
+
+<p>在数据结构领域，stack 是一种后进先出的结构，设想某个函数被调用时，我们需要为该函数开辟空间，当调用结束后，空间将被释放，所以 stack 这种数据结构非常适用函数的调用。本文主要介绍 stack 以及函数是如何调用的。</p>
+
+<hr />
+
+<h1 id="id-stack-frame">Stack Frame</h1>
+
+<p>要实现函数调用，必须解决以下几个问题：</p>
+
+<ul>
+  <li>参数的传递</li>
+  <li>返回值的传递</li>
+  <li>stack 的维护</li>
+</ul>
+
+<p>我们通常使用<a href="https://en.wikipedia.org/wiki/Call_stack">栈帧(stack frame)</a>实现函数的调用，它的结构如下：</p>
+
+<pre><code>  high address
+                                 +---------------+
+                                 |               |
+                                 |      Old      |
+                                 |     Stack     |
+                                 |     Frame     |
+                                 |               |
+                --------------   +---------------+
+                      ^     ^    |   Parameters  |
+                      |   caller +---------------+
+                      |     v    |  Return addr  |
+                           ---   +---------------+
+                Stack Frame ^    |    Old  ebp   |   &lt;------- ebp  Frame Pointer
+                            |    +---------------+
+                      |  callee  |   Registers   |
+                      |     |    +---------------+
+                      v     v    |   Local vars  |
+                --------------   +---------------+   &lt;------- esp  Stack Pointer
+
+low address  
+</code></pre>
+
+<p>首先介绍 x86 下的两个寄存器：</p>
+
+<ul>
+  <li>esp：栈寄存器，永远指向程序的栈顶。</li>
+  <li>ebp：帧寄存器，指向当前的帧</li>
+</ul>
+
+<p>我们把主动调用函数的一方称为 caller，被调用的一方称为 callee，当函数被调用时，caller 首先把参数压栈，然后压栈返回地址，之后跳到相应的函数执行。当跳到相应的函数时，callee 需保存 caller 的帧地址，即把上个函数的帧地址压入栈中，并更新当前的帧寄存器，之后保存某些寄存器的值，最后才是为 callee 函数体内的局部变量开辟空间。当函数调用结束后，当前栈帧所占用的空间已经没有用处，所以需要释放这片空间，即把当前栈帧的所有数据全部弹出。</p>
+
+<p>函数的调用规则有多种，这些规则主要表现在某些细节的差异，比如参数的压栈顺序，参数的出栈。<a href="http://linux.die.net/man/1/cdecl">Cdecl</a> 是 C 语言默认的规则，它规定参数从右到左压栈，调用方负责参数的出栈。</p>
+
+<hr />
+
+<h1 id="id-example">Example</h1>
+
+<p>以下是个简单的 c 样例：</p>
+
+<pre><code class="language-c">int add_1(int a){
+    return a + 1;
+}
+
+void main(){
+    int a = 1;
+    a = add_1(a);
+}
+</code></pre>
+
+<p>编译所得的汇编如下：</p>
+
+<pre><code class="language-s">main:
+    ......
+    movl    $1, -4(%ebp)    # set a = 1
+    leal    -4(%ebp), %eax  # set eax = a
+    movl    %eax, 4(%esp)   # store on stack
+    call    add_1           # call add_1
+    ......
+
+add_1:
+    pushq   %ebp            # save old ebp
+    movq    %esp, %ebp      # update the ebp
+    movl    -4(%ebp), %eax  # set eax = a
+    addl    $1, %eax        # eax = eax + 1
+    popq    %ebp            # restore ebp
+    ret                     # return
+</code></pre>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

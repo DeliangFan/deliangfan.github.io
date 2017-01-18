@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解浮点数</title>
+  <meta name="description" content="Example">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/algorithm/2016/10/20/Floating_number.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解浮点数</h1>
+    <p class="post-meta"><time datetime="2016-10-20T00:00:00+08:00" itemprop="datePublished">Oct 20, 2016</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <h1 id="id-example">Example</h1>
+
+<p>首先从两个例子开始。</p>
+
+<ul>
+  <li>例 1，下例输出是？</li>
+</ul>
+
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+
+void main(){
+    float p = 1000000.9;
+
+    printf("%f", p);
+}
+</code></pre>
+
+<p>结果：</p>
+
+<pre><code>1000000.875000
+</code></pre>
+
+<ul>
+  <li>例 2，下例输出是？</li>
+</ul>
+
+<pre><code class="language-c">#include&lt;stdio.h&gt;
+
+void main(){
+    int i = 1;
+    float* p = &amp;i;
+
+    printf("%f", *p);
+}
+</code></pre>
+
+<p>结果：</p>
+
+<pre><code>0.000000
+</code></pre>
+
+<h1 id="id-section">理解浮点数</h1>
+
+<p>从例 1 可知，<a href="https://en.wikipedia.org/wiki/IEEE_floating_point">浮点数</a>表示的精度有限；由例 2 可知，同样为 4 Byte，float 和 int 的数据组织不一样。那么浮点数是如何组织的呢？首先回忆<a href="https://zh.wikipedia.org/wiki/%E7%A7%91%E5%AD%A6%E8%AE%B0%E6%95%B0%E6%B3%95">科学计数法</a>。在科学记数法中，一个有限的实数可用如下表示：</p>
+
+<pre><code>a * 10^n
+
+其中：
+1 &lt;= |a| &lt; 10
+n 为整数
+</code></pre>
+
+<p>以上式子亦可表达为如下：</p>
+
+<pre><code>(-1)^s * a * 10^n
+
+其中：
+s = 0 或 1，s 为 0 表示正数，为 1 表示负数
+1 &lt;= a &lt; 10
+n 为整数
+</code></pre>
+
+<p>计算机采用二进制，科学计数法的二进制表达如下：</p>
+
+<pre><code>(−1)^s × a × 2^n
+
+其中
+s = 0 或 1，s 为 0 表示正数，为 1 表示负数
+1 &lt;= a &lt; 2
+n 为整数
+</code></pre>
+
+<p>以 4 Byte 的 float 为例，<a href="https://en.wikipedia.org/wiki/IEEE_754-1985">IEEE 754</a> 对其的定义如下：</p>
+
+<pre><code>|s|exponent(8 bit)|            fraction (23 bit)                |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+</code></pre>
+
+<ul>
+  <li>s 表示符号位，共 1 bit，0 表示正数，1 表示负数</li>
+  <li>e(exponent) 共 8 bit，它决定了 n 的值，即浮点数能表达的范围</li>
+  <li>f(fraction) 共 23 bit，它决定了 a 的值，即浮点数的精度</li>
+</ul>
+
+<p>e 和 n 的关系如下：</p>
+
+<pre><code>n = e - 127
+
+其中 0&lt;= e &lt;= 255
+所以 -127 &lt;= n &lt;= 128。(当 n = 128 时，表示浮点数无穷大)
+</code></pre>
+
+<p>f 和 a 的关系如下：</p>
+
+<pre><code>a = f/(2^23) + 1
+
+其中 0 &lt;= f &lt;= 8388607
+所以 1 &lt;= a &lt;= 1.99999988
+</code></pre>
+
+<p>所以 float 类型的浮点数能表示的范围为：</p>
+
+<pre><code>± 1.99999988 * 2^-127 至 ± 1.99999988 * 2^127
+即：± 1.18 × 10^-38 至 ± 3.4 × 10^38
+</code></pre>
+
+<p>float 类型的浮点数精度为：</p>
+
+<pre><code>1/(2^23) = 1.19 * 10^-7，十进制下为 7 位。
+</code></pre>
+
+<p>同理，double 类型的浮点数能表示的范围和最大精度为：</p>
+
+<pre><code>范围：± 2.23 × 10^-308 到 ± 1.80 × 10^308
+精度：十进制下为 16 位
+</code></pre>
+
+<p>例 1 中，因为 1000000.9 长度为 8 位，超出 float 所能表示的最大精度，所以不能被精确表示。</p>
+
+<p>例 2 中，对于 int i = 1，其在内存中的数据为：</p>
+
+<pre><code>|s|exponent(8 bit)|            fraction (23 bit)                |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|1|
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+</code></pre>
+
+<p>故有 s = 0, e = 0, f = 1，其值为 (-1)^0 * (1 + 2^-23) * 2^-127，即 5.88 * 10^-39，所以显示的结果为 0。</p>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

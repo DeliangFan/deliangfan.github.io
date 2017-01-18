@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解 RPC 之 oslo.messaging</title>
+  <meta name="description" content="RPC(Remote Procedure Call) 是一种远程过程调用协议，它允许一台主机透明的调用另外一台主机的函数(子程序)。RPC 广泛的应用在分布式系统中，它允许系统根据功能和业务解耦成多个模块，提高了系统的扩展性和部署的灵活性等。">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2015/12/06/olso_messaging.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解 RPC 之 oslo.messaging</h1>
+    <p class="post-meta"><time datetime="2015-12-06T00:00:00+08:00" itemprop="datePublished">Dec 6, 2015</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p><a href="https://en.wikipedia.org/wiki/Remote_procedure_call">RPC(Remote Procedure Call)</a> 是一种远程过程调用协议，它允许一台主机透明的调用另外一台主机的函数(子程序)。RPC 广泛的应用在分布式系统中，它允许系统根据功能和业务解耦成多个模块，提高了系统的扩展性和部署的灵活性等。</p>
+
+<p><a href="https://wiki.openstack.org/wiki/Oslo/Messaging">Oslo.messaging</a> 是 OpenStack 非常重要的 RPC 库，它基于支持 <a href="https://en.wikipedia.org/wiki/Advanced_Message_Queuing_Protocol">AMQP(Advanced Message Queuing Protocol) 协议</a> 的消息中间件，为同一个项目内的各个进程之间的通信提供了 API，如 nova-api 和 nova-scheduler 的通信，cinder-api 和 cinder-volume 的通信等。</p>
+
+<hr />
+
+<h1 id="id-rpc-overview">RPC Overview</h1>
+
+<p>RPC 首次出现在 SUN 公司 Solaris UNIX 操作系统上，我们称调用者为 client，被调用者为 server，client 和 server 可以分布在不同的主机中，每当 client 调用 server 时，server 端创建一个线程处理 client 端的请求，所以 server 端是一个并发服务器。</p>
+
+<p>RPC 支持同步和异步这两种调用：</p>
+
+<ul>
+  <li>同步调用：client 发送请求后保持阻塞，直到获取 server 端的返回结果后才继续往下执行。</li>
+  <li>异步调用：client 发送请求后继续执行后续步骤。</li>
+</ul>
+
+<pre><code>        +--------+          Call            +--------+
+        |        |   ------------------&gt;    |        |
+        | Client |                          | Server |
+        |        |   &lt;------------------    |        |
+        +--------+        Response          +--------+
+</code></pre>
+
+<p>关于 RPC 更为详细的介绍和使用请参见 <a href="https://book.douban.com/subject/4118577/">《UNIX 网络编程 卷2 进程间通信》</a> 第五部分。</p>
+
+<hr />
+
+<h1 id="id-amqp-overview">AMQP Overview</h1>
+
+<p>上节介绍的 RPC 具有简单易用的特点，但是存在两个缺点：</p>
+
+<ul>
+  <li>Client 需要知道 server 端的 IP/PORT 才能通信，采用 IP/PORT 标志 server 端不利于系统的维护和扩展。</li>
+  <li>当有大量的 client 和 server 时，client 和 server 端的关系网庞大复杂，不利于系统的维护和扩展。</li>
+</ul>
+
+<p>AMQP 是应用层协议，它在 client 和 server 端引入了消息中间件，解耦了 client 和 server 端，支持大规模下的消息通信，其模型如下：</p>
+
+<pre><code>        +----------+           +--------+           +----------+
+        | Producer |   &lt;---&gt;   |  AMQP  |   &lt;---&gt;   | Consumer |
+        | (Client) |           | Server |           | (Server) |
+        +----------+           + -------+           +----------+
+</code></pre>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/amqp_fanout.png" alt="AMQP Overview" /></p>
+
+<p>在 AMQP 的术语中，我们把 client 端称为 producer，server 端称为 consumer。除此以外，还有以下概念：</p>
+
+<ul>
+  <li>Topic: 即消息，由消息头和消息体组成，消息头部包含了 routing-key 等属性，exchange 就是根据 routing-key 把消息发送到对应的队列。</li>
+  <li>Exchange: 即消息转发器，producer 先把消息发送到 exchange 中，exchange 根据消息属性把消息转发到相应的队列。</li>
+  <li>Queue: 即消息队列，接收和暂存由 exchange 转发来的消息，以供 consumer 消费。</li>
+  <li>Bind: 即 queue 和 exchange 之间的绑定，绑定时定义了消息的转发规则。</li>
+</ul>
+
+<p>AMQP 支持三种调用：</p>
+
+<ul>
+  <li>Call: 同步调用，但过程稍微复杂，producer 发送消息后立刻创建一个 direct consumer, 该  direct consumer 阻塞于接收返回值。对端的 consumer 接收并处理 producer 的消息后，创建一个 direct producer，它负责把处理结果发送给 direct consumer，如下图。</li>
+</ul>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/amqp_call.png" alt="AMQP Overview" /></p>
+
+<ul>
+  <li>Cast: 异步调用，producer 发送消息后继续执行后续步骤，consumer 接收处理消息，如下图。</li>
+</ul>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/amqp_cast.png" alt="AMQP Overview" /></p>
+
+<ul>
+  <li>Fanout: 相当于广播，producer 可把消息发送给多个 consumer，属于异步调用范畴，如下图。</li>
+</ul>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/amqp_fanout.png" alt="AMQP Overview" /></p>
+
+<hr />
+
+<h1 id="id-oslo-messaging">Oslo Messaging</h1>
+
+<p>OpenStack 有三大常用消息中间件，RabbitMQ，QPID 和 ZeroMQ，它们参数和接口各异，不利于直接使用，所以 oslo.messaging 对这三种消息中间件做了抽象和封装，为上层提供统一的接口。</p>
+
+<pre><code>                     +----------------+
+                     | Olso Messaging |
+                     +----------------+
+        -------------------------------------------
+            +-----------+  +------+  +--------+
+            | Rabbit MQ |  | Qpid |  | ZeroMQ |
+            +-----------+  +------+  +--------+
+</code></pre>
+
+<p>Oslo.messaging 抽象出了两类数据：</p>
+
+<ul>
+  <li>Transport: 消息中间件的基本参数，如 host, port 等信息。
+    <ul>
+      <li>RabbitMQ:host, port, userid, password, virtual_host, durable_queues, ha_queues 等。</li>
+      <li>Qpid: hostname, port, username, password, protocol (tcp or ssl) 等。</li>
+      <li>ZeroMQ: bind_address, host, port, ipc_dir 等。</li>
+    </ul>
+  </li>
+  <li>Target: 主要包括 exchange, topic, server (optional), fanout (defaults to False) 等消息通信时用到的参数。</li>
+</ul>
+
+<p>Oslo.messaging 代码框架清晰，简单易读，以下是一个简单样例，server 端代码如下：</p>
+
+<pre><code class="language-python">from oslo_config import cfg
+import oslo_messaging
+import time
+
+class ServerControlEndpoint(object):
+
+    target = oslo_messaging.Target(namespace='control')
+
+    def __init__(self, server):
+        self.server = server
+
+    def stop(self, ctx):
+        if self.server:
+            self.server.stop()
+
+class TestEndpoint(object):
+
+    def test(self, ctx, arg):
+        return arg
+
+transport = oslo_messaging.get_transport(cfg.CONF)
+target = oslo_messaging.Target(topic='test', server='server1')
+endpoints = [
+    ServerControlEndpoint(None),
+    TestEndpoint(),
+]
+server = oslo_messaging.get_rpc_server(transport, target, endpoints,
+                                       executor='blocking')
+try:
+    server.start()
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    print("Stopping server")
+
+server.stop()
+server.wait()
+</code></pre>
+
+<p>Client 端代码如下：</p>
+
+<pre><code class="language-python">import oslo_messaing as messaging
+
+transport = messaging.get_transport(cfg.CONF)
+target = messaging.Target(topic='test', version='2.0')
+client = messaging.RPCClient(transport, target)
+client.call(ctxt, 'test', arg=arg)
+</code></pre>
+
+<p>相关文章推荐：</p>
+
+<ul>
+  <li><a href="http://docs.openstack.org/developer/nova/rpc.html">AMQP and Nova</a></li>
+  <li><a href="https://wiki.openstack.org/wiki/Oslo/Messaging">Oslo Messaging</a></li>
+  <li><a href="https://www.rabbitmq.com/tutorials/tutorial-six-python.html">RabbitMQ: Remote Procedure Call</a></li>
+</ul>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

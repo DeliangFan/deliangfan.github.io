@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>An Introduction to Heat</title>
+  <meta name="description" content="">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/openstack/2014/02/14/Introduction_to_heat.html">
+  <link rel="alternate" type="application/rss+xml" title="koala bear" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/">koala bear</a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">An Introduction to Heat</h1>
+    <p class="post-meta"><time datetime="2014-02-14T00:00:00+08:00" itemprop="datePublished">Feb 14, 2014</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/heat_logo.png" alt="heat_log" /></p>
+
+<p>                                                                          <a href="http://www.slideshare.net/openstackindia/introduction-to-openstack-heat">原图出处</a></p>
+
+<h1 id="id-overview">Overview</h1>
+
+<p><a href="https://wiki.openstack.org/wiki/Heat">Heat</a> 从 Havana 起成为 OpenStack 的正式项目，它的定位相当于 AWS 的 CloudFormation，为多种云平台的云服务乃至虚拟机的应用程序提供编排的功能。所谓的编排，就是按照特定的顺序执行某些操作。我们以用户需要创建一个 instance 和 volume，然后挂载 volume 至 instance 为例，一般的步骤为：</p>
+
+<pre><code>调用 Nova 创建 instance
+         |
+         v
+调用 Cinder 创建 volume
+         |
+         v
+调用 nova 挂载 volume 至 instance
+</code></pre>
+
+<p>如果利用 heat，用户只需在一个文本的 template 中定义上述的资源和操作步骤，然后调用 heat stack-create 即可，heat 会自动的解析 template 里内容和依赖关系，最后按照顺序调用相关组件的 API 依次创建 instance、volume 并挂载 volume。如此，用户可以非常便捷的构建 IT 设施和部署应用，极大的简化了中间繁杂的步骤。</p>
+
+<p>Heat 的架构如下，它由 4 部分组成：</p>
+
+<ul>
+  <li>heat-api: 提供原生的 Restful API</li>
+  <li>heat-api-cfn: 兼容 AWS CloudFormation API</li>
+  <li>heat-api-cloudwatch: 兼容 AWS CloudWatch API，可用于接收 ceilometer 的告警</li>
+  <li>heat-engine: 最核心部分，解析 template，处理逻辑业务，完成资源的创建和部署</li>
+</ul>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/heat_work_flow.png" alt="Heat work flow" /></p>
+
+<p>                                                                          <a href="http://gigaroom.blogspot.com/2014/12/cloud-orchestrator-between-it-and-telco.html?view=magazine">原图出处</a></p>
+
+<hr />
+
+<h1 id="id-orchestration">Orchestration</h1>
+
+<p>Orchestration 是 heat 最重要的功能，和 RESTful API 把一切都抽象为 resource 相同，heat 也把所有的云服务，如 instance、flavor、volume、network、ip 乃至 volumeattachment、softwaredeployment 都抽象为 resource，每种的 resource 都有自身的 properties，比如 flavor 类型的 resource，它有 ram、vcpu 和 disk 等 properties。Template 用文本定义一系列的 resource，heat 解析 template 的 resource，然后生成一个 stack，stack 表示这些 resource 的集合，最后根据依赖关系，依次完成各种资源的创建。</p>
+
+<ul>
+  <li>template: 文本模块，定义各种 resource，支持 AWS 和 HOT 格式的模板</li>
+  <li>stack: stack 是一组 resource 的集合，heat 根据 template 创建 stack</li>
+  <li>resource: 云服务，如 instance, flavor 等</li>
+  <li>properties: 表示 resource 的某些属性</li>
+</ul>
+
+<p>例如，下述 <a href="https://github.com/openstack/heat-templates/blob/master/hot/vm_with_cinder.yaml">template</a> 创建一个 instance 和 volume，并把 volume 挂载到 instance：</p>
+
+<pre><code class="language-yaml">heat_template_version: 2013-05-23
+
+description: &gt;
+  A HOT template that holds a VM instance with an attached
+  Cinder volume.  The VM does nothing, it is only created.
+
+resources:
+  my_instance:
+    type: OS::Nova::Server
+    properties:
+      image: your_image_id
+      flavor: m1.small
+      networks: [{network: your_network_id }]
+
+  my_volume:
+    type: OS::Cinder::Volume
+    properties:
+      size: 10
+
+  vol_attachment:
+    type: OS::Cinder::VolumeAttachment
+    properties:
+      instance_uuid: { get_resource: my_instance }
+      volume_id: { get_resource: my_vol }
+      mountpoint: /dev/vdb
+</code></pre>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/volume_instance_attachment_heat.png" alt="volume_instance_attachment" /></p>
+
+<p>Heat 支持多种类型的 resource，用户也可以加入自己定义的 resource：</p>
+
+<pre><code class="language-bash">AWS::AutoScaling::AutoScalingGroup
+......
+AWS::S3::Bucket
+OS::Ceilometer::Alarm
+OS::Ceilometer::CombinationAlarm
+OS::Cinder::EncryptedVolumeType
+OS::Cinder::Volume
+OS::Cinder::VolumeAttachment
+OS::Glance::Image
+OS::Heat::AutoScalingGroup
+......
+OS::Heat::WaitConditionHandle
+OS::Keystone::Endpoint
+......
+OS::Neutron::LBaaS::PoolMember
+OS::Neutron::LoadBalancer
+......
+OS::Nova::Server
+......
+</code></pre>
+
+<hr />
+
+<h1 id="id-autoscaling">Autoscaling</h1>
+
+<p><a href="https://wiki.openstack.org/wiki/Heat/AutoScaling">Autoscaling</a> 是 Heat 的另外一大特性，它通过 ceilometer 监控伸缩组(scaling group)的虚拟机的负载，当虚拟机的负载超过阈值时，ceilometer 发送告警给 heat，heat 收到告警后，根据伸缩策略(scaling policy)增加虚拟机，并将虚拟机加入到 load balancer 的 backends 中；反之，当虚拟机的负载很低时，heat 收到告警后删除虚拟机。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/asg_heat.png" alt="heat asg" /></p>
+
+<p>官方推荐的 <a href="https://github.com/openstack/heat-templates/blob/master/hot/autoscaling.yaml">autoscaling template</a> 如下：</p>
+
+<pre><code class="language-yaml">heat_template_version: 2013-05-23
+description: AutoScaling Wordpress
+parameters:
+  image:
+    type: string
+    description: Image used for servers
+  key:
+    type: string
+    description: SSH key to connect to the servers
+  flavor:
+    type: string
+    description: flavor used by the web servers
+  database_flavor:
+    type: string
+    description: flavor used by the db server
+  network:
+    type: string
+    description: Network used by the server
+  subnet_id:
+    type: string
+    description: subnet on which the load balancer will be located
+  database_name:
+    type: string
+    description: Name of the wordpress DB
+    default: wordpress
+  database_user:
+    type: string
+    description: Name of the wordpress user
+    default: wordpress
+  external_network_id:
+    type: string
+    description: UUID of a Neutron external network
+resources:
+  db:
+    type: OS::Nova::Server
+    properties:
+      flavor: {get_param: database_flavor}
+      image: {get_param: image}
+      key_name: {get_param: key}
+      networks: [{network: {get_param: network} }]
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          template: |
+            #!/bin/bash -v
+            yum -y install mariadb mariadb-server
+            systemctl enable mariadb.service
+            systemctl start mariadb.service
+            mysqladmin -u root password $db_rootpassword
+            cat &lt;&lt; EOF | mysql -u root --password=$db_rootpassword
+            CREATE DATABASE $db_name;
+            GRANT ALL PRIVILEGES ON $db_name.* TO "$db_user"@"%"
+            IDENTIFIED BY "$db_password";
+            FLUSH PRIVILEGES;
+            EXIT
+            EOF
+          params:
+            $db_rootpassword: {get_attr: [database_root_password, value]}
+            $db_name: {get_param: database_name}
+            $db_user: {get_param: database_user}
+            $db_password: {get_attr: [database_password, value]}
+  asg:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      min_size: 1
+      max_size: 3
+      resource:
+        type: lb_server.yaml
+        properties:
+          flavor: {get_param: flavor}
+          image: {get_param: image}
+          key_name: {get_param: key}
+          network: {get_param: network}
+          pool_id: {get_resource: pool}
+          metadata: {"metering.stack": {get_param: "OS::stack_id"}}
+          user_data:
+            str_replace:
+              template: |
+                #!/bin/bash -v
+                yum -y install httpd wordpress
+                systemctl enable httpd.service
+                systemctl start httpd.service
+                setsebool -P httpd_can_network_connect_db=1
+                sed -i "/Deny from All/d" /etc/httpd/conf.d/wordpress.conf
+                sed -i "s/Require local/Require all granted/" /etc/httpd/conf.d/wordpress.conf
+                sed -i s/database_name_here/$db_name/ /etc/wordpress/wp-config.php
+                sed -i s/username_here/$db_user/ /etc/wordpress/wp-config.php
+                sed -i s/password_here/$db_password/ /etc/wordpress/wp-config.php
+                sed -i s/localhost/$db_host/ /etc/wordpress/wp-config.php
+                systemctl restart httpd.service
+              params:
+                $db_name: {get_param: database_name}
+                $db_user: {get_param: database_user}
+                $db_password: {get_attr: [database_password, value]}
+                $db_host: {get_attr: [db, first_address]}
+  web_server_scaleup_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: {get_resource: asg}
+      cooldown: 60
+      scaling_adjustment: 1
+  web_server_scaledown_policy:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: {get_resource: asg}
+      cooldown: 60
+      scaling_adjustment: -1
+  cpu_alarm_high:
+    type: OS::Ceilometer::Alarm
+    properties:
+      description: Scale-up if the average CPU &gt; 50% for 1 minute
+      meter_name: cpu_util
+      statistic: avg
+      period: 60
+      evaluation_periods: 1
+      threshold: 50
+      alarm_actions:
+        - {get_attr: [web_server_scaleup_policy, alarm_url]}
+      matching_metadata: {'metadata.user_metadata.stack': {get_param: "OS::stack_id"}}
+      comparison_operator: gt
+  cpu_alarm_low:
+    type: OS::Ceilometer::Alarm
+    properties:
+      description: Scale-down if the average CPU &lt; 15% for 10 minutes
+      meter_name: cpu_util
+      statistic: avg
+      period: 600
+      evaluation_periods: 1
+      threshold: 15
+      alarm_actions:
+        - {get_attr: [web_server_scaledown_policy, alarm_url]}
+      matching_metadata: {'metadata.user_metadata.stack': {get_param: "OS::stack_id"}}
+      comparison_operator: lt
+  monitor:
+    type: OS::Neutron::HealthMonitor
+    properties:
+      type: TCP
+      delay: 5
+      max_retries: 5
+      timeout: 5
+  pool:
+    type: OS::Neutron::Pool
+    properties:
+      protocol: HTTP
+      monitors: [{get_resource: monitor}]
+      subnet_id: {get_param: subnet_id}
+      lb_method: ROUND_ROBIN
+      vip:
+        protocol_port: 80
+  lb:
+    type: OS::Neutron::LoadBalancer
+    properties:
+      protocol_port: 80
+      pool_id: {get_resource: pool}
+
+  # assign a floating ip address to the load balancer
+  # pool.
+  lb_floating:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: {get_param: external_network_id}
+      port_id: {get_attr: [pool, vip, port_id]}
+</code></pre>
+
+<p>这些 resource 的依赖关系如下：</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/resource%20dependency.png" alt="resource dependency" /></p>
+
+<hr />
+
+<h1 id="id-software-configuration-and-deployment">Software Configuration and Deployment</h1>
+
+<p>虚拟机业务的初始化部署同样是 heat 重要的功能，它要求虚拟机镜像已安装 <a href="https://cloudinit.readthedocs.io/en/latest/">cloud-init</a>，支持初始化虚拟机的以下信息等:</p>
+
+<ul>
+  <li>hostname</li>
+  <li>password</li>
+  <li>ssh key</li>
+  <li>要安装的包</li>
+  <li>bash 脚本</li>
+  <li>……</li>
+</ul>
+
+<p>它把这些信息存放于 nova 的 userdata 和 metadata，当虚拟机启动后，由 cloud-init 消费这些信息，完成虚拟机业务的初始化部署和配置。Heat 专门提供了如下 resource 用于虚拟机业务的部署和配置：</p>
+
+<ul>
+  <li>OS::Heat::MultipartMime</li>
+  <li>OS::Heat::CloudConfig</li>
+  <li>OS::Heat::SoftwareConfig</li>
+  <li>OS::Heat::SoftwareDeployment</li>
+  <li>OS::Heat::StructuredConfig</li>
+  <li>OS::Heat::StructuredDeployment</li>
+</ul>
+
+<p>OpenStack 西安 Meetup 黄填华演讲的 <a href="http://files.meetup.com/14970122/Heat-Software-Config.pdf">Heat-Software-Config</a> 详细地介绍了 software configuration 和 deployment。</p>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">koala bear</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li>koala bear</li>
+          <li><a href="mailto:vanderliang@gmail.com">vanderliang@gmail.com</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+          <li>
+            <a href="https://github.com/deliangfan"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">deliangfan</span></a>
+
+          </li>
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p>观水有术，必观其澜，日月有明，容光必照。
+</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
