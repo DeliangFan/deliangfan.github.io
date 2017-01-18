@@ -1,67 +1,52 @@
 ---
 layout: post
-title:  "复合主键 ORM 的 query.all()"
+title:  "同局域网下的 Iptables DNAT"
 categories: 踩坑杂记
 ---
 
-假定有如下表 test:
+某业务运行在服务器 A(10.0.0.2:80)，后来将其迁移至服务器 B(10.0.0.3:80)，为了保证平滑迁移，服务器 A 需要将 80 端口的入口流量转发至服务器 B 的 80 端口。[Iptables](http://ipset.netfilter.org/iptables.man.html) 强大的端口转发功能可以很好的满足该需求，因为服务器 A 需要将入口流量转发，因此使用 [DNAT](http://linux-ip.net/html/nat-dnat.html)。[官网文档](https://www.netfilter.org/documentation/HOWTO/NAT-HOWTO-6.html)的步骤如下：
 
-~~~ bash
-mysql> show columns from test;
-+-------+---------+------+-----+---------+-------+
-| Field | Type    | Null | Key | Default | Extra |
-+-------+---------+------+-----+---------+-------+
-|  id1  | int(11) | NO   | PRI | 0       |       |
-|  id2  | int(11) | NO   | PRI | 0       |       |
-+-------+---------+------+-----+---------+-------+~~~
+开启转发功能：
 
-采用 sql 查询 id1 为 1 的结果如下：
-
-~~~ bash
-mysql> select * from test where id1=1;
-+-----+-----+
-| id1 | id2 |
-+-----+-----+
-|   1 |   1 |
-|   1 |   2 |
-+-----+-----+
+~~~ shell
+$ sysctl -w net.ipv4.ip_forward=1
 ~~~
 
-采用 ORM 来查询所有 id1 为 1 的数据，代码如下：
+设置如下转发规则，即把 A 的 80 端口的流量转发到服务器 B 的 80 端口。
 
-~~~ python
-from sqlalchemy import create_engine
-from sqlalchemy import Column, Integer
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-
-Base = declarative_base()
-
-class Test(Base):
-    __tablename__ = "test"
-    id1 = Column(Integer, primary_key=True)
-    id2 = Column(Integer) # My problem!, need to set Column(Interger, primary_key=True)
-
-engine = create_engine("......")
-Session = sessionmaker(bind=engine)
-session = Session()
-query = session.query(Test).filter_by(id1=1)
-
-print length(query.all())
-print query.count()
+~~~ shell
+$ iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to  10.0.0.3:80
 ~~~
 
-所得的结果为：
+然后从客户端(10.0.0.10)访问服务器 A 的 80 端口，但是没有回应，原因是超时。
 
-~~~ bash
-1
-2
+~~~ shell
+$ curl http://10.0.0.2:80
+curl: (7) Failed to connect to 10.0.0.2 port 80: Operation timed out
 ~~~
 
-之所以出现以上情况，是因为 ORM 会把查询的结果转换为 object，并且 SQLAlchemry 的 Identity Map 记录映射关系，映射依赖 ORM unique primary key(id1)。当执行 query.all() 时，第一个数据(id1=1, id2=1) 被转换为对象，并被 Identity Map 所记录，第二个 (id1=1, id2=2)) 被转换为对象时，ORM 发现该 key 已经存在，所以 query.all() 只返回一个对象。
+服务器 A 的抓包如下，由第一行可知服务器 A 的 80 端口收到请求，第二行表示服务器 A 将 80 端口的流量转发至服务器 B 的 80 端口(请注意相同的 TCP 序列号)。
 
-Stackoverflow 中 [Querying for all results in SQLAlchemy 0.7.10](http://stackoverflow.com/questions/19409278/querying-for-all-results-in-sqlalchemy-0-7-10) 也阐述了类似的问题。[SQLalchemy 的解释](http://docs.sqlalchemy.org/en/rel_0_8/orm/session.html#what-does-the-session-do)如下：
+~~~ shell
+$ tcpdump port 80
+... IP 10.0.0.10.52799 > 10.0.0.2.80 Flags [S], seq 100071038, ... length 0
+... IP 10.0.0.10.52799 > 10.0.0.3.80 Flags [S], seq 100071038, ... length 0
+... (repeat the two lines above)
+~~~
 
-> In the most general sense, the Session establishes all conversations with the database and represents a “holding zone” for all the objects which you’ve loaded or associated with it during its lifespan. It provides the entrypoint to acquire a Query object, which sends queries to the database using the Session object’s current database connection, populating result rows into objects that are then stored in the Session, inside a structure called the Identity Map - a data structure that maintains unique copies of each object, where “unique” means “only one object with a particular primary key”.
+服务器 B 的抓包如下，第一行表示服务器 B 收到 TCP 三次握手中的 sync 报文，之后服务器回送 sync 报文(第二行)，第三行表示收到客户端 reset 报文。客户端之所以发送 reset 报文，是因为客户端是和服务器 A 而非 B 建立的 TCP 链接，所以服务器 B 回送 sync 报文时，客户端并不认识服务器 B，故客户端重置连接。
 
-所以，写代码时，千万千万要小心！在处理 composite primary key 时，一定要保证 ORM 与数据库的格式保持一致性。
+~~~ shell
+$ tcpdump port 80
+... IP 10.0.0.10.52799 > 10.0.0.3.80: Flags [S], seq 100071038 ... length 0
+... IP 10.0.0.3.80 > 10.0.0.10.52799: Flags [S.], seq 2076971142, ack 100071039 ... length 0
+... IP 10.0.0.10.52799 > 10.0.0.3.80: Flags [R], seq 100071039 ... length 0
+~~~
+
+分析清楚原因后，对于该问题，解决的办法有多种，最为便捷的是在服务器 A 对 80 端口的流量上再做 SNAT。
+
+~~~ shell
+$ iptables -t nat -A POSTROUTING -d 10.0.0.3 -p tcp --dport 80 -j SNAT --to-source 10.0.0.2
+~~~
+
+Serverfault 亦有人提出类似问题 [how-to-do-the-port-forwarding-from-one-ip-to-another-ip-in-same-network](http://serverfault.com/questions/586486/how-to-do-the-port-forwarding-from-one-ip-to-another-ip-in-same-network)。
