@@ -1,0 +1,88 @@
+---
+layout: post
+title:  "理解 Consistent Hashing"
+categories: Algorithm
+---
+
+# 简介
+
+为了解决分布式 web 中的热点问题，[David Karger](https://en.wikipedia.org/wiki/David_Karger) 于 1997 年提出 [一致性哈希(Consistent Hashing)](https://en.wikipedia.org/wiki/Consistent_hashing)，论文请见 [Consistent Hashing and Random Trees: Distributed Caching Protocols for Relieving Hot Spots on the World Wide Web(较难理解)](https://www.akamai.com/es/es/multimedia/documents/technical-publication/consistent-hashing-and-random-trees-distributed-caching-protocols-for-relieving-hot-spots-on-the-world-wide-web-technical-publication.pdf)。一致性哈希广泛的运用于多种分布式系统中，如 memcache/redis，gluster file system, zookooper 等。
+
+- Swift: [Building a Consistent Hashing Ring](http://docs.openstack.org/developer/swift/ring_background.html)
+- Cassandra: [Consistent Hashing in Cassandra](https://blog.imaginea.com/consistent-hashing-in-cassandra/)
+- Redis/Memcache: [Memcache的一致性hash算法使用](http://get.ftqq.com/7057.get)
+- ...
+
+本文主要介绍一致性哈希的原理。
+
+# 原理
+
+## 去中心与水平扩展
+
+以 web 为例，cache 节点(如 Redis, Memcache)广泛用于 web 中，以提升性能。随着 web 规模扩大，单个节点无论是从性能上还是容量上都无法支撑大规模的业务，所以需要用多个节点以提升性能和容量。
+
+在多个节点下，给定某个 object，客户端如何知道它存储在哪个节点呢？最简单的做法是选取某个节点做为元数据服务器，记录每个 object 存放的节点，每次访问该 object 时，客户端首先访问元数据服务器，获取其所存放的节点，最后从该节点获取 object。元数据服务器需要维护所有 object 的位置信息，并且每次访问 object 都需要先访问元数据服务器，如此，元数据服务器容易成为性能和容量的瓶颈，不利于大规模扩展。
+
+~~~
+          1. Fetch       +-----------------+
+client  ------------->   | Metadata Server |   bottleneck
+           Location      +-----------------+
+       
+          2. Access      +-----------------+
+        ------------->   | Cache Server X  |
+         Cache Server    +-----------------+           
+~~~
+
+**去中心化的系统最大优点之一就是易水平扩展**，那是否有办法可以去除上述元数据服务器呢。答案是肯定的，比如计算 object 的 hash 值，然后均匀的分布到各个节点上。
+
+~~~
+hash(object) mod N        其中 N 为节点数目
+~~~
+
+但是如果某个节点宕机，剔除宕机节点后数目为 N - 1，此时映射关系变为：
+
+~~~
+hash(object) mod (N - 1)
+~~~
+
+另外，可能由于负载过高，需要新增一个节点，此时映射关系为：
+
+~~~
+hash(object) mod (N + 1)
+~~~
+
+无论是增加还是减少节点，都有可能会改变映射关系，造成大量请求的 miss。那是否能避免大量的 miss 呢？答案也是肯定的，**一致性哈希解决了节点增减造成大量 hash 重定位的问题**。
+
+## 原理与增删节点
+
+一致性哈希的原理如下：
+
+- 将每个节点(node)映射到数值空间 [0, 2^32 - 1]，映射的规则可为 IP、hostname 等。
+- 将每个 object 映射到数值空间 [0, 2^32 - 1]。
+- 对于某个 object，对于所有满足 hash(node) <= hash(object) 的节点，选择 hash(node) 最大的节点存放 object。如果没有满足上述条件的节点，选择 hash(node) 最小的节点存放该 object，如下图。
+
+![hash ring](http://7xp2eu.com1.z0.glb.clouddn.com/hashring.png)
+
+当某个节点宕机时，仅有该节点的对象被重哈希到相邻节点上。
+
+![hash ring delete](http://7xp2eu.com1.z0.glb.clouddn.com/hashringdelete.png)
+
+与此类似，当新增一个节点时，仅有一个节点的部分 object 需要重哈希。
+
+![hash ring add](http://7xp2eu.com1.z0.glb.clouddn.com/hashringadd.png)
+
+## 虚节点与平衡性
+
+节点的位置是由自身哈希值决定的，它们的分布并非均匀，特别当节点数目很少时，容易造成 object 的分布不均匀，即平衡性低，例如：
+
+![unbalance](http://7xp2eu.com1.z0.glb.clouddn.com/hashringubalance.png)
+
+为了解决这个问题，我们引入虚拟节点，虚拟节点实际上是物理节点的复制品，一个物理节点包含多个虚拟节点，我们将这些虚拟节点映射到数值空间 [0, 2^32 - 1]，对于某个 object，我们根据上节步骤计算该 object 存放的虚拟节点，进而得出物理节点。如下图共有 2 个物理节点，每个物理节点有三个虚拟机节点。当虚拟节点越多，虚拟节点的位置分布越均匀，相应的，映射到物理节点的 object 数目也越均匀，提高了平衡性。
+
+![virtual node](http://7xp2eu.com1.z0.glb.clouddn.com/hashringvn.png)
+
+
+
+# 总结
+
+通过一致性哈希，客户端可以在本地计算 object 的存放位置，去除了中心节点，使得系统容易水平扩展，便于按需提升/降低整体的容量和性能，同时避免了每次增删节点造成大量哈希重定位的问题，最大化的减少了数据迁移。为使 object 能够尽可能均衡的分散在各个节点上，一致性哈希引入了虚节点，以提高平衡性。
