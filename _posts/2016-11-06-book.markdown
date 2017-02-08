@@ -46,3 +46,8 @@ categories: 编程随想
 - 《硅谷之火》
 
 《硅谷之火》介绍了 PC 的发展历史，从硬件、操作系统到上层的软件应用，诞生了多少公司和成就了多少人物，也谱写了多少故事。此外还有一部名为《硅谷海盗》的电影，值得一看。我想，此书应该是献给那些创业者，献给那些弄潮人。Good artist copy, Great artist steal。 
+
+# 论文
+
+- [MapReduce: Simplified Data Processing on Large Clusters](https://static.googleusercontent.com/media/research.google.com/en//archive/mapreduce-osdi04.pdf)
+- [Consistent Hashing and Random Trees: Distributed Caching Protocols for Relieving Hot Spots on the World Wide Web](https://www.akamai.com/es/es/multimedia/documents/technical-publication/consistent-hashing-and-random-trees-distributed-caching-protocols-for-relieving-hot-spots-on-the-world-wide-web-technical-publication.pdf)
