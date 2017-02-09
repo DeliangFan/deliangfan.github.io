@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>理解 Consistent Hashing</title>
+  <meta name="description" content="简介">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://wsfdl.com/algorithm/2017/01/28/%E7%90%86%E8%A7%A3%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C.html">
+  <link rel="alternate" type="application/rss+xml" title="" href="http://wsfdl.com/feed.xml">
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <a class="site-title" href="/"></a>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+          
+          <a class="page-link" href="/about/">About Me</a>
+          
+        
+          
+          <a class="page-link" href="/categories.html">Categories</a>
+          
+        
+          
+        
+          
+        
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title" itemprop="name headline">理解 Consistent Hashing</h1>
+    <p class="post-meta"><time datetime="2017-01-28T00:00:00+08:00" itemprop="datePublished">Jan 28, 2017</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+    <h1 id="id-section">简介</h1>
+
+<p>为了解决分布式 web 中的热点问题，<a href="https://en.wikipedia.org/wiki/David_Karger">David Karger</a> 于 1997 年提出 <a href="https://en.wikipedia.org/wiki/Consistent_hashing">一致性哈希(Consistent Hashing)</a>，论文请见 <a href="https://www.akamai.com/es/es/multimedia/documents/technical-publication/consistent-hashing-and-random-trees-distributed-caching-protocols-for-relieving-hot-spots-on-the-world-wide-web-technical-publication.pdf">Consistent Hashing and Random Trees: Distributed Caching Protocols for Relieving Hot Spots on the World Wide Web(较难理解)</a>。一致性哈希广泛的运用于多种分布式系统中，如 memcache/redis，gluster file system, zookooper 等。</p>
+
+<ul>
+  <li>Swift: <a href="http://docs.openstack.org/developer/swift/ring_background.html">Building a Consistent Hashing Ring</a></li>
+  <li>Cassandra: <a href="https://blog.imaginea.com/consistent-hashing-in-cassandra/">Consistent Hashing in Cassandra</a></li>
+  <li>Redis/Memcache: <a href="http://get.ftqq.com/7057.get">Memcache的一致性hash算法使用</a></li>
+  <li>…</li>
+</ul>
+
+<p>本文主要介绍一致性哈希的原理。</p>
+
+<h1 id="id-section-1">原理</h1>
+
+<h2 id="id-section-2">去中心与水平扩展</h2>
+
+<p>以 web 为例，cache 节点(如 Redis, Memcache)广泛用于 web 中，以提升性能。随着 web 规模扩大，单个节点无论是从性能上还是容量上都无法支撑大规模的业务，所以需要用多个节点以提升性能和容量。</p>
+
+<p>在多个节点下，给定某个 object，客户端如何知道它存储在哪个节点呢？最简单的做法是选取某个节点做为元数据服务器，记录每个 object 存放的节点，每次访问该 object 时，客户端首先访问元数据服务器，获取其所存放的节点，最后从该节点获取 object。元数据服务器需要维护所有 object 的位置信息，并且每次访问 object 都需要先访问元数据服务器，如此，元数据服务器容易成为性能和容量的瓶颈，不利于大规模扩展。</p>
+
+<pre><code>          1. Fetch       +-----------------+
+client  -------------&gt;   | Metadata Server |   bottleneck
+           Location      +-----------------+
+       
+          2. Access      +-----------------+
+        -------------&gt;   | Cache Server X  |
+         Cache Server    +-----------------+           
+</code></pre>
+
+<p><strong>去中心化的系统最大优点之一就是易水平扩展</strong>，那是否有办法可以去除上述元数据服务器呢。答案是肯定的，比如计算 object 的 hash 值，然后均匀的分布到各个节点上。</p>
+
+<pre><code>hash(object) mod N        其中 N 为节点数目
+</code></pre>
+
+<p>但是如果某个节点宕机，剔除宕机节点后数目为 N - 1，此时映射关系变为：</p>
+
+<pre><code>hash(object) mod (N - 1)
+</code></pre>
+
+<p>另外，可能由于负载过高，需要新增一个节点，此时映射关系为：</p>
+
+<pre><code>hash(object) mod (N + 1)
+</code></pre>
+
+<p>无论是增加还是减少节点，都有可能会改变映射关系，造成大量请求的 miss。那是否能避免大量的 miss 呢？答案也是肯定的，<strong>一致性哈希解决了节点增减造成大量 hash 重定位的问题</strong>。</p>
+
+<h2 id="id-section-3">原理与增删节点</h2>
+
+<p>一致性哈希的原理如下：</p>
+
+<ul>
+  <li>将每个节点(node)映射到数值空间 [0, 2^32 - 1]，映射的规则可为 IP、hostname 等。</li>
+  <li>将每个 object 映射到数值空间 [0, 2^32 - 1]。</li>
+  <li>对于某个 object，对于所有满足 hash(node) &lt;= hash(object) 的节点，选择 hash(node) 最大的节点存放 object。如果没有满足上述条件的节点，选择 hash(node) 最小的节点存放该 object，如下图。</li>
+</ul>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/hashring.png" alt="hash ring" /></p>
+
+<p>当某个节点宕机时，仅有该节点的对象被重哈希到相邻节点上。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/hashringdelete.png" alt="hash ring delete" /></p>
+
+<p>与此类似，当新增一个节点时，仅有一个节点的部分 object 需要重哈希。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/hashringadd.png" alt="hash ring add" /></p>
+
+<h2 id="id-section-4">虚节点与平衡性</h2>
+
+<p>节点的位置是由自身哈希值决定的，它们的分布并非均匀，特别当节点数目很少时，容易造成 object 的分布不均匀，即平衡性低，例如：</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/hashringubalance.png" alt="unbalance" /></p>
+
+<p>为了解决这个问题，我们引入虚拟节点，虚拟节点实际上是物理节点的复制品，一个物理节点包含多个虚拟节点，我们将这些虚拟节点映射到数值空间 [0, 2^32 - 1]，对于某个 object，我们根据上节步骤计算该 object 存放的虚拟节点，进而得出物理节点。如下图共有 2 个物理节点，每个物理节点有三个虚拟机节点。当虚拟节点越多，虚拟节点的位置分布越均匀，相应的，映射到物理节点的 object 数目也越均匀，提高了平衡性。</p>
+
+<p><img src="http://7xp2eu.com1.z0.glb.clouddn.com/hashringvn.png" alt="virtual node" /></p>
+
+<h1 id="id-section-5">总结</h1>
+
+<p>通过一致性哈希，客户端可以在本地计算 object 的存放位置，去除了中心节点，使得系统容易水平扩展，便于按需提升/降低整体的容量和性能，同时避免了每次增删节点造成大量哈希重定位的问题，最大化的减少了数据迁移。为使 object 能够尽可能均衡的分散在各个节点上，一致性哈希引入了虚节点，以提高平衡性。</p>
+
+  </div>
+
+</article>
+
+<div id="disqus_thread"></div>
+<script>
+/**
+* RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+* LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables
+*/
+
+var disqus_shortname = 'wsfdl';
+
+/*
+var disqus_config = function () {
+this.page.url = PAGE_URL; // Replace PAGE_URL with your page's canonical URL variable
+this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+};
+*/
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+
+s.src = '//wsfdl.disqus.com/embed.js';
+
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading"></h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li></li>
+          <li><a href="mailto:"></a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-2">
+        <ul class="social-media-list">
+          
+
+          
+        </ul>
+      </div>
+
+      <div class="footer-col footer-col-3">
+        <p></p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

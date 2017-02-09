@@ -1,257 +1,100 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>koala bear</title>
-    <description>观水有术，必观其澜，日月有明，容光必照。
-</description>
+    <title></title>
+    <description></description>
     <link>http://wsfdl.com/</link>
     <atom:link href="http://wsfdl.com/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 11 Mar 2016 22:59:43 +0800</pubDate>
-    <lastBuildDate>Fri, 11 Mar 2016 22:59:43 +0800</lastBuildDate>
+    <pubDate>Thu, 09 Feb 2017 10:00:38 +0800</pubDate>
+    <lastBuildDate>Thu, 09 Feb 2017 10:00:38 +0800</lastBuildDate>
     <generator>Jekyll v2.4.0</generator>
     
       <item>
-        <title>从 Helion OpenStack 浅谈 OpenStack 的产品化</title>
-        <description>&lt;hr /&gt;
+        <title>理解 Consistent Hashing</title>
+        <description>&lt;h1 id=&quot;id-section&quot;&gt;简介&lt;/h1&gt;
 
-&lt;h1 id=&quot;id-ecosystem-vs-product&quot;&gt;Ecosystem VS Product&lt;/h1&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/EcosystemandProduct.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;id-openstack&quot;&gt;OpenStack&lt;/h2&gt;
-
-&lt;p&gt;确切的说，OpenStack 更像一个生态系统，从硬件、软件到服务，覆盖了计算、存储、网络和安全等领域，截止到 2016 Feb，OpenStack Community 共有：&lt;/p&gt;
+&lt;p&gt;为了解决分布式 web 中的热点问题，&lt;a href=&quot;https://en.wikipedia.org/wiki/David_Karger&quot;&gt;David Karger&lt;/a&gt; 于 1997 年提出 &lt;a href=&quot;https://en.wikipedia.org/wiki/Consistent_hashing&quot;&gt;一致性哈希(Consistent Hashing)&lt;/a&gt;，论文请见 &lt;a href=&quot;https://www.akamai.com/es/es/multimedia/documents/technical-publication/consistent-hashing-and-random-trees-distributed-caching-protocols-for-relieving-hot-spots-on-the-world-wide-web-technical-publication.pdf&quot;&gt;Consistent Hashing and Random Trees: Distributed Caching Protocols for Relieving Hot Spots on the World Wide Web(较难理解)&lt;/a&gt;。一致性哈希广泛的运用于多种分布式系统中，如 memcache/redis，gluster file system, zookooper 等。&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;36008 people&lt;/li&gt;
-  &lt;li&gt;20M+ lines of code&lt;/li&gt;
-  &lt;li&gt;177 countries&lt;/li&gt;
-  &lt;li&gt;563 supporting companies&lt;/li&gt;
-  &lt;li&gt;600+ project&lt;/li&gt;
+  &lt;li&gt;Swift: &lt;a href=&quot;http://docs.openstack.org/developer/swift/ring_background.html&quot;&gt;Building a Consistent Hashing Ring&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;Cassandra: &lt;a href=&quot;https://blog.imaginea.com/consistent-hashing-in-cassandra/&quot;&gt;Consistent Hashing in Cassandra&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;Redis/Memcache: &lt;a href=&quot;http://get.ftqq.com/7057.get&quot;&gt;Memcache的一致性hash算法使用&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;…&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;虽然 OpenStack 提供了丰富的功能，但是很多项目的成熟度和稳定性还有待商榷，并且其安装和运维也并非易事。&lt;/p&gt;
+&lt;p&gt;本文主要介绍一致性哈希的原理。&lt;/p&gt;
 
-&lt;h2 id=&quot;id-helion&quot;&gt;Helion&lt;/h2&gt;
+&lt;h1 id=&quot;id-section-1&quot;&gt;原理&lt;/h1&gt;
 
-&lt;p&gt;Helion OpenStack 基于 OpenStack 并对其修枝裁叶，为企业提供自助服务平台和简化管理，并帮助开发人员快速交付应用。&lt;/p&gt;
+&lt;h2 id=&quot;id-section-2&quot;&gt;去中心与水平扩展&lt;/h2&gt;
+
+&lt;p&gt;以 web 为例，cache 节点(如 Redis, Memcache)广泛用于 web 中，以提升性能。随着 web 规模扩大，单个节点无论是从性能上还是容量上都无法支撑大规模的业务，所以需要用多个节点以提升性能和容量。&lt;/p&gt;
+
+&lt;p&gt;在多个节点下，给定某个 object，客户端如何知道它存储在哪个节点呢？最简单的做法是选取某个节点做为元数据服务器，记录每个 object 存放的节点，每次访问该 object 时，客户端首先访问元数据服务器，获取其所存放的节点，最后从该节点获取 object。元数据服务器需要维护所有 object 的位置信息，并且每次访问 object 都需要先访问元数据服务器，如此，元数据服务器容易成为性能和容量的瓶颈，不利于大规模扩展。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;          1. Fetch       +-----------------+
+client  -------------&amp;gt;   | Metadata Server |   bottleneck
+           Location      +-----------------+
+       
+          2. Access      +-----------------+
+        -------------&amp;gt;   | Cache Server X  |
+         Cache Server    +-----------------+           
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;去中心化的系统最大优点之一就是易水平扩展&lt;/strong&gt;，那是否有办法可以去除上述元数据服务器呢。答案是肯定的，比如计算 object 的 hash 值，然后均匀的分布到各个节点上。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;hash(object) mod N        其中 N 为节点数目
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;但是如果某个节点宕机，剔除宕机节点后数目为 N - 1，此时映射关系变为：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;hash(object) mod (N - 1)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;另外，可能由于负载过高，需要新增一个节点，此时映射关系为：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;hash(object) mod (N + 1)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;无论是增加还是减少节点，都有可能会改变映射关系，造成大量请求的 miss。那是否能避免大量的 miss 呢？答案也是肯定的，&lt;strong&gt;一致性哈希解决了节点增减造成大量 hash 重定位的问题&lt;/strong&gt;。&lt;/p&gt;
+
+&lt;h2 id=&quot;id-section-3&quot;&gt;原理与增删节点&lt;/h2&gt;
+
+&lt;p&gt;一致性哈希的原理如下：&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;对运维而言，简化管理，更易部署和运维&lt;/li&gt;
-  &lt;li&gt;对开发人员，提供丰富的自助服务，支持快速获取资源&lt;/li&gt;
-  &lt;li&gt;对业务而言，更为稳定，安全可靠&lt;/li&gt;
-  &lt;li&gt;对企业而言，提高资源利用率，节省成本，提高效率&lt;/li&gt;
+  &lt;li&gt;将每个节点(node)映射到数值空间 [0, 2^32 - 1]，映射的规则可为 IP、hostname 等。&lt;/li&gt;
+  &lt;li&gt;将每个 object 映射到数值空间 [0, 2^32 - 1]。&lt;/li&gt;
+  &lt;li&gt;对于某个 object，对于所有满足 hash(node) &amp;lt;= hash(object) 的节点，选择 hash(node) 最大的节点存放 object。如果没有满足上述条件的节点，选择 hash(node) 最小的节点存放该 object，如下图。&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;hr /&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/hashring.png&quot; alt=&quot;hash ring&quot; /&gt;&lt;/p&gt;
 
-&lt;h1 id=&quot;id-openstack-&quot;&gt;浅谈 OpenStack 的产品化&lt;/h1&gt;
+&lt;p&gt;当某个节点宕机时，仅有该节点的对象被重哈希到相邻节点上。&lt;/p&gt;
 
-&lt;p&gt;下图从 Security, High availability, Extend service, Operation 和 HPE 的角度分析 Helion 在产品化 OpenStack 所做的工作。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/hashringdelete.png&quot; alt=&quot;hash ring delete&quot; /&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/Helion1.png&quot; alt=&quot;Helion1&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;与此类似，当新增一个节点时，仅有一个节点的部分 object 需要重哈希。&lt;/p&gt;
 
-&lt;h2 id=&quot;id-security&quot;&gt;Security&lt;/h2&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/hashringadd.png&quot; alt=&quot;hash ring add&quot; /&gt;&lt;/p&gt;
 
-&lt;ul&gt;
-  &lt;li&gt;SSL：所有的 Public Endpoint 必须支持 HTTPS，以保证 HTTP 通信的安全。&lt;/li&gt;
-  &lt;li&gt;Keystone：&lt;/li&gt;
-  &lt;li&gt;Network：默认采用 VLAN 某型，&lt;/li&gt;
-  &lt;li&gt;AppArmor：增强宿主机系统的安全&lt;/li&gt;
-  &lt;li&gt;ArcSight：日志监控与告警&lt;/li&gt;
-  &lt;li&gt;Data Encryption：敏感数据加密，诸如涉及密码的配置文件&lt;/li&gt;
-&lt;/ul&gt;
+&lt;h2 id=&quot;id-section-4&quot;&gt;虚节点与平衡性&lt;/h2&gt;
 
-&lt;h2 id=&quot;id-hpe-&quot;&gt;HPE 差异化&lt;/h2&gt;
+&lt;p&gt;节点的位置是由自身哈希值决定的，它们的分布并非均匀，特别当节点数目很少时，容易造成 object 的分布不均匀，即平衡性低，例如：&lt;/p&gt;
 
-&lt;ul&gt;
-  &lt;li&gt;Hardware：HPE 的 x86 服务器，网络设备等&lt;/li&gt;
-  &lt;li&gt;Hlinux：HPE Linux&lt;/li&gt;
-  &lt;li&gt;Storm &amp;amp; Vertica：HPE 大数据分析和存储软件&lt;/li&gt;
-  &lt;li&gt;VSA &amp;amp; 3PAR：HPE 分布式存储&lt;/li&gt;
-  &lt;li&gt;Sherpa：HPE 云生态&lt;/li&gt;
-  &lt;li&gt;HPE Portal&lt;/li&gt;
-&lt;/ul&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/hashringubalance.png&quot; alt=&quot;unbalance&quot; /&gt;&lt;/p&gt;
 
-&lt;h2 id=&quot;id-high-availability&quot;&gt;High Availability&lt;/h2&gt;
+&lt;p&gt;为了解决这个问题，我们引入虚拟节点，虚拟节点实际上是物理节点的复制品，一个物理节点包含多个虚拟节点，我们将这些虚拟节点映射到数值空间 [0, 2^32 - 1]，对于某个 object，我们根据上节步骤计算该 object 存放的虚拟节点，进而得出物理节点。如下图共有 2 个物理节点，每个物理节点有三个虚拟机节点。当虚拟节点越多，虚拟节点的位置分布越均匀，相应的，映射到物理节点的 object 数目也越均匀，提高了平衡性。&lt;/p&gt;
 
-&lt;ul&gt;
-  &lt;li&gt;Controller HA：采用 Haproxy 和 IP Cluster 保证控制节点高可靠性&lt;/li&gt;
-  &lt;li&gt;Database HA：采用 Galera Cluster 保证数据库高可靠性&lt;/li&gt;
-  &lt;li&gt;RabbitMQ HA：采用 RabbitMQ Cluster 保证消息中间件的可靠性&lt;/li&gt;
-  &lt;li&gt;Network HA：采用 Neutron DVR 避免网络节点的单点故障&lt;/li&gt;
-  &lt;li&gt;Storage HA：采用 Ceph，VSA 等分布式存储软件保证存储的高可靠性&lt;/li&gt;
-  &lt;li&gt;Freezer：支持备份宿主机的文件系统&lt;/li&gt;
-  &lt;li&gt;AZ &amp;amp; Region：多区域，多机房部署&lt;/li&gt;
-&lt;/ul&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/hashringvn.png&quot; alt=&quot;virtual node&quot; /&gt;&lt;/p&gt;
 
-&lt;h2 id=&quot;id-extend-service&quot;&gt;Extend Service&lt;/h2&gt;
+&lt;h1 id=&quot;id-section-5&quot;&gt;总结&lt;/h1&gt;
 
-&lt;ul&gt;
-  &lt;li&gt;ELK：提供日志的搜集、存储和检索&lt;/li&gt;
-  &lt;li&gt;Mail Alarm：提供邮件通知服务&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;id-operation&quot;&gt;Operation&lt;/h2&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Package：维护上百个安装包&lt;/li&gt;
-  &lt;li&gt;Deployment：提供自动化快速部署功能&lt;/li&gt;
-  &lt;li&gt;Automation：简化运维工作&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/Helion2.png&quot; alt=&quot;Helion2&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;通过一致性哈希，客户端可以在本地计算 object 的存放位置，去除了中心节点，使得系统容易水平扩展，便于按需提升/降低整体的容量和性能，同时避免了每次增删节点造成大量哈希重定位的问题，最大化的减少了数据迁移。为使 object 能够尽可能均衡的分散在各个节点上，一致性哈希引入了虚节点，以提高平衡性。&lt;/p&gt;
 </description>
-        <pubDate>Wed, 17 Feb 2016 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/openstack/2016/02/17/HelionOpenStack.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/openstack/2016/02/17/HelionOpenStack.html</guid>
-        
-        
-        <category>openstack</category>
-        
-      </item>
-    
-      <item>
-        <title>理解 RSA 算法</title>
-        <description>&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-public-key-cryptography-&quot;&gt;Public-key Cryptography 简介&lt;/h1&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Public-key_cryptography&quot;&gt;Public-key cryptography&lt;/a&gt;&lt;br /&gt;
-(公开密钥加密) 又称 asymmetric cryptography (非对称加密)，即存在两把不同的密钥，分别称为公钥 Pu 和私钥 Pr，公钥通常用来加密明文 M，只有私钥才能解密密文 C，如果用 E 和 D 分别表示加密和解密算法，那么有：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;C = E(Pu, M)
-M = D(Pr, C)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;下图(摘自维基百科)形象的表述了加密和解密流程：&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/500px-Public-key-crypto-1.svg.png?imageView2/1/w/300/h/300/q/100&quot; alt=&quot;P1&quot; /&gt;     &lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/500px-Public_key_encryption.svg.png?imageView2/1/w/300/h/300/q/100&quot; alt=&quot;P2&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;传统的对称加密需双方共享相同的密钥，通信安全很大程度依赖双方是否能妥善的管理密钥。公开密钥加密发明是密码学最为重要的里程碑之一，它从数学的角度保证了通信安全。公开密钥加密体系有三大范畴：&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Encryption/Decryption：即加密与解密，发送方用接收方的公钥加密消息&lt;/li&gt;
-  &lt;li&gt;Digital Signature：数字签名，发送方用私钥加密消息摘要生成签名，保证消息的完整性和可靠性&lt;/li&gt;
-  &lt;li&gt;Key Exchange：安全的交换密钥，通常用于交换对称加密的密钥&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;公钥加密有多种算法，最有名的的是 &lt;a href=&quot;https://zh.wikipedia.org/wiki/RSA%E5%8A%A0%E5%AF%86%E6%BC%94%E7%AE%97%E6%B3%95&quot;&gt;RSA&lt;/a&gt; 和 &lt;a href=&quot;https://zh.wikipedia.org/wiki/%E8%BF%AA%E8%8F%B2-%E8%B5%AB%E7%88%BE%E6%9B%BC%E5%AF%86%E9%91%B0%E4%BA%A4%E6%8F%9B&quot;&gt;DH&lt;/a&gt; 等，如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;+----------------+-----------------------+-------------------+--------------+
-|   Algorithm    | Encryption/Decryption | Digital Signature | Key Exchange |
-+----------------+-----------------------+-------------------+--------------+
-|      RSA       |          Yes          |        Yes        |      Yes     |
-+----------------+-----------------------+-------------------+--------------+
-| Deffie-Hellman |          No           |        No         |      Yes     |
-+----------------+-----------------------+-------------------+--------------+
-| Elliptic Curve |          Yes          |        Yes        |      Yes     |
-+----------------+-----------------------+-------------------+--------------+
-|      DSS       |          No           |        Yes        |      No      |
-+----------------+-----------------------+-------------------+--------------+
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-section&quot;&gt;数论知识&lt;/h1&gt;
-
-&lt;p&gt;理解 RSA 算法前，先介绍一些必要的数论领域知识。&lt;/p&gt;
-
-&lt;h2 id=&quot;id-section-1&quot;&gt;欧拉函数&lt;/h2&gt;
-
-&lt;p&gt;对正整数 n，&lt;a href=&quot;https://en.wikipedia.org/wiki/Euler%27s_totient_function&quot;&gt;欧拉函数&lt;/a&gt; 指小于 n 且与 n 互质的正整数数目，通常用 φ(n) 表示。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;对于素数 p，有：   
-φ(p) = p - 1   
-对于素数 p, q 有：   
-φ(p * q) = φ(p) * φ(q) = (p - 1) * (q - 1)   
-如 φ(21) = 2 * 6 = 12
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;id-section-2&quot;&gt;欧拉定理&lt;/h2&gt;
-
-&lt;p&gt;对于正整数 a 和 n，&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E6%AC%A7%E6%8B%89%E5%AE%9A%E7%90%86_(%E6%95%B0%E8%AE%BA)&quot;&gt;欧拉定理&lt;/a&gt;有：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;a^φ(n) mod n = 1
-即：a^(φ(n) + 1) mod n = a mod n
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;id-section-3&quot;&gt;模反元素&lt;/h2&gt;
-
-&lt;p&gt;当 a, n 互质，一定存在&lt;a href=&quot;https://zh.wikipedia.org/zh/%E6%A8%A1%E5%8F%8D%E5%85%83%E7%B4%A0&quot;&gt;模仿元素&lt;/a&gt; b，使得：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;a * b mod n = 1
-由欧拉定理可知：
-1 = a^φ(n) mod n = a * a^(φ(n) - 1) mod n
-可求得一个 b = a^(φ(n) - 1)，满足 a * b mod n = 1
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-rsa-&quot;&gt;RSA 算法原理&lt;/h1&gt;
-
-&lt;h2 id=&quot;id-rsa--1&quot;&gt;RSA 简介&lt;/h2&gt;
-
-&lt;p&gt;RSA 算法于 1977 由 Ron Rivest，Adi Shamir 和 Leonard Adleman 提出，是目前应用最为广泛的非对称加密算法。极大数&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E6%95%B4%E6%95%B0%E5%88%86%E8%A7%A3&quot;&gt;分解&lt;/a&gt;难题是 RSA 算法可靠性的根基，即给定两个大素数 p 和 q，其中 n = p * q，有：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;已知 p、q，求 n = p * q 很容易    
-已知 n，求 p、q，并且 p * q = n 很困难
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;id-rsa--2&quot;&gt;RSA 原理&lt;/h2&gt;
-
-&lt;p&gt;对于明文 M 和 密文 C，且 M &amp;lt; n, C &amp;lt; n，其加密和解密过程如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;C = M^e mod n
-M = C^d mod n
-
-上述公式可表述为：
-M = M^(e * d) mod n
-
-根据欧拉定理可知:
-只需 e * d mod φ(n) = 1，即可满足上式
-
-如果我们选取素数 p, q，那么：
-n = p * q 容易计算
-φ(n) = (p - 1) * (q - 1) 容易计算
-很容易选取一个正整数 e，e 和 φ(n) 互质
-
-当 e 和 φ(n) 互质时：
-由欧拉定理可很容易算出一个模反元素 d，满足 e * d mod φ(n) = 1
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;id-rsa--3&quot;&gt;RSA 流程&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;http://www.amazon.com/Cryptography-Network-Security-Principles-Practice/dp/0133354695&quot;&gt;Cryptography and Network Security&lt;/a&gt; 形象的描述了 RSA 流程：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;+-------------------------------------------------------------------------------+
-|                                 Key Generation                                |
-|                                                                               |
-|     Select p, q                               p and q both prime, p != q      |
-|     Calculate n = p * q                                                       |
-|     Calculate φ(n) = (p - 1) * (q - 1)                                        |
-|     Select integer e                          e is relatively primte to φ(n)  |
-|     Calculate d                               (d * e) mod n = 1               |
-|     Public key                                PU = {e, n}                     |
-|     Private key                               PR = {d, n}                     |
-+-------------------------------------------------------------------------------+
-+-------------------------------------------------------------------------------+
-|                                  Encryption                                   |
-|                                                                               |
-|     Plaintext M                               M &amp;lt; n                           |
-|     Ciphertext C                              C = M^e mod n                   |
-+-------------------------------------------------------------------------------+
-+-------------------------------------------------------------------------------+
-|                                  Decryption                                   |
-|                                                                               |
-|     Ciphertext C                              C                               |
-|     Plaintext M                               M = C^d mod n                   |
-+-------------------------------------------------------------------------------+
-&lt;/code&gt;&lt;/pre&gt;
-</description>
-        <pubDate>Thu, 11 Feb 2016 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/algorithm/2016/02/11/%E7%90%86%E8%A7%A3RSA%E7%AE%97%E6%B3%95.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/algorithm/2016/02/11/%E7%90%86%E8%A7%A3RSA%E7%AE%97%E6%B3%95.html</guid>
+        <pubDate>Sat, 28 Jan 2017 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/algorithm/2017/01/28/%E7%90%86%E8%A7%A3%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/algorithm/2017/01/28/%E7%90%86%E8%A7%A3%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C.html</guid>
         
         
         <category>algorithm</category>
@@ -259,410 +102,129 @@ n = p * q 容易计算
       </item>
     
       <item>
-        <title>理解 Deffie-Hellman 密钥交换算法</title>
-        <description>&lt;hr /&gt;
-&lt;p&gt;    &lt;/p&gt;
+        <title>同局域网下的 Iptables DNAT</title>
+        <description>&lt;p&gt;某业务运行在服务器 A(10.0.0.2:80)，后来将其迁移至服务器 B(10.0.0.3:80)，为了保证平滑迁移，服务器 A 需要将 80 端口的入口流量转发至服务器 B 的 80 端口。&lt;a href=&quot;http://ipset.netfilter.org/iptables.man.html&quot;&gt;Iptables&lt;/a&gt; 强大的端口转发功能可以很好的满足该需求，因为服务器 A 需要将入口流量转发，因此使用 &lt;a href=&quot;http://linux-ip.net/html/nat-dnat.html&quot;&gt;DNAT&lt;/a&gt;。&lt;a href=&quot;https://www.netfilter.org/documentation/HOWTO/NAT-HOWTO-6.html&quot;&gt;官网文档&lt;/a&gt;的步骤如下：&lt;/p&gt;
 
-&lt;blockquote&gt;
-  &lt;p&gt;再拾此书时，怀念 4 年前阳光明媚的午后，我在浙大紫金港图书馆的三楼，梦回了中学奥数的小伙伴，和那时曾想证明哥德巴尔猜想的情怀！&lt;/p&gt;
-&lt;/blockquote&gt;
+&lt;p&gt;开启转发功能：&lt;/p&gt;
 
-&lt;h1 id=&quot;id-deffie-hellman-&quot;&gt;Deffie-Hellman 算法简介&lt;/h1&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange&quot;&gt;Deffie-Hellman&lt;/a&gt;(简称 DH) 密钥交换是最早的密钥交换算法之一，它使得通信的双方能在非安全的信道中安全的交换密钥，用于加密后续的通信消息。 Whitfield Diffie 和 Martin Hellman 于 1976 提出该算法，之后被应用于安全领域，比如 Https 协议的 TSL(&lt;a href=&quot;https://en.wikipedia.org/wiki/Transport_Layer_Security&quot;&gt;Transport Layer Security&lt;/a&gt;) 和 IPsec 协议的 IKE(&lt;a href=&quot;https://en.wikipedia.org/wiki/Internet_Key_Exchange&quot;&gt;Internet Key Exchange&lt;/a&gt;) 均以 DH 算法作为密钥交换算法。&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-section&quot;&gt;数论知识&lt;/h1&gt;
-
-&lt;p&gt;理解 DH 算法前，先介绍一些必要的数论领域知识，分别是离散对数问题和一个求模公式。&lt;/p&gt;
-
-&lt;h2 id=&quot;id-section-1&quot;&gt;离散对数问题&lt;/h2&gt;
-
-&lt;p&gt;假定 a, p 均是素数，下面两个集合相等，证明过程请参考 &lt;a href=&quot;http://www.amazon.com/Cryptography-Network-Security-Principles-Practice/dp/0133354695&quot;&gt;Cryptography and Network Security&lt;/a&gt; 第八章：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;{ a^1 mod p, a^2 mod p, ..., a^(p-1) mod p } = {1, 2, ... , p-1 }   {} 表示集合
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;$ sysctl -w net.ipv4.ip_forward=1
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;上述式子可概括成以下三点，对于 1 &amp;lt;= x,y &amp;lt;= p - 1，有：&lt;/p&gt;
+&lt;p&gt;设置如下转发规则，即把 A 的 80 端口的流量转发到服务器 B 的 80 端口。&lt;/p&gt;
 
-&lt;ul&gt;
-  &lt;li&gt;a^x mod p 一定属于 {1, 2, …, p -1 }&lt;/li&gt;
-  &lt;li&gt;如果 x != y，则 a^x mod p != a^y mod p&lt;/li&gt;
-  &lt;li&gt;对于 1 &amp;lt;= b &amp;lt;= p - 1，一定存在唯一的 1 &amp;lt;= x &amp;lt;= p-1，使得 b = a^x mod p&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;第三点在求解上有这么一个特点：已知 x 求 b 非常容易，已知 b 求 x 非常困难，特别当 p 很大时，求解的复杂度非常高，所以它又被称为离散对数问题  (&lt;a href=&quot;https://en.wikipedia.org/wiki/Discrete_logarithm&quot;&gt;Discrete logarithm&lt;/a&gt;)，它是 DH 算法能够安全交换密钥的基础！&lt;/p&gt;
-
-&lt;h2 id=&quot;id-section-2&quot;&gt;求模公式&lt;/h2&gt;
-
-&lt;p&gt;假设 q 为素数，对于正整数 a,x,y，有：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;(a^x mod p)^y mod p = a^(xy) mod p
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;$ iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to  10.0.0.3:80
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;证明如下：&lt;/p&gt;
+&lt;p&gt;然后从客户端(10.0.0.10)访问服务器 A 的 80 端口，但是没有回应，原因是超时。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;令 a^x = mp + n， 其中 m, n 为自然数， 0 &amp;lt;= n &amp;lt; p，则有
-C = (a^x mod p)^y mod p
-  = ((mp + n) mod p)^y mod p
-  = n^y mod p
-  = (mp +n)^y mod p
-  = a^(xy) mod p
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;$ curl http://10.0.0.2:80
+curl: (7) Failed to connect to 10.0.0.2 port 80: Operation timed out
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;hr /&gt;
+&lt;p&gt;服务器 A 的抓包如下，由第一行可知服务器 A 的 80 端口收到请求，第二行表示服务器 A 将 80 端口的流量转发至服务器 B 的 80 端口(请注意相同的 TCP 序列号)。&lt;/p&gt;
 
-&lt;h1 id=&quot;id-deffie-hellman--1&quot;&gt;Deffie-Hellman 算法原理&lt;/h1&gt;
-
-&lt;p&gt;本文参考 &lt;a href=&quot;http://www.amazon.com/Cryptography-Network-Security-Principles-Practice/dp/0133354695&quot;&gt;Cryptography and Network Security&lt;/a&gt; 一书，介绍 DH 算法原理，在掌握上节数论知识的基础上，理解 DH 算法原理非常容易。&lt;/p&gt;
-
-&lt;p&gt;假设 A, B 两方进行通信前需要交换密钥，首先 A, B 共同选取 p 和 a 两个素数，其中 p 和 a 均公开。之后 A 选择一个自然数 Xa，计算出 Ya，Xa 保密，Ya 公开；同理，B 选择 Xb 并计算出 Yb，其中 Xb 保密，Yb 公开。之后 A 用 Yb 和 Xa 计算出密钥 K，而 B 用 Ya 和 Xb 计算密钥 K，流程如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;+-------------------------------------------------------------------+
-|                    Global Pulic Elements                          |
-|                                                                   |
-|       p                               prime number                |
-|       a                               prime number, a &amp;lt; p         |
-+-------------------------------------------------------------------+
-+-------------------------------------------------------------------+
-|                    User A Key Generation                          |
-|                                                                   |
-|       Select private Xa               Xa &amp;lt; p                      |
-|       Calculate public Ya             Ya = a^Xa mod p             |
-+-------------------------------------------------------------------+
-+-------------------------------------------------------------------+
-|                    User B Key Generation                          |
-|                                                                   |
-|       Select private Xb               Xb &amp;lt; p                      |
-|       Calculate public Yb             Yb = a^Xb mod p             |
-+-------------------------------------------------------------------+
-+-------------------------------------------------------------------+
-|               Calculation of Secret Key by User A                 |
-|                                                                   |
-|       Secret Key K                    K = Yb^Xa mod p             |
-+-------------------------------------------------------------------+
-+-------------------------------------------------------------------+
-|               Calculation of Secret Key by User B                 |
-|                                                                   |
-|       Secret Key K                    K = Ya^Xb mod p             |
-+-------------------------------------------------------------------+
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;$ tcpdump port 80
+... IP 10.0.0.10.52799 &amp;gt; 10.0.0.2.80 Flags [S], seq 100071038, ... length 0
+... IP 10.0.0.10.52799 &amp;gt; 10.0.0.3.80 Flags [S], seq 100071038, ... length 0
+... (repeat the two lines above)
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;下面证明，A 和 B 计算出来的密钥 K 相同。&lt;/p&gt;
+&lt;p&gt;服务器 B 的抓包如下，第一行表示服务器 B 收到 TCP 三次握手中的 sync 报文，之后服务器回送 sync 报文(第二行)，第三行表示收到客户端 reset 报文。客户端之所以发送 reset 报文，是因为客户端是和服务器 A 而非 B 建立的 TCP 链接，所以服务器 B 回送 sync 报文时，客户端并不认识服务器 B，故客户端重置连接。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;K = Yb^Xa mod p
-  = (a^Xb mod p)^Xa mod p
-  = a^(Xa * Xb) mod p          根据上述求模公式
-  = (a^Xa mod p)^Xb mod p
-  = Ya^Xb mod p
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;$ tcpdump port 80
+... IP 10.0.0.10.52799 &amp;gt; 10.0.0.3.80: Flags [S], seq 100071038 ... length 0
+... IP 10.0.0.3.80 &amp;gt; 10.0.0.10.52799: Flags [S.], seq 2076971142, ack 100071039 ... length 0
+... IP 10.0.0.10.52799 &amp;gt; 10.0.0.3.80: Flags [R], seq 100071039 ... length 0
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;上面一共出现了 a, p, Xa, Ya, Xb, Yb, K 共 7 个数，其中：&lt;/p&gt;
+&lt;p&gt;分析清楚原因后，对于该问题，解决的办法有多种，最为便捷的是在服务器 A 对 80 端口的流量上再做 SNAT。&lt;/p&gt;
 
-&lt;ul&gt;
-  &lt;li&gt;公开的数：a, p, Ya, Yb&lt;/li&gt;
-  &lt;li&gt;非公开数：Xa, Xb, K&lt;/li&gt;
-&lt;/ul&gt;
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;$ iptables -t nat -A POSTROUTING -d 10.0.0.3 -p tcp --dport 80 -j SNAT --to-source 10.0.0.2
+&lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;通常情况下，a 一般为 2 或 5，而 p 的取值非常大，至少几百位，Xa 和 Xb 的取值也非常大，其复杂度至少为 &lt;a href=&quot;https://en.wikipedia.org/wiki/Pollard%27s_rho_algorithm_for_logarithms&quot;&gt;O(p^0.5)&lt;/a&gt;。对于攻击者来说，已知 Ya，Xa 的求解非常困难，同理 Xb 的求解也很困难，所以攻击者难以求出 K，所以 DH 能够保证通信双方在透明的信道中安全的交换密钥。&lt;a href=&quot;https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange#/media/File:Diffie-Hellman_Key_Exchange.svg&quot;&gt;下图&lt;/a&gt;非常形象的描述密钥交换流程：&lt;/p&gt;
-
-&lt;p&gt;                                                &lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/DH%20exchange%20Key.png?imageView2/1/w/310/h/450/q/100&quot; alt=&quot;DH key exchange&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;Serverfault 亦有人提出类似问题 &lt;a href=&quot;http://serverfault.com/questions/586486/how-to-do-the-port-forwarding-from-one-ip-to-another-ip-in-same-network&quot;&gt;how-to-do-the-port-forwarding-from-one-ip-to-another-ip-in-same-network&lt;/a&gt;。&lt;/p&gt;
 </description>
-        <pubDate>Thu, 04 Feb 2016 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/algorithm/2016/02/04/%E7%90%86%E8%A7%A3Diffie-Hellman%E5%AF%86%E9%92%A5%E4%BA%A4%E6%8D%A2%E7%AE%97%E6%B3%95.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/algorithm/2016/02/04/%E7%90%86%E8%A7%A3Diffie-Hellman%E5%AF%86%E9%92%A5%E4%BA%A4%E6%8D%A2%E7%AE%97%E6%B3%95.html</guid>
+        <pubDate>Thu, 12 Jan 2017 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/%E8%B8%A9%E5%9D%91%E6%9D%82%E8%AE%B0/2017/01/12/iptables_snat.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/%E8%B8%A9%E5%9D%91%E6%9D%82%E8%AE%B0/2017/01/12/iptables_snat.html</guid>
         
         
-        <category>algorithm</category>
+        <category>踩坑杂记</category>
         
       </item>
     
       <item>
-        <title>Keystone Google Federation With OpenID</title>
-        <description>&lt;hr /&gt;
+        <title>[行摄] 泰山</title>
+        <description>&lt;p&gt;泰山不亏为中华名山，自岱庙至玉皇顶共六七千余台阶，沿途林立着具有数百年历史的道观、寺庙、尼姑庵和关帝庙，碑林无数，尤其是明清时代的碑文保存完整，这些经历千百年风吹雨淋的古迹，见证了多少来往之人的历史故事，上至帝王、下至平民，既有得志之士，也有迁客骚人，积淀了多少文化。&lt;/p&gt;
 
-&lt;p&gt;本文是 Keystone federation identity 系列的第二篇，主要介基于 OpenID Connect 协议搭建 Keystone 和 Google 单点登录的 demo。Federation Identity 的概念、原理以及基于 SAML2 协议的文章请见&lt;a href=&quot;http://wsfdl.com/openstack/2016/01/14/Keystone-Federation-Identity-with-SAML2.html&quot;&gt;第一篇&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;特别喜欢孟子的一段话：“孔子登东山而小鲁，登泰山而小天下。故观于海者难为水，游于圣人之门者难为言。观水有术，必观其澜。日月有明，容光必照焉。流水之为物也，不盈科不行；君子之志于道也，不成章不达。&lt;/p&gt;
 
-&lt;p&gt;环境：&lt;/p&gt;
+&lt;p&gt;今朝登顶泰山，祈福新年之福祉，更将此话送予自己：观水有术，必观其澜！&lt;/p&gt;
 
-&lt;ul&gt;
-  &lt;li&gt;Linux: Ubuntu 14.04 LTS&lt;/li&gt;
-  &lt;li&gt;OpenStack: Kilo&lt;/li&gt;
-  &lt;li&gt;Identity Provider: Google&lt;/li&gt;
-  &lt;li&gt;Federation Protocol： OpenID Connect&lt;/li&gt;
-&lt;/ul&gt;
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;p&gt;P1. 三朝庙&lt;/p&gt;
 
-&lt;h1 id=&quot;id-openid-connect-protocol&quot;&gt;OpenID Connect Protocol&lt;/h1&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG11ts.jpeg?imageView2/1/w/800/h/800/q/100&quot; alt=&quot;p1&quot; /&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;a href=&quot;http://openid.net/connect/&quot;&gt;OpenID&lt;/a&gt; 的官网是这样定义 OpenID Connect：&lt;/p&gt;
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
 
-&lt;blockquote&gt;
-  &lt;p&gt;OpenID Connect 1.0 is a simple identity layer on top of the OAuth 2.0 protocol. It allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server, as well as to obtain basic profile information about the End-User in an interoperable and REST-like manner.&lt;/p&gt;
-&lt;/blockquote&gt;
+&lt;p&gt;P2. 泰山十八盘&lt;/p&gt;
 
-&lt;p&gt;以上话语可简单的概括成如下几点：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG10ts.jpeg?imageView2/1/w/800/h/800/q/100&quot; alt=&quot;p2&quot; /&gt;&lt;/p&gt;
 
-&lt;ul&gt;
-  &lt;li&gt;用于认证 (Authtication) 用户，认证成功后返回用户的基本信息&lt;/li&gt;
-  &lt;li&gt;基于 OAuth 2.0 协议，其中 OAuth 是授权(Authorization)相关协议&lt;/li&gt;
-  &lt;li&gt;提供了友好的 API，支持 Rest-like 风格&lt;/li&gt;
-  &lt;li&gt;支持 web 和 app 等&lt;/li&gt;
-&lt;/ul&gt;
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
 
-&lt;p&gt;即：&lt;/p&gt;
+&lt;p&gt;P3. 日之将出&lt;/p&gt;
 
-&lt;p&gt;OpenID Connect = OAuth + Identity + Authentication&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG1ts.jpeg?imageView2/1/w/800/h/800/q/100&quot; alt=&quot;p3&quot; /&gt;&lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
 
-&lt;h1 id=&quot;id-setup-google&quot;&gt;Setup Google&lt;/h1&gt;
+&lt;p&gt;P4. 泰山日出&lt;/p&gt;
 
-&lt;p&gt;首先申请一个域名，并将域名指向 Keystone server，本文在阿里云申请如下域名：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG2ts.jpeg?imageView2/1/w/800/h/800/q/100&quot; alt=&quot;p4&quot; /&gt;&lt;/p&gt;
 
-&lt;blockquote&gt;
-  &lt;p&gt;keystonegoogle.com&lt;/p&gt;
-&lt;/blockquote&gt;
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
 
-&lt;p&gt;Keystone server 的 IP 为 209.9.108.221，设置如下 DNS 解析：&lt;/p&gt;
+&lt;p&gt;P5. 泰山日出&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/keystonegoogledns.png?imageView2/1/w/360/h/80/q/100&quot; alt=&quot;dns&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG3ts.jpeg?imageView2/1/w/800/h/800/q/100&quot; alt=&quot;p5&quot; /&gt;&lt;/p&gt;
 
-&lt;p&gt;参考&lt;a href=&quot;https://www.youtube.com/watch?v=Rfxy0FKOfgw&quot;&gt;此文&lt;/a&gt;在 &lt;a href=&quot;https://console.developers.google.com/&quot;&gt;console.developers.google.com&lt;/a&gt; 注册一个 application，获取 application 的 Client ID 和 Client Secret 信息，并在 Authorized redirect URIs 中填入重定向 URI，以本文为例：&lt;/p&gt;
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
 
-&lt;ul&gt;
-  &lt;li&gt;Client ID：388517667150-adc2etk5ohfif5bluber4ho2150pqb3k.apps.googleusercontent.com&lt;/li&gt;
-  &lt;li&gt;Client secret：2CnpJ5mm8mfqfoN_6aqd-72A&lt;/li&gt;
-  &lt;li&gt;Authorized redirect URIs：www.keystonegoogle.com:5000/v3/auth/OS-FEDERATION/websso/oidc/redirect&lt;/li&gt;
-&lt;/ul&gt;
+&lt;p&gt;P6. 剪影&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/googleclientsetup.png&quot; alt=&quot;google-openid-client&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG5ts.jpeg?imageView2/1/w/800/h/800/q/100&quot; alt=&quot;p6&quot; /&gt;&lt;/p&gt;
 
-&lt;p&gt;      &lt;br /&gt;
-      &lt;/p&gt;
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;p&gt;P7. 青帝庙门&lt;/p&gt;
 
-&lt;h1 id=&quot;id-setup-keystone&quot;&gt;Setup Keystone&lt;/h1&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG7ts.jpeg?imageView2/1/w/800/h/800/q/100&quot; alt=&quot;p7&quot; /&gt;&lt;/p&gt;
 
-&lt;p&gt;在某公有云厂商创建一台境外服务器，以便能访问 Google。参考官网文档 &lt;a href=&quot;http://docs.openstack.org/kilo/install-guide/install/apt/content/&quot;&gt;OpenStack Kilo Installation Guide&lt;/a&gt; 安装至第六章 network 即可，因 ubuntu 对 horizon 做了较大改动，所以参考&lt;a href=&quot;http://docs.openstack.org/developer/horizon/topics/install.html&quot;&gt;文档&lt;/a&gt;采用源码安装 horizon。&lt;/p&gt;
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
 
-&lt;h2 id=&quot;id-configure-keystone&quot;&gt;Configure Keystone&lt;/h2&gt;
+&lt;p&gt;P8. 玉皇顶远眺&lt;/p&gt;
 
-&lt;p&gt;下面的安装和配置主要参考 &lt;a href=&quot;http://shop.oreilly.com/product/0636920045960.do&quot;&gt;Identity, Authentication &amp;amp; Access Management in OpenStack&lt;/a&gt;，首先安装 libapache2-mode-auth-openidc：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG6ts.jpeg?imageView2/1/w/800/h/800/q/100&quot; alt=&quot;p8&quot; /&gt;&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ apt-get install libjansson4 libhiredis0.10 libcurl3
-$ wget https://github.com/pingidentity/mod_auth_openidc/releases/download/v1.8.6/libapache2-mod-auth-openidc_1.8.6-1_amd64.deb
-$ dpkg -i libapache2-mod-auth-openidc_1.8.6-1_amd64.deb
-$ cp /opt/stack/keystone/etc/sso_callback_template.html /etc/keystone
-&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;P9. 千山朝雪&lt;/p&gt;
 
-&lt;p&gt;更新 /etc/keystone/keystone.conf 的如下配置：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG8ts.jpeg?imageView2/1/w/800/h/800/q/100&quot; alt=&quot;p9&quot; /&gt;&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;[auth]
-methods = external,password,token,oauth1,oidc
-oidc = keystone.auth.plugins.mapped.Mapped
-
-[oidc]
-remote_id_attribute = HTTP_OIDC_ISS
-
-[federation]
-remote_id_attribute = HTTP_OIDC_ISS
-trusted_dashboard = http://keystonegoogle.com/auth/websso/
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;更新 /etc/apache2/sites-available/wsgi-keystone.conf 配置如下，注意到 OIDCClientID，OIDCClientSecret 和 OIDCRedirectURI 依次对应上文 Google Client 的参数：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ cat /etc/apache2/sites-available/wsgi-keystone.conf
-Listen 5000
-Listen 35357
-
-LoadModule auth_openidc_module /usr/lib/apache2/modules/mod_auth_openidc.so
-
-&amp;lt;VirtualHost *:5000&amp;gt;
-    WSGIDaemonProcess keystone-public processes=5 threads=1 user=keystone display-name=%{GROUP}
-    WSGIProcessGroup keystone-public
-    WSGIScriptAlias / /var/www/cgi-bin/keystone/main
-    WSGIApplicationGroup %{GLOBAL}
-    WSGIPassAuthorization On
-    &amp;lt;IfVersion &amp;gt;= 2.4&amp;gt;
-      ErrorLogFormat &quot;%{cu}t %M&quot;
-    &amp;lt;/IfVersion&amp;gt;
-    LogLevel debug
-    ErrorLog /var/log/apache2/keystone-error.log
-    CustomLog /var/log/apache2/keystone-access.log combined
-
-    OIDCClaimPrefix &quot;OIDC-&quot;
-    OIDCResponseType &quot;id_token&quot;
-    OIDCScope &quot;openid email profile&quot;
-    OIDCProviderMetadataURL &quot;https://accounts.google.com/.well-known/openid-configuration&quot;
-    OIDCClientID &quot;388517667150-adc2etk5ohfif5bluber4ho2150pqb3k.apps.googleusercontent.com&quot;
-    OIDCClientSecret 2CnpJ5mm8mfqfoN_6aqd-72A
-    OIDCCryptoPassphrase openstack
-    OIDCRedirectURI &quot;http://keystonegoogle.com:5000/v3/auth/OS-FEDERATION/websso/oidc/redirect&quot;
-    &amp;lt;Location ~ &quot;/v3/auth/OS-FEDERATION/websso/oidc&quot;&amp;gt;
-      AuthType openid-connect
-      Require valid-user
-      LogLevel debug
-    &amp;lt;/Location&amp;gt;
-&amp;lt;/VirtualHost&amp;gt;
-
-&amp;lt;VirtualHost *:35357&amp;gt;
-......
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;id-configure-horizon&quot;&gt;Configure Horizon&lt;/h2&gt;
-
-&lt;p&gt;Horizon 默认不启用 websso，所以需要更新 local_settings.py 以下配置：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;OPENSTACK_KEYSTONE_URL = &quot;http://keystonegoogle.com:5000/v3”
-OPENSTACK_API_VERSIONS = {
-         &quot;identity&quot;: 3}
-WEBSSO_ENABLED = True
-WEBSSO_CHOICES = (
-    (&quot;credentials&quot;, _(&quot;Keystone Credentials&quot;)),
-    (&quot;oidc&quot;, _(&quot;Google Login&quot;)))
-WEBSSO_INITIAL_CHOICE = &quot;credentials&quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;重启 Keystone 和 Horizon：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ service apache2 restart
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&quot;id-create-user-etc&quot;&gt;Create User etc&lt;/h2&gt;
-
-&lt;p&gt;创建 Google 的 Group 和 Project：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ openstack group create google_group
-$ openstack project create google_project
-$ openstack role add admin --group google_group --project google_project
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;创建 Google Identity Provider：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ curl -g -X POST http://keystonegoogle.com:35357/v3/OS-FEDERATION/identity_providers/google_idp
- -H &quot;Content-Type: application/json&quot; -H &quot;Accept: application/json&quot; -H &quot;X-Auth-Token: $token&quot; -d &#39;{&quot;identity_provider&quot;: {&quot;enabled&quot;: true, &quot;description&quot;: null, &quot;remote_ids&quot;: [&quot;https://accounts.google.com&quot;]}}&#39;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;创建 mapping 等相关信息：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;$ cat google_mapping.json
-[
-  {
-    &quot;local&quot;: [
-      {
-        &quot;group&quot;: {
-          &quot;id&quot;: &quot;a52d06a163f049e29416e20d0e8a12ea&quot;
-          }
-        }
-      ],
-    &quot;remote&quot;: [
-        {
-          &quot;type&quot;: &quot;HTTP_OIDC_ISS&quot;,
-          &quot;any_one_of&quot;: [
-            &quot;https://accounts.google.com&quot;
-            ]
-          }
-        ]
-  }
-]
-
-$ openstack mapping create google_mapping --rules google_mapping.json
-$ openstack federation protocol create oidc --identity-provider google_idp --mapping google_mapping
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-test&quot;&gt;Test&lt;/h1&gt;
-
-&lt;p&gt;登录 keystonegoogle.com，进入 Login 页面。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/Login.png&quot; alt=&quot;login&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;选择 Google Login，输入 Google 账户密码即可登录。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/keystonegooglegoogleinstance.png&quot; alt=&quot;dashboard&quot; /&gt;&lt;/p&gt;
 </description>
-        <pubDate>Mon, 01 Feb 2016 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/openstack/2016/02/01/Keystone-Google-Federation--With-OpenID.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/openstack/2016/02/01/Keystone-Google-Federation--With-OpenID.html</guid>
-        
-        
-        <category>openstack</category>
-        
-      </item>
-    
-      <item>
-        <title>[行摄] 雪后黄山</title>
-        <description>&lt;hr /&gt;
-&lt;p&gt;   &lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;薄海内外，无如徽之黄山，登黄山，天下无山，观止矣！&lt;br /&gt;
-                                                                                                           —徐霞客&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;16年元月下旬，南方迎来了十年难逢的暴雪，江浙皖一带白雪皑皑，而黄山更是裹上过膝的雪装。从天气预报得知周五暴雪而周末晴朗，果断起步前往黄山。&lt;/p&gt;
-
-&lt;p&gt;东边日出西边雪，黄山在南方的艳阳里大雪纷飞，当乘索道登上山顶时，宛如在东北冰天雪地的雪原走了一遭，洁白的栈道，棉花糖般的雪松，交错有致的琼枝，蔚蓝的天空和冬天里的艳阳，给险峻的黄山平添了几份童话的色彩。忽如一夜春风来，千树万树梨花开，暮雪千山妖娆，玉树琼枝醉人。傍晚的西海大峡谷显得更加温馨，日暮的晚霞，夕阳映雪，日照金松，一切显得如此祥和宁静。&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;    &lt;br /&gt;
-    &lt;/p&gt;
-
-&lt;p&gt;P1. 始信峰远眺&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P1_xhs.JPG?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p1&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;    &lt;br /&gt;
-    &lt;/p&gt;
-
-&lt;p&gt;P2. 云谷远眺&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P2_xhs.JPG?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p2&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;    &lt;br /&gt;
-    &lt;/p&gt;
-
-&lt;p&gt;P3. 云谷远眺&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P3_xhs.jpg?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p3&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;    &lt;br /&gt;
-    &lt;/p&gt;
-
-&lt;p&gt;P4. 雪松琼枝&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P4_xhs.JPG?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p4&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;    &lt;br /&gt;
-    &lt;/p&gt;
-
-&lt;p&gt;P5. 暮色雪松&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P5_xhs.JPG?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p5&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;    &lt;br /&gt;
-    &lt;/p&gt;
-
-&lt;p&gt;P6. 日落西海&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P6_xhs.JPG?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p6&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;    &lt;br /&gt;
-    &lt;/p&gt;
-
-&lt;p&gt;P7. 夕阳映雪&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/P7_xhs.JPG?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p7&quot; /&gt;&lt;/p&gt;
-</description>
-        <pubDate>Sun, 24 Jan 2016 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/photos/2016/01/24/%E9%9B%AA%E5%90%8E%E9%BB%84%E5%B1%B1.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/photos/2016/01/24/%E9%9B%AA%E5%90%8E%E9%BB%84%E5%B1%B1.html</guid>
+        <pubDate>Sun, 01 Jan 2017 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/photos/2017/01/01/%E6%B3%B0%E5%B1%B1.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/photos/2017/01/01/%E6%B3%B0%E5%B1%B1.html</guid>
         
         
         <category>photos</category>
@@ -670,1158 +232,697 @@ $ openstack federation protocol create oidc --identity-provider google_idp --map
       </item>
     
       <item>
-        <title>Keystone Federation Identity With SAML2</title>
-        <description>&lt;hr /&gt;
+        <title>[行摄] 苏州</title>
+        <description>&lt;p&gt;在浙江上海已六年，竟未到苏州，遂择十二月暖冬前往，游览博物馆、拙政园和留园。&lt;/p&gt;
 
-&lt;p&gt;Keystone federation identity 涉及很多概念，安装配置复杂，官网的文档又不够清晰，下面 4 篇文章在安装配置方面阐述的非常详细。&lt;/p&gt;
+&lt;p&gt;苏州博物馆出自&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E8%B4%9D%E8%81%BF%E9%93%AD&quot;&gt;贝聿铭&lt;/a&gt;大师之手，他曾在祖宅狮子林度过一段儿童岁月，对园林的理解更为深刻。苏州博物馆多用几何形体，现代的建筑结构，简洁的风格。在建筑手法上与传统的园林风格多有差异之处，却与旁边的拙政园毫无违和之感，形不似而神似！博物馆内的假山，摈弃传统的太湖石，却更似假山！&lt;/p&gt;
+
+&lt;p&gt;拙政园和留园是园林的典范，拙政园格局大气，留园精致美观，是拍摄旗袍、汉服的绝佳场所。&lt;/p&gt;
+
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
+
+&lt;p&gt;P1. 苏州博物馆&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG5.jpeg?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p1&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
+
+&lt;p&gt;P2. 苏州博物馆&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG6.jpeg?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p2&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
+
+&lt;p&gt;P3. 苏州博物馆&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG3.jpeg?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p3&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
+
+&lt;p&gt;P4. 拙政园&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG8.jpeg?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p4&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
+
+&lt;p&gt;P5. 留园&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG15.jpeg?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p5&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
+
+&lt;p&gt;P6. 留园&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG16.jpeg?imageView2/1/w/800/h/800/q/100&quot; alt=&quot;p6&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
+
+&lt;p&gt;P7. 留园&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG10.jpeg?imageView2/1/w/800/h/800/q/100&quot; alt=&quot;p7&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt; &lt;br /&gt;
+ &lt;/p&gt;
+
+&lt;p&gt;P8. 留园&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/WechatIMG12.jpeg?imageView2/1/w/800/h/800/q/100&quot; alt=&quot;p7&quot; /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Sun, 18 Dec 2016 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/photos/2016/12/18/%E8%8B%8F%E5%B7%9E.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/photos/2016/12/18/%E8%8B%8F%E5%B7%9E.html</guid>
+        
+        
+        <category>photos</category>
+        
+      </item>
+    
+      <item>
+        <title>LVM 扩展逻辑卷</title>
+        <description>&lt;h1 id=&quot;id-overview&quot;&gt;Overview&lt;/h1&gt;
+
+&lt;p&gt;对于早期 Linux 用户，如何准确地评估分区的大小以及分配合适的空间一直是安装系统时的难题，因为在普通磁盘分区的管理下，分区划分后无法在不影响数据和系统运行的条件下改变其大小，当某个分区的存储空间消耗殆尽时，往往需要更换磁盘并迁移数据，如此可能会影响业务的正常运行。&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Logical_Volume_Manager_(Linux)&quot;&gt;LVM(Logical Volume Management)&lt;/a&gt; 的出现完美的解决上述问题，它是建立在硬盘和文件系统之间的一个逻辑层，支持动态的调整文件系统的大小，增添硬盘等，提高了存储空间管理的灵活性。LVM 大有先破后立之感，它把多块硬盘组成一个资源池，再按需从资源池划分虚拟分区，并且可以动态调整虚拟分区的大小和数量，它有以下三个重要概念。&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;http://blog.rodrigods.com/it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo/&quot;&gt;Configure Keystone to Keystone Federation&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;https://bigjools.wordpress.com/2015/05/22/saml-federation-with-openstack/&quot;&gt;Configure Keystone to Testshib Federation with SAML&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;https://bigjools.wordpress.com/2015/04/27/federated-openstack-logins-using-kerberos/&quot;&gt;Configure Keystone federation with Kerberos&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;https://zenodo.org/record/11982/files/CERN_openlab_Luca_Tartarini.pdf&quot;&gt;Configure Keystone federation with multi-IDP&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.centos.org/docs/5/html/Cluster_Logical_Volume_Manager/physical_volumes.html&quot;&gt;Physical Volume(PV)&lt;/a&gt;：建立在物理分区之上，每个分区可以创建一个 PV。&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.centos.org/docs/5/html/Cluster_Logical_Volume_Manager/volume_group_overview.html&quot;&gt;Volume Group(VG)&lt;/a&gt;：建立在 PV 之上，由一个或者多个 PV 组成，每个 PV 只能加入到一个 VG 中。&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.centos.org/docs/5/html/Cluster_Logical_Volume_Manager/lv_overview.html&quot;&gt;Logical Volume(LV)&lt;/a&gt;：它是从 VG 划分的一块虚拟分区，可动态调整大小，一个 VG 可划分出多个 LV，这些 LV 可被格式化成文件系统并挂载在相关目录下。&lt;/li&gt;
 &lt;/ul&gt;
+
+&lt;pre&gt;&lt;code&gt;                   +-----------+ +------------+ +------+
+File System        |  / (ext4) | | /var (xfs) | |  ... |
+                   +-----------+ +------------+ +------+
+                -------------------------------------------
+                   +-----------+ +------------+ +------+
+Logical Volume     |  lv-root  | |   lv-var   | |  ... |
+                   +-----------+ +------------+ +------+
+                -------------------------------------------
+                   +-----------------------------------+
+Volume Group       |                 vg                |
+                   +-----------------------------------+
+                ------------------------------------------- 
+                   +---------------+   +---------------+
+Physical Volume    |      pvsda1   |   |    pvsdb1     |
+                   +---------------+   +---------------+
+                -------------------------------------------
+                   +---------------+   +---------------+
+Disk partitions    |      sda1     |   |      sdb1     |
+                   +---------------+   +---------------+
+                -------------------------------------------
+                   +---------------+   +---------------+
+Disk               |      sda      |   |      sdb      |
+                   +---------------+   +---------------+
+&lt;/code&gt;&lt;/pre&gt;
 
 &lt;hr /&gt;
 
-&lt;h1 id=&quot;id-federation-identity-&quot;&gt;Federation Identity 简介&lt;/h1&gt;
+&lt;h1 id=&quot;id-guide&quot;&gt;Guide&lt;/h1&gt;
 
-&lt;p&gt;关于 &lt;a href=&quot;https://en.wikipedia.org/wiki/Federated_identity&quot;&gt;federation identity&lt;/a&gt;，维基百科的定义如下：&lt;/p&gt;
+&lt;p&gt;以本人 Linux 机器为例，根目录的空间使用率已达到 83%，扩容步骤如下。&lt;/p&gt;
 
-&lt;blockquote&gt;
-  &lt;p&gt;A federated identity is the means of linking a person’s electronic identity and attributes, stored across multiple distinct identity management systems(IDM).&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;root@ubuntu:~# df -T
+Filesystem                  Type     1K-blocks     Used Available Use% Mounted on
+/dev/mapper/ubuntu--vg-root ext4      18180876 14265152   2969140  83% /
+none                        tmpfs            4        0         4   0% /sys/fs/cgroup
+...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;它仅有一块磁盘 sda，分区 sda5 是最主要的分区，占据绝大多数存储空间，该分区属于一个名为 ubuntu-vg 的 VG，该 VG 包含两个 LV，分别是挂载在根目录的 ubuntu-vg-root 和用作 swap 的 ubuntu-vg-swap_1。该 VG 已无剩余空间，如果要扩展根目录的空间，就必须先增加磁盘，再扩展 ubuntu-vg VG，最后扩展 ubuntu-vg-root LV。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;root@ubuntu:~# pvdisplay
+  --- Physical volume ---
+  PV Name               /dev/sda5
+  VG Name               ubuntu-vg
+  PV Size               19.76 GiB / not usable 2.00 MiB
+  
+root@ubuntu:~# vgdisplay
+  --- Volume group ---
+  VG Name               ubuntu-vg
+  ...
+  Alloc PE / Size       5053 / 19.74 GiB
+  Free  PE / Size       5 / 20.00 MiB
+
+root@ubuntu:~# lvdisplay
+  --- Logical volume ---
+  LV Path                /dev/ubuntu-vg/root
+  VG Name                ubuntu-vg
+  LV Size                17.74 GiB
+  ...
+
+  --- Logical volume ---
+  LV Path                /dev/ubuntu-vg/swap_1
+  VG Name                ubuntu-vg
+  LV Size                2.00 GiB
+  ...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;首先增加一块磁盘 sdb，利用 &lt;a href=&quot;https://linux.die.net/man/8/fdisk&quot;&gt;fdisk&lt;/a&gt; 在该磁盘创建一个名为 sdb1 的扩展分区，分区的大小和磁盘相当。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;root@ubuntu:~# fdisk /dev/sdb
+...
+Command (m for help): n
+Partition type:
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended
+Select (default p): p
+Partition number (1-4, default 1): 1
+First sector (2048-41943039, default 2048):
+Using default value 2048
+Last sector, +sectors or +size{K,M,G} (2048-41943039, default 41943039):
+Using default value 41943039
+
+Command (m for help): t
+Selected partition 1
+Hex code (type L to list codes): 8e
+Changed system type of partition 1 to 8e (Linux LVM)
+
+Command (m for help): w
+The partition table has been altered!
+
+Calling ioctl() to re-read partition table.
+Syncing disks.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;利用 &lt;a href=&quot;https://linux.die.net/man/8/pvcreate&quot;&gt;pvcreate&lt;/a&gt; 在分区 sdb1 上创建一个名为 sdb1 的 PV：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;root@ubuntu:~# pvcreate /dev/sdb1
+  Physical volume &quot;/dev/sdb1&quot; successfully created
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;把刚刚创建的 sdb1 PV 加入到 VG 中：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;root@ubuntu:~# vgextend ubuntu-vg /dev/sdb1
+ Volume group &quot;ubuntu-vg&quot; successfully extended
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这时 ubuntu-vg 总容量为 39.74 GB，可用空间为 20 GB：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;root@ubuntu:~# vgdisplay
+  --- Volume group ---
+  VG Name               ubuntu-vg
+  VG Size               39.75 GiB
+  PE Size               4.00 MiB
+  Total PE              15296
+  Alloc PE / Size       5053 / 19.74 GiB
+  Free  PE / Size       5124 / 20.02 GiB
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;接下来扩展 /dev/ubuntu-vg/root LV，本次增加 10GB 的空间。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;root@ubuntu:~# lvextend -L+10G /dev/ubuntu-vg/root
+  Extending logical volume root to 27.74 GiB
+  Logical volume root successfully resized
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;扩展了逻辑卷后，还需要更新文件系统，因为 /dev/ubuntu-vg/root 上的文件系统类型为 ext4，所以 resize2fs 命令扩展。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;root@ubuntu:~# resize2fs /dev/mapper/ubuntu--vg-root
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;扩展后效果如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;root@ubuntu:~# df -T
+Filesystem                  Type     1K-blocks     Used Available Use% Mounted on
+/dev/mapper/ubuntu--vg-root ext4      28502156 14265156  12871324  53% /
+none                        tmpfs            4        0         4   0% /sys/fs/cgroup
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+        <pubDate>Sat, 10 Dec 2016 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/devops/2016/12/10/LVM_extend_directory.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/devops/2016/12/10/LVM_extend_directory.html</guid>
+        
+        
+        <category>devops</category>
+        
+      </item>
+    
+      <item>
+        <title>《人月神话》贵族专制和民主政治章节读后感</title>
+        <description>&lt;blockquote&gt;
+  &lt;p&gt;This great church is an incomparable work of art. There is neither aridity nor confusion in the tenets it sets forth. . . . It is the zenith of a style, the work of artists who had understood and assimilated all their predecessors ‘ successes, in complete possession of the techniques of their times, but using them without indiscreet display nor gratuitous feats of skill.       &lt;br /&gt;
+   &lt;/p&gt;
+
+  &lt;p&gt;It was Jean d’Orbais who undoubtedly conceived the general plan of the building, a plan which was respected, at least in its essential elements, by his successors. This is one of the reasons for the extreme coherence and unity of the edifice.&lt;br /&gt;
+   &lt;/p&gt;
+
+  &lt;p&gt;                                                                                    ———《人月神话》贵族专制和民主政治章节序&lt;/p&gt;
 &lt;/blockquote&gt;
 
-&lt;p&gt;在多个认证管理系统互相信任的基础上，federation identity 允许多个认证管理系统联邦认证各个系统的用户身份。它最重要的一个功能就是实现单点登录(&lt;a href=&quot;https://en.wikipedia.org/wiki/Single_sign-on&quot;&gt;Single Sign On&lt;/a&gt;)，用户仅需认证一次，便可访问这些互相授信的资源。比如 A 公司员工需使用 AWS 公有云，出于安全考虑，不希望在 AWS 的 IAM 创建员工账户信息，通过 federation identity 打通二者之间的用户授权和认证，A 公司员工只需在本公司完成身份认证即可访问 AWS 资源。我们把 A 公司称之为 Identity Provider(IDP), AWS 称之为 Service Provider(SP)。&lt;/p&gt;
+&lt;p&gt;大型的软件往往非常复杂，概念之多，功能之多，模块之多，代码之多。如果把大型软件比作一座城市，宜居之城应该是大而有序，繁而不乱，美观和谐，而不是城中有村，村中有城，建筑风格，囊括中外，道路交通，曲值相交！和构建一个美观有序的大城市一样，软件开发也应当适当的追求完整性和一致性，化繁为简，整理归纳，追求易用性：&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;功能与概念的复杂度的比值才是系统设计的最终测试标准。&lt;br /&gt;
+   &lt;/p&gt;
+
+  &lt;p&gt;每个部分必须反应相同的原理需求的一致平衡。在语法上，每个部分应使用相同的技巧；在语义上，应具有同样的相似性。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;具体来说，本人的理解是概念应当通俗易懂，功能应当易用，多而不乱。整体布局得当，模块之间和谐共生，研发遵守一定的规则和工具。适当追求完整性具有诸多优点：&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;Service Provider: 服务提供方，它只提供服务，依赖 Identity Provider 认证用户身份&lt;/li&gt;
-  &lt;li&gt;Identity Provider: 断言(assertion)方，用于认证用户身份&lt;/li&gt;
-  &lt;li&gt;Assertion Protocol: 认证(断言)协议，Service Provider 和 Identity Provider 完成认证用户身份所用的协议，常用有 SAML, OpenID, Oauth 等&lt;/li&gt;
+  &lt;li&gt;概念易懂&lt;/li&gt;
+  &lt;li&gt;功能易用&lt;/li&gt;
+  &lt;li&gt;降低沟通成本&lt;/li&gt;
+  &lt;li&gt;提升研发效率&lt;/li&gt;
+  &lt;li&gt;降低维护成本，减少不可预知的问题&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;以 SAML 协议为例，典型的&lt;a href=&quot;http://www.searchsoa.com.cn/showcontent_1604.htm&quot;&gt;认证流程&lt;/a&gt;分为 &lt;a href=&quot;https://en.wikipedia.org/wiki/SAML_2.0#HTTP_Redirect_Binding&quot;&gt;Redirect Bindings&lt;/a&gt; 和 &lt;a href=&quot;https://en.wikipedia.org/wiki/SAML_2.0#HTTP_Artifact_Binding&quot;&gt;Artifact/POST Bindings&lt;/a&gt; 两种。&lt;/p&gt;
+&lt;p&gt;至于如何获取概念的完整性，作者只是给了一个非常 high-level 的答案：“概念的完整性要求设计必须由一个人，或者非常少数互有默契的人员来实现。”至于更详细的操作，本人认为可以从产品和研发两个角度出发分析，当然，在追求一致性和软件规模之间应当有所取舍，规模越小，一致性要求降低；规模越大，一致性的要求越高。&lt;/p&gt;
 
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/Redirect%20Binding.png?imageView2/1/w/600/h/400/q/100&quot; alt=&quot;Redirect Bindings&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/artifact%20binding.png?imageView2/1/w/600/h/400/q/100&quot; alt=&quot;Artifact Bindings&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Federation identity 具有以下优点：&lt;/p&gt;
+&lt;p&gt;从产品的角度提高易用性&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;支持 SSO 单点登录&lt;/li&gt;
-  &lt;li&gt;避免向 Service Provider 暴露用户信息，提高安全性&lt;/li&gt;
-  &lt;li&gt;避免用户注册多个账号，增加用户负担&lt;/li&gt;
+  &lt;li&gt;提高产品概念的易懂性，一个产品的概念应该是易于理解的，最好能类比到生活中，盲目的创造各种新词可能并非是一个好的选择。&lt;/li&gt;
+  &lt;li&gt;提高产品功能的易用性，功能之间应当具有操作的相似性。&lt;/li&gt;
+  &lt;li&gt;提高产品的美感性，好的设计是美感大方的，布局、色彩、字体之间应当相衬相托。&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-keystone-federation-&quot;&gt;Keystone Federation 的原理&lt;/h1&gt;
-
-&lt;p&gt;Federation identity 为 hybrid cloud 在用户管理层面提供了良好的解决方案。Keystone 从 Icehouse 开始逐步增加 federation identity 的功能，Icehouse 支持 Keystone 作为 Service Provider，Juno 版本新增了 Identity Provider，支持 SAML 和 OpenID 两种认证协议。OpenStack 作为云服务的解决方案，对外提供计算、存储和网络等服务，多数场景下 Keystone 常常作为服务端，对接其它的 Identity Provider，所以本节着重阐述 Service Provider 的原理和流程。首先先介绍 3 类重要的 &lt;a href=&quot;https://specs.openstack.org/openstack/keystone-specs/api/v3/identity-api-v3-os-federation-ext.html&quot;&gt;API&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;从研发的角度提高一致性&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;Identity Provider API: /OS-FEDERATION/identity_providers         &lt;br /&gt;
-管理 Keystone 信任的 Identity Providers。&lt;/li&gt;
-  &lt;li&gt;Protocol API: /OS-FEDERATION/identity_providers/{idp_id}/protocols   &lt;br /&gt;
-管理 Keystone 和某个 Identity Provider 之间认证的协议，通常为 oidc(OpenID) 或 saml2(SAML)。&lt;/li&gt;
-  &lt;li&gt;
-    &lt;p&gt;Mapping API: /OS-FEDERATION/mappings    &lt;br /&gt;
-管理 Identity Provider 里的用户和 Keystone 里的用户之间的映射规则，通过该 API，管理员可以管理 IDP 中用户访问 Service 的权限。比如 IDP 有用户 A，B，通过配置 mapping rule，可以允许 A 有权限而 B 无权限访问。&lt;/p&gt;
-
-    &lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/federation%20service%20provider.png?imageView2/1/w/500/h/400/q/100&quot; alt=&quot;Keystone Federation&quot; /&gt;&lt;/p&gt;
-  &lt;/li&gt;
+  &lt;li&gt;一致的内核和操作系统&lt;/li&gt;
+  &lt;li&gt;尽可能采用一致的编程语言，至少模块内应该使用同一编程语言，并且注意版本，同种语言不同版本间的库函数可能会有很大差异；不同的高级语言之间的调用请走网络协议，尽量不要直接调用，如 Python 代码调用 shell 脚本。&lt;/li&gt;
+  &lt;li&gt;尽可能一致的数据库，如 mysql 和 postgres 功能类似，但是对一些细节处理不一致，容易引起问题。&lt;/li&gt;
+  &lt;li&gt;一致的编码风格，每种编程语言在构建 UT 时加入代码规范检查。&lt;/li&gt;
+  &lt;li&gt;统一的文档存放，风格一致的文档说明&lt;/li&gt;
 &lt;/ul&gt;
+</description>
+        <pubDate>Tue, 22 Nov 2016 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/%E7%BC%96%E7%A8%8B%E9%9A%8F%E6%83%B3/2016/11/22/moon_people_char_4.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/%E7%BC%96%E7%A8%8B%E9%9A%8F%E6%83%B3/2016/11/22/moon_people_char_4.html</guid>
+        
+        
+        <category>编程随想</category>
+        
+      </item>
+    
+      <item>
+        <title>大话编程中的 time</title>
+        <description>&lt;p&gt;最近在 time 方面踩坑数个，加上对各类时间名词的含义含糊不清，遂在本文整理时间相关的名词。&lt;/p&gt;
 
-&lt;p&gt;为了支持 Service Provider，Keystone 必须运行在 Apache HTTPD 上，mod-shibboleth 作为 apache plugin 支持 SAML 认证协议，完成了 Keystone 和 IDP 之间用户的身份认证，&lt;a href=&quot;http://shop.oreilly.com/product/0636920045960.do&quot;&gt;流程&lt;/a&gt;如下。&lt;/p&gt;
+&lt;h1 id=&quot;id-gmt&quot;&gt;格林威治天文台与格林威治时间（GMT）&lt;/h1&gt;
 
-&lt;ol&gt;
-  &lt;li&gt;用户访问 /OS-FEDERATION/identity_providers/{identity_provider}/protocols/{protocol}/auth，Apache 捕获该 URL 并触发 mod-shibboleth 重定向至外部的 Identity Provider。&lt;/li&gt;
-  &lt;li&gt;外部的 Identity Provider 认证用户的身份并把用户的某些身份信息返回给 Apache，Apache 再把信息传给 Keystone。&lt;/li&gt;
-  &lt;li&gt;Keystone 根据 mapping rule 把判断用户是否有访问权限，如果有访问权限，返回一个 unscoped token。用户可拿 unscoped token 查看可用的 project 并生成 scoped token，进而访问 OpenStack 的 API。&lt;/li&gt;
-&lt;/ol&gt;
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/Royal_Observatory_Greenwich_London.jpg&quot; alt=&quot;Royal_Observatory_Greenwich_London.jpg&quot; /&gt;&lt;/p&gt;
 
-&lt;hr /&gt;
+&lt;p&gt;                                                                           &lt;a href=&quot;https://commons.wikimedia.org/wiki/File:Royal_Observatory_Greenwich_London.jpg&quot;&gt;原图出处&lt;/a&gt;&lt;/p&gt;
 
-&lt;h1 id=&quot;id-configure-keystone-as-a-service-provider&quot;&gt;Configure Keystone as a Service Provider&lt;/h1&gt;
+&lt;p&gt;&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E6%A0%BC%E6%9E%97%E5%B0%BC%E6%B2%BB%E7%9A%87%E5%AE%B6%E5%A4%A9%E6%96%87%E5%8F%B0&quot;&gt;格林威治皇家天文台(Royal Observatory, Greenwich)&lt;/a&gt; 是英国国王查理二世于 1675 年在伦敦格林威治建造的一个综合性天文台，那时处于&lt;a href=&quot;[大航海时代](https://zh.wikipedia.org/wiki/%E5%9C%B0%E7%90%86%E5%A4%A7%E5%8F%91%E7%8E%B0)&quot;&gt;大航海时代&lt;/a&gt;，在当时远洋航行意味着冒险：茫茫大洋上无法准确测量船只所在的经度。所以国王建造天文台并设立皇家天文学家的职位：“致力于以最忱治的关心和努力校正天体运动的星表，和恒星的位置，以便能正确的定出经度，使导航成为完美的艺术”。虽然格林威治天文台并没有解决航海经度的测量问题，但其名气之大，一度成为最活跃的天文台，如&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E6%9C%AC%E5%88%9D%E5%AD%90%E5%8D%88%E7%B7%9A&quot;&gt;本初子午线&lt;/a&gt;就是经过该天文台的 0 度经线。&lt;/p&gt;
 
-&lt;p&gt;本节开始介绍如何安装配置 Keystone to Keystone Federation，重点参考了 &lt;a href=&quot;http://blog.rodrigods.com/it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo/&quot;&gt;it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo&lt;/a&gt;(原文存在 2 处配置错误，本文已给予纠正)。 我们有两个服务器，分别作为 SP 和 IDP，二者均需按照&lt;a href=&quot;http://docs.openstack.org/kilo/install-guide/install/apt/content/ch_keystone.html&quot;&gt;官网的手册&lt;/a&gt;安装 Keystone。&lt;/p&gt;
+&lt;p&gt;顾名思义，&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E6%A0%BC%E6%9E%97%E5%B0%BC%E6%B2%BB%E5%B9%B3%E6%97%B6&quot;&gt;格林威治标准时间(Greenwich Mean Time，GMT)&lt;/a&gt; 即指皇家格林威治天文台的标准时间，自 1924 年 2 月 5 日开始，格林威治天文台每隔一小时会向全世界发放调时信息。理论上说，格林威治标准时间的正午是指当太阳横穿格林威治子午线的时间，但是地球在椭圆轨道里运动速度不均匀，这个时刻可能与&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E5%A4%AA%E9%98%B3%E6%97%A5&quot;&gt;平太阳时&lt;/a&gt;有误差，最大误差达16分钟。&lt;a href=&quot;http://ajucs.com/2016/06/24/talk-about-time-and-timer.html&quot;&gt;所以格林威治天文台连续观测 365 个长短不一的天&lt;/a&gt;，然后求平均值得到一天的长度，称为平太阳日，即格林威治标准时间采用的是平太阳时间。&lt;/p&gt;
+
+&lt;p&gt;由于地球每天的自转是不规则的，而且正在缓慢减速，因此格林威治时间已经不再被作为标准时间使用。现在的标准时间，是由原子钟报时的协调世界时（UTC）。&lt;/p&gt;
+
+&lt;h1 id=&quot;id-utc&quot;&gt;原子时与协调世界时（UTC）&lt;/h1&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E5%8E%9F%E5%AD%90%E9%90%98&quot;&gt;原子时&lt;/a&gt;是一种基于原子的时间，它以原子共振频率标准来计算和保证时间的准确。原子时是世界上已知最准确的时间测量和频率标准，也是国际时间和频率转换的基准。&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E5%8E%9F%E5%AD%90%E6%97%B6&quot;&gt;1967 年第 13 届国际计量大会上通过一项决议&lt;/a&gt;，定义一秒(原子时秒)为铯-133 原子基态两个超精细能级间跃迁辐射 9192631770 周所持续的时间。&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Coordinated_Universal_Time&quot;&gt;协调世界时(Coordinated Universal Time, UTC)&lt;/a&gt; 又称世界标准时间或世界协调时间，是目前最主要的世界时间标准。它以原子时的秒为基础，和平太阳时相差不超过 1 秒，在时刻上尽量接近于格林威治标准时间。对于大多数用途来说，UTC 时间被认为能与 GMT 时间互换，但 GMT 时间已不再被科学界所确定。&lt;/p&gt;
+
+&lt;p&gt;协调世界时把时间分为天、小时、分钟和秒，每天包含 24 小时，每小时包含 60 分钟，一分钟通常有 60 秒，但是分钟加入了闰秒，所以一分钟也可能是 61 秒或 59 秒。在 UTC 系统的时间尺度中，秒和比秒小的单位（毫秒、微秒等）其长度是固定的，但是对于分钟和比分还大的单位（小时、天、周等），其长度是可变的。可采用 date -u 获取 UTC 时间。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ date -u
+Mon Nov 20 09:15:20 UTC 2016
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1 id=&quot;id-localtime-&quot;&gt;Localtime 与夏令时&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/Standard_World_Time_Zones.png&quot; alt=&quot;Time Zones&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;                                                                           &lt;a href=&quot;https://zh.wikipedia.org/wiki/%E6%97%B6%E5%8C%BA#/media/File:Standard_World_Time_Zones.png&quot;&gt;原图&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;各个国家分布在地球的不同位置上，因此不同国家的日出、正午、日落时间可能有所偏差，在现实生活中，人们更关注本地时间，因为和 UTC 相比，本地时间更适合用于当地的生产和生活。1863 年，&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E6%97%B6%E5%8C%BA&quot;&gt;时区&lt;/a&gt;的概念被首次提出，它以区域为范围设定标准时间，某地的本地时间通常指该地所在时区的标准时间。理论时区以被 15 整除的子午线为中心，向东西两侧延伸 7.5 度，即每 15 度划分一个时区，这是理论时区。但是，为了避开国界线，有的时区的形状并不规则，而且比较大的国家以国家内部行政分界线为时区界线，这是实际时区，即法定时区。&lt;/p&gt;
+
+&lt;p&gt;北京位于东八区，故其时区为 UTC+8，北京时间比格林威治标准时间早 8 小时，在不考虑夏令时的情况下，可用以下公式完成本地时间和 UTC 时间之间的转换。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;UTC + 时区差 = 本地时间
+其中东半球时区威差为正，西半球时区差负。 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E5%A4%8F%E6%97%B6%E5%88%B6&quot;&gt;夏令时(Summer Time)&lt;/a&gt; 又称日光节约时制或日光节约时间，是一种为节约能源而人为规定地方时间的制度。一般在天亮较早的夏季人为将时间调快一小时，可以使人早起早睡，减少照明量，以充分利用光照资源，从而节约照明用电。各个采纳夏时制的国家具体规定不同，目前全世界有近 110 个国家每年要实行夏令时，如美国、欧盟等；中国、日本等国家曾经实行过夏令时，但是目前不予实行。&lt;/p&gt;
+
+&lt;h1 id=&quot;id-unix-&quot;&gt;Unix 时间&lt;/h1&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://zh.wikipedia.org/wiki/UNIX%E6%97%B6%E9%97%B4&quot;&gt;Unix 时间&lt;/a&gt;又称 Posix 时间，它是 Unix 和 类 Unix 系统使用的表达方式，它指自 UTC 时间 1970 年 1 月 1 日 0 时 0 分 0 秒起值现在的总秒数，可用 date +%s 查看 Unix 时间：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ date +%s
+1479655113
+$
+$ date -r 1479655113
+Sun Nov 20 15:18:33 UTC 2016
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;由上可知，Unix 时间 1479655113 表示的日期为 Sun Nov 20 15:18:33 UTC 2016。&lt;/p&gt;
+
+&lt;p&gt;现在有些系统采用 32 位有符号整数保存 Unix 时间，所以它最多只能表示 136 年，即：1901-12-13 20:45:52 至 2038-1-19 3:14:07。和 &lt;a href=&quot;https://zh.wikipedia.org/wiki/2000%E5%B9%B4%E9%97%AE%E9%A2%98&quot;&gt;千年虫问题&lt;/a&gt; 类似，32 位 Unix/Linux 的系统在 2038 年可能会发生故障。&lt;/p&gt;
+
+&lt;p&gt;我们常用 &lt;a href=&quot;https://en.wikipedia.org/wiki/Network_Time_Protocol&quot;&gt;NTP 协议&lt;/a&gt;校准计算机时间。&lt;/p&gt;
+
+&lt;p&gt;一点感想：软件开发中，最好采用 UTC，分布式跨时区系统一定请用 UTC！&lt;/p&gt;
+</description>
+        <pubDate>Fri, 18 Nov 2016 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/algorithm/2016/11/18/%E7%90%86%E8%A7%A3time.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/algorithm/2016/11/18/%E7%90%86%E8%A7%A3time.html</guid>
+        
+        
+        <category>algorithm</category>
+        
+      </item>
+    
+      <item>
+        <title>Yield 和 Coroutine</title>
+        <description>&lt;blockquote&gt;
+  &lt;p&gt;This PEP proposes some enhancements to the API and syntax of generators, to make them usable as simple coroutines.&lt;/p&gt;
+
+  &lt;p&gt;                                                                                                                                             ——— Pep342&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;博文 &lt;a href=&quot;http://wsfdl.com/python/2016/10/18/python_yield.html&quot;&gt;Iterator, Generator 与 Yield&lt;/a&gt; 介绍了 iterator，generator 和 yield，并阐述三者之间的关系。本文将进一步介绍 yield 和 coroutine，并阐述如何通过 yield 实现一个简单的 coroutine。&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Coroutine&quot;&gt;Coroutine(协程)&lt;/a&gt; 最早于 1963 年提出，在之后的三四十年里并没有受到广泛关注，但在近些年受到热捧。通俗而言：协程相当于用户态线程。这句话包含了两层意思：&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;Linux: Ubuntu 14.04 LTS&lt;/li&gt;
-  &lt;li&gt;OpenStack: Kilo&lt;/li&gt;
+  &lt;li&gt;协程具有类似线程的功能，它能提供并发。&lt;/li&gt;
+  &lt;li&gt;协程是用户态的，即操作系统对协程不感知，也不负责调度；应用程序负责管理协程的生命周期和调度协程，由于协程的切换是函数级别的切换，故切换的开销远远小于线程/进程。&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;更新 keystone.conf 如下配置：&lt;/p&gt;
+&lt;p&gt;为什么协程在近些年越来越火？原因得从并发谈起，随着互联网爆炸式增长，服务端对并发能力的需求越来越大。最初工程师采用多进程提供并发，每当服务端收到一个请求，就 fork 一个进程处理请求，Apache 是最典型的例子。但是进程很重，占用了的大量 CPU 和内存资源，和进程相比，线程占用更少的资源，所以多线程的并发模型更受欢迎，每当服务端收到一个请求，就创建一个线程处理请求，如 Nginx。每个线程维护私有的 stack，Linux 下 stack 的默认大小为 8MB，所以 8G 内存的 Linux 服务器最多能创建 1000 个线程；此外线程的调度由内核负责，调度和切换的开销也不容小觑，以上两个因素限制了多线程模型的并发能力。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;[auth]
-methods = external,password,token,oauth1,saml2
-saml2 = keystone.auth.plugins.mapped.Mapped 
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Apache 新增如下配置：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;Listen 5000
-Listen 35357
-
-&amp;lt;VirtualHost *:5000&amp;gt;
-    WSGIScriptAliasMatch ^(/v3/OS-FEDERATION/identity_providers/.*?/protocols/.*?/auth)$ /var/www/cgi-bin/keystone/main/$1
-     ......
-&amp;lt;/VirtualHost&amp;gt;
-
-&amp;lt;VirtualHost *:35357&amp;gt;
-    WSGIScriptAliasMatch ^(/v3/OS-FEDERATION/identity_providers/.*?/protocols/.*?/auth)$ /var/www/cgi-bin/keystone/admin/$1
-      ......
-&amp;lt;/VirtualHost&amp;gt;
-
-&amp;lt;Location /Shibboleth.sso&amp;gt;
-    SetHandler shib
-&amp;lt;/Location&amp;gt;
-
-&amp;lt;LocationMatch /v3/OS-FEDERATION/identity_providers/.*?/protocols/saml2/auth&amp;gt;
-    ShibRequestSetting requireSession 1
-    AuthType shibboleth
-    ShibExportAssertion Off
-    Require valid-user
-&amp;lt;/LocationMatch&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;安装 Shibboleth：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ apt-get install libapache2-mod-shib2
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;更新 /etc/shibboleth/attribute-map.xml 的以下配置项：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;Attribute name=&quot;openstack_user&quot; id=&quot;openstack_user&quot;/&amp;gt;  
-&amp;lt;Attribute name=&quot;openstack_roles&quot; id=&quot;openstack_roles&quot;/&amp;gt;  
-&amp;lt;Attribute name=&quot;openstack_project&quot; id=&quot;openstack_project&quot;/&amp;gt; 
-&amp;lt;Attribute name=&quot;openstack_user_domain&quot; id=&quot;openstack_user_domain&quot;/&amp;gt;  
-&amp;lt;Attribute name=&quot;openstack_project_domain&quot; id=&quot;openstack_project_domain&quot;/&amp;gt;  
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;更新 /etc/shibboleth/shibboleth2.xml 的以下配置项：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-xml&quot;&gt;&amp;lt;SSO entityID=&quot;http://idp:5000/v3/OS-FEDERATION/saml2/idp&quot;&amp;gt;  
-    SAML2 SAML1
-&amp;lt;/SSO&amp;gt;
-
-&amp;lt;MetadataProvider type=&quot;XML&quot; uri=&quot;http://idp:5000/v3/OS-FEDERATION/saml2/metadata&quot;/&amp;gt;  
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;启动 shibboleth 并重启 apache：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ shib-keygen  
-$ service apache2 restart
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;查看 shibboleth 是否正常运行&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ a2enmod shib2
-Module shib2 already enabled
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-configure-keystone-as-an-identity-provider&quot;&gt;Configure Keystone as an Identity Provider&lt;/h1&gt;
-
-&lt;p&gt;安装 xmlsec1 和 pysaml2：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ apt-get install xmlsec1  
-$ pip install pysaml2
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;更新 keystone.conf 的如下配置：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;[saml]
-certfile=/etc/keystone/ssl/certs/ca.pem  
-keyfile=/etc/keystone/ssl/private/cakey.pem  
-idp_entity_id=http://idp:5000/v3/OS-FEDERATION/saml2/idp  
-idp_sso_endpoint=http://idp:5000/v3/OS-FEDERATION/saml2/sso  
-idp_metadata_path=/etc/keystone/keystone_idp_metadata.xml  
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;生成 DIP 的 metadata 并重启 apache HTTPD：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ keystone-manage saml_idp_metadata &amp;gt; /etc/keystone/keystone_idp_metadata.xml
-service apache2 restart
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-test-keystone-to-keystone-federation&quot;&gt;Test Keystone to Keystone federation&lt;/h1&gt;
+&lt;p&gt;为了提升服务端的并发能力，我们需要一种并发模型，这种模型具有以下特点：&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;在 Service Provider 端执行以下脚本，创建 domain, group, mapping, idp, protocol 等。其中 idp 指向另外一个作为 Identity Provider 的 Keystone，protocol 采用了 saml2 协议，mapping 的规则为只要 IDP 中名为 bob 或者 acme 的用户都可通过认证，并且映射到 Service 端的 federated_user 用户上。&lt;/li&gt;
+  &lt;li&gt;占用更少的资源，如内存和 CPU 周期&lt;/li&gt;
+  &lt;li&gt;避免内核调度带来的额外开销，协程仅在必要的时候才被调度切换，如 IO 操作。&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;import os
+&lt;p&gt;而协程作为用户态线程，恰好满足上述要求，首先协程的 stack 比线程的 stack 更小，占用更少的内存空间(KB 级别)，无需通过系统调用来创建和销毁，故消耗更少的 CPU 周期；另外，协程的调度由应用程序负责，仅在必要的时候才切换，和线程相比，减少了切换的次数和每次切换的开销。&lt;/p&gt;
 
-from keystoneclient import session as ksc_session
-from keystoneclient.auth.identity import v3
-from keystoneclient.v3 import client as keystone_v3
+&lt;p&gt;回顾 Yield，我们用它编写一个如下的 Generator。&lt;/p&gt;
 
-try:
-    # Used for creating the ADMIN user
-    OS_PASSWORD = &#39;123456&#39;
-    OS_USERNAME = &#39;admin&#39;
-    # This will vary according to the entity:
-    # the IdP or the SP
-    OS_AUTH_URL = &#39;http://sp:35357/v3&#39;
-    OS_PROJECT_NAME = &#39;admin&#39;
-    OS_DOMAIN_NAME = &#39;default&#39;
-except KeyError as e:
-    raise SystemExit(&#39;%s environment variable not set.&#39; % e)
-
-def client_for_admin_user():
-    auth = v3.Password(auth_url=OS_AUTH_URL,
-                       username=OS_USERNAME,
-                       password=OS_PASSWORD,
-                       user_domain_name=OS_DOMAIN_NAME,
-                       project_name=OS_PROJECT_NAME,
-                       project_domain_name=OS_DOMAIN_NAME)
-    session = ksc_session.Session(auth=auth)
-    return keystone_v3.Client(session=session)
-
-# Used to execute all admin actions
-client = client_for_admin_user()
-
-def create_domain(client, name):
-    try:
-         d = client.domains.create(name=name)
-    except:
-         d = client.domains.find(name=name)
-    return d
-
-
-def create_group(client, name, domain):
-    try:
-         g = client.groups.create(name=name, domain=domain)
-    except:
-         g = client.groups.find(name=name)
-    return g
-
-
-def create_role(client, name):
-    try:
-        r = client.roles.create(name=name)
-    except:
-        r = client.roles.find(name=name)
-    return r
-
-
-print(&#39;\nCreating domain1&#39;)
-domain1 = create_domain(client, &#39;domain1&#39;)
-
-print(&#39;\nCreating group1&#39;)
-group1 = create_group(client, &#39;group1&#39;, domain1)
-
-print(&#39;\nCreating role Member&#39;)
-role1 = create_role(client, &#39;Member&#39;)
-
-print(&#39;\nGrant role Member to group1 in domain1&#39;)
-client.roles.grant(role1, group=group1, domain=domain1)
-
-print(&#39;\nList group1 role assignments&#39;)
-client.role_assignments.list(group=group1)
-
-def create_mapping(client, mapping_id, rules):
-    try:
-        m = client.federation.mappings.create(
-            mapping_id=mapping_id, rules=rules)
-    except:
-        m = client.federation.mappings.find(
-            mapping_id=mapping_id)
-    return m
-
-print(&#39;\nCreating mapping&#39;)
-rules = [
-{
-    &quot;local&quot;: [
-        {
-            &quot;user&quot;: {
-                &quot;name&quot;: &quot;federated_user&quot;
-            },
-            &quot;group&quot;: {
-                &quot;id&quot;: group1.id
-            }
-        }
-    ],
-    &quot;remote&quot;: [
-        {
-            &quot;type&quot;: &quot;openstack_user&quot;,
-            &quot;any_one_of&quot;: [
-                &quot;bob&quot;,
-                &quot;acme&quot;
-            ]
-        }
-    ]
-}
-]
-
-mapping1 = create_mapping(client, mapping_id=&#39;keystone-idp-mapping&#39;, rules=rules)
-
-
-def create_idp(client, id, remote_id):
-    idp_ref = {&#39;id&#39;: id,
-               &#39;remote_ids&#39;: [remote_id],
-               &#39;enabled&#39;: True}
-    try:
-        i = client.federation.identity_providers.create(**idp_ref)
-    except:
-        i = client.federation.identity_providers.find(id=id)
-    return i
-
-def create_protocol(client, protocol_id, idp, mapping):
-    try:
-        p = client.federation.protocols.create(protocol_id=protocol_id,
-                                               identity_provider=idp,
-                                               mapping=mapping)
-    except:
-        p = client.federation.protocols.find(protocol_id=protocol_id)
-    return p
-
-
-print(&#39;\nRegister keystone-idp&#39;)
-idp1 = create_idp(client, id=&#39;keystone-idp&#39;,
-                  remote_id=&#39;http://idp:5000/v3/OS-FEDERATION/saml2/idp&#39;)
-
-print(&#39;\nRegister protocol&#39;)
-protocol1 = create_protocol(client, protocol_id=&#39;saml2&#39;, idp=idp1,
-                            mapping=mapping1)
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def task1():
+    while True:
+        # Do something
+        yield &quot;This is task1&quot;
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;在 IDP 端执行以下脚本，用户 bob 获得一个 unscoped token，可拿该 token 向 SP 获取 scope token 后访问 Service 端的资源。&lt;/p&gt;
+&lt;p&gt;运行：&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;import json
-import os
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;&amp;gt;&amp;gt;&amp;gt; t1 = task1()              # Initiate a task
+&amp;gt;&amp;gt;&amp;gt; t1.next()                 # Run task
+&amp;gt;&amp;gt;&amp;gt; This is task1             # Task suspend when meeting next yield
+&amp;gt;&amp;gt;&amp;gt; t1.Send(None)             # Run task
+&amp;gt;&amp;gt;&amp;gt; This is task1             # Task suspend when meeting next yield
+&amp;gt;&amp;gt;&amp;gt; t1.close()                # Delete task
+&lt;/code&gt;&lt;/pre&gt;
 
-import requests
+&lt;p&gt;当我们调用一个包含 yield 的函数时，相当于初始化了一个协程，我们可以调用 next() 或者 send() 让协程运行，每当 task 遇到 yield 则自动暂停挂起，我们也可以调用 close() 结束一个协程。以下是进程，线程和上例协程生命周期管理的部分函数。&lt;/p&gt;
 
-from keystoneclient import session as ksc_session
-from keystoneclient.auth.identity import v3
-from keystoneclient.v3 import client as keystone_v3
+&lt;pre&gt;&lt;code&gt;Method          Process         Thread           Coroutine
+----------------------------------------------------------------------
+Create/Run      fork            pthread_create   task1()/next/send
+Delete          exit            pthread_exit     close
+&lt;/code&gt;&lt;/pre&gt;
 
+&lt;p&gt;上例协程具备基本的生命周期管理的方法，我们现在往其加入调度功能，调度算法为 FIFO。&lt;/p&gt;
 
-class K2KClient(object):
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;class Scheduler(object):
     def __init__(self):
-        self.sp_id = &#39;keystone-sp&#39;
-        self.auth_url = &#39;http://idp:35357/v3&#39;
-        self.project_id = &#39;582df27a0db14149a6da375b31fce3df&#39;
-        self.username = &#39;bob&#39;
-        self.password = &#39;123456&#39;
-        self.domain_id = &#39;default&#39;
+        self.queue = []
+        self.task_num = 0
 
-    def v3_authenticate(self):
-        auth = v3.Password(auth_url=self.auth_url,
-                           username=self.username,
-                           password=self.password,
-                           user_domain_id=self.domain_id,
-                           project_id=self.project_id)
-        self.session = ksc_session.Session(auth=auth, verify=False)
-        self.session.auth.get_auth_ref(self.session)
-        self.token = self.session.auth.get_token(self.session)
-    def _generate_token_json(self):
-        return {
-            &quot;auth&quot;: {
-                &quot;identity&quot;: {
-                    &quot;methods&quot;: [
-                        &quot;token&quot;
-                    ],
-                    &quot;token&quot;: {
-                        &quot;id&quot;: self.token
-                    }
-                },
-                &quot;scope&quot;: {
-                    &quot;service_provider&quot;: {
-                        &quot;id&quot;: self.sp_id
-                    }
-                }
-            }
-        }
+    def new(self, task):
+        self.queue.append(task)
+        self.task_num += 1
 
-    def _check_response(self, response):
-        if not response.ok:
-            raise Exception(&quot;Something went wrong, %s&quot; % response.__dict__)
-
-    def get_saml2_ecp_assertion(self):
-        token = json.dumps(self._generate_token_json())
-        url = self.auth_url + &#39;/auth/OS-FEDERATION/saml2/ecp&#39;
-        r = self.session.post(url=url, data=token, verify=False)
-        self._check_response(r)
-        self.assertion = str(r.text)
-
-    def _get_sp(self):
-        url = self.auth_url + &#39;/OS-FEDERATION/service_providers/&#39; + self.sp_id
-        r = self.session.get(url=url, verify=False)
-        self._check_response(r)
-        sp = json.loads(r.text)[u&#39;service_provider&#39;]
-        return sp
-
-    def _handle_http_302_ecp_redirect(self, response, location, **kwargs):
-        return self.session.get(location, authenticated=False, **kwargs)
-
-    def exchange_assertion(self):
-        &quot;&quot;&quot;Send assertion to a Keystone SP and get token.&quot;&quot;&quot;
-        sp = self._get_sp()
-
-        r = self.session.post(
-            sp[u&#39;sp_url&#39;],
-            headers={&#39;Content-Type&#39;: &#39;application/vnd.paos+xml&#39;},
-            data=self.assertion,
-            authenticated=False,
-            redirect=False)
-
-        self._check_response(r)
-
-        r = self._handle_http_302_ecp_redirect(r, sp[u&#39;auth_url&#39;],
-                                               headers={&#39;Content-Type&#39;:
-                                               &#39;application/vnd.paos+xml&#39;})
-        self.fed_token_id = r.headers[&#39;X-Subject-Token&#39;]
-        self.fed_token = r.text
-
-    def list_federated_projects(self):
-        url = &#39;http://sp:5000/v3/OS-FEDERATION/projects&#39;
-        headers = {&#39;X-Auth-Token&#39;: self.fed_token_id}
-        r = requests.get(url=url, headers=headers)
-        self._check_response(r)
-        return json.loads(str(r.text))
-
-    def _get_scoped_token_json(self, project_id):
-        return {
-            &quot;auth&quot;: {
-                &quot;identity&quot;: {
-                    &quot;methods&quot;: [
-                        &quot;token&quot;
-                    ],
-                    &quot;token&quot;: {
-                        &quot;id&quot;: self.fed_token_id
-                    }
-                },
-                &quot;scope&quot;: {
-                    &quot;project&quot;: {
-                        &quot;id&quot;: project_id
-                    }
-                }
-            }
-        }
-
-    def scope_token(self, project_id):
-        # project_id can be select from the list in the previous step
-        token = json.dumps(self._get_scoped_token_json(project_id))
-        url = &#39;http://sp:5000/v3/auth/tokens&#39;
-        headers = {&#39;X-Auth-Token&#39;: self.fed_token_id,
-                   &#39;Content-Type&#39;: &#39;application/json&#39;}
-        r = requests.post(url=url, headers=headers, data=token,
-                          verify=False)
-        self._check_response(r)
-        self.scoped_token_id = r.headers[&#39;X-Subject-Token&#39;]
-        self.scoped_token = str(r.text)
+    def loop(self):
+        while self.task_num:
+            task = self.queue.pop(0)
+            task.next()
+            self.queue.append(task)
 
 
-def main():
-    client = K2KClient()
-    client.v3_authenticate()
-    client.get_saml2_ecp_assertion()
-    print(&#39;ECP wrapped SAML assertion: %s&#39; % client.assertion)
-    client.exchange_assertion()
-    print(&#39;Unscoped token id: %s&#39; % client.fed_token_id)
-    
-    # If you want to get a scope token, please ensure federated_user has a project
-    # and uncommen below codes.
-    &#39;&#39;&#39;
-    projects = client.list_federated_projects()
-    print(&#39;Federated projects: %s&#39; % projects[&#39;projects&#39;])
-    project_id = projects[&#39;projects&#39;][0][&#39;id&#39;]
-    project_name = projects[&#39;projects&#39;][0][&#39;name&#39;]
-    client.scope_token(project_id)
-    print(&#39;Scoped token of &#39; + project_name + &#39; : &#39; + client.scoped_token_id)
-    &#39;&#39;&#39;
-
-
-if __name__ == &quot;__main__&quot;:
-    main()
+def task2():
+    while True:
+        # Do something
+        yield &quot;This is task2&quot;
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;hr /&gt;
+&lt;p&gt;运行结果：&lt;/p&gt;
 
-&lt;h1 id=&quot;id-reference&quot;&gt;Reference&lt;/h1&gt;
-&lt;ol&gt;
-  &lt;li&gt;https://developer.rackspace.com/blog/keystone-to-keystone-federation-with-openstack-ansible/&lt;/li&gt;
-  &lt;li&gt;https://specs.openstack.org/openstack/keystone-specs/api/v3/identity-api-v3-os-federation-ext.html&lt;/li&gt;
-  &lt;li&gt;http://blog.rodrigods.com/it-is-time-to-play-with-keystone-to-keystone-federation-in-kilo/&lt;/li&gt;
-  &lt;li&gt;https://bigjools.wordpress.com/2015/05/22/saml-federation-with-openstack/&lt;/li&gt;
-&lt;/ol&gt;
+&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;&amp;gt;&amp;gt;&amp;gt; scheduler = Scheduler()
+&amp;gt;&amp;gt;&amp;gt; scheduler.new(task1())
+&amp;gt;&amp;gt;&amp;gt; scheduler.new(task2())
+&amp;gt;&amp;gt;&amp;gt; scheduler.loop()
+This is task1
+This is task2
+This is task1
+This is task2
+......
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;流程图如下，每当 Main Loop 调用 next()/send()，执行权交给相应协程，每当协程遇到 yield，则交出执行权给 Main Loop。该流程图和 Linux 的进程调度非常类似，如果把 Main Loop 比作内核，协程如同进程/线程，yield 如同系统调用、硬件中断等。任何时刻，一个 Python 进程内只有一个协程在执行，即协程是伪并发的。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;           Run       Run      Run      Run      Run
+Main Loop  ---&amp;gt;      --&amp;gt;      --&amp;gt;      --&amp;gt;      ---&amp;gt;
+               |    |   |    |   |    |   |    |
+               |Run |   |    |   |Run |   |    |     ......
+Task1           ---&amp;gt;    |    |    ---&amp;gt;    |    |
+                        |Run |            |Run |
+Task2                    ---&amp;gt;              ---&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;本文借用 yield 实现了一个非常简单的协程，它的调度功能非常简陋，不支持同步功能，没有处理阻塞的 IO，无法处理复杂事务，另推荐 &lt;a href=&quot;http://www.dabeaz.com/coroutines/&quot;&gt;A Curious Course on Coroutines and Concurrency&lt;/a&gt; 和 Python 协程库 &lt;a href=&quot;http://eventlet.net/&quot;&gt;eventlet&lt;/a&gt;，&lt;a href=&quot;http://www.gevent.org/&quot;&gt;gevent&lt;/a&gt; 做进一步的学习。&lt;/p&gt;
 </description>
-        <pubDate>Thu, 14 Jan 2016 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/openstack/2016/01/14/Keystone-Federation-Identity-with-SAML2.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/openstack/2016/01/14/Keystone-Federation-Identity-with-SAML2.html</guid>
+        <pubDate>Sun, 13 Nov 2016 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/python/2016/11/13/yield_and_croutine.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/python/2016/11/13/yield_and_croutine.html</guid>
         
         
-        <category>openstack</category>
+        <category>python</category>
         
       </item>
     
       <item>
-        <title>Keystone 集成 LDAP</title>
-        <description>&lt;hr /&gt;
-
-&lt;p&gt;得益于 Keystone 优良的架构，它允许 Service 适配多种 Backend。Keystone 目前有 Identity, Resource, Assigment, Token, Policy, Catatlog 等 service，在 K 版本中，Identity, Resource, Assigment 都支持 LDAP 作为其 Backend，但是因为 Resource 和 Assigment 中的某些属性在 LDAP 并不能很好的支持，因此从 M 版本后，只有 Idendity 支持 LDAP 作为 Backend。本文的例子也仅将 Identity 的数据存储在 LDAP 中，其它 Services 的数据依旧存储在 SQL 里。&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Identity: User and Group&lt;/li&gt;
-  &lt;li&gt;Resource: Project and Domain&lt;/li&gt;
-  &lt;li&gt;Assigment: Role and Role Assigment&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/keystone%20service%20and%20backend.png?imageView2/1/w/1300/q/100&quot; alt=&quot;Services and Backends&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;基本配置如下：&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Linux: Ubuntu 14.04 LTS&lt;/li&gt;
-  &lt;li&gt;OpenStack: Kilo&lt;/li&gt;
-  &lt;li&gt;LDAP: slapd 2.4.31&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;LDAP 的 DN(Distinguished Names) 默认由主机域名生成，本地的 DNS 设置如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ cat /etc/hosts
-10.10.1.100    keystone.com
-127.0.0.1   localhost
-&lt;/code&gt;&lt;/pre&gt;
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-install-ldap&quot;&gt;Install LDAP&lt;/h1&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ apt-get install slapd ldap-utils
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;安装完成后可通过以下命令和步骤完成 LDAP 的基本配置：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ dpkg-reconfigure slapd
-
-* Omit OpenLDAP server configuration? No
-
-* DNS domain name?  keystone.com
-
-* Organization name?  admin
-
-* Administrator password? YourPassword
-
-* Use the password you configured during installation, or choose another one
-  Database backend to use? HDB
-
-* Remove the database when slapd is purged? No
-
-* Move old database? Yes
-
-* Allow LDAPv2 protocol? No
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-configure-ldap&quot;&gt;Configure LDAP&lt;/h1&gt;
-
-&lt;p&gt;由于 LDAP 的用户属性和 Keystone 默认的用户属性有所差异，所以 LDAP 需生成与 Keystone 中的 User 和 Group 相匹配的对象，可通过以下脚本(add_user_group.ldif)添加该对象，并生成 demo 和 admin 两个用户。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# Users
-dn: ou=users,dc=keystone,dc=com
-ou: users
-objectClass: organizationalUnit
-
-# Group
-dn: ou=groups,dc=keystone,dc=com
-objectClass: organizationalUnit
-ou: groups
-
-# demo user
-dn: cn=demo,ou=users,dc=keystone,dc=com
-cn: demo
-displayName: demo
-givenName: demo
-mail: demo@example.com
-objectClass: inetOrgPerson
-objectClass: top
-sn: demo
-uid: demo
-userPassword: 123456
-
-# admin user
-dn: cn=admin,ou=users,dc=keystone,dc=com
-cn: admin
-displayName: admin
-givenName: admin
-mail: admin@example.com
-objectClass: inetOrgPerson
-objectClass: top
-sn: admin
-uid: admin
-userPassword: 123456
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;由以下命令把上述配置文件内容更新至 LDAP：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ ldapadd -x -W -D &quot;cn=admin,dc=example,dc=com&quot; -f add_user_group.ldif
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Keystone 的配置文件如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;[identity]
-driver = keystone.identity.backends.ldap.Identity
-
-[assignment]
-driver = keystone.assignment.backends.sql.Assignment
-
-[ldap]
-# LDAP 服务器地址，tree_dn 目录下管理员的账号和密码等
-url = ldap://keystone.com              
-query_scope = sub
-user = &quot;cn=admin,dc=keystone,dc=com&quot; 
-password = 123456
-tree_dn = &quot;dc=keystone,dc=com&quot;
-
-# 以下配置定义 Keystone 和 LDAP 二者的属性的 mapping 关系。
-user_tree_dn = &quot;ou=users,dc=keystone,dc=com&quot;  
-user_objectclass = inetOrgPerson
-user_id_attribute = cn
-user_name_attribute = cn
-user_mail_attribute = mail
-user_pass_attribute = userPassword
-user_enabled_attribute = enabled
-
-group_tree_dn = &quot;ou=groups,dc=keystone,dc=com&quot;
-group_objectclass = groupOfUniqueNames
-group_id_attribute = cn
-group_name_attribute = cn
-group_member_attribute = uniquemember
-group_desc_attribute = description
-
-user_allow_create = true
-user_allow_update = true
-user_allow_delete = true
-
-group_allow_create = true
-group_allow_update = true
-group_allow_delete = true
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-test&quot;&gt;Test&lt;/h1&gt;
-
-&lt;p&gt;用 admin_token 创建 project 和 role，并赋予 demo 和 admin 用户在 project 中的 role 后，即可使用该用户获得 scope token 访问 Keystone 的 API。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-bash&quot;&gt;$ openstack user list
-+--------------------+--------------------+
-| ID                 | Name               |
-+--------------------+--------------------+
-| demo               | demo               |
-| admin              | admin              |
-+--------------------+--------------------+
-
-$ openstack user show demo
-+-----------+------------------+
-| Field     | Value            |
-+-----------+------------------+
-| domain_id | default          |
-| email     | demo@example.com |
-| id        | demo             |
-| name      | demo             |
-+-----------+------------------+
-
-$ openstack user create hello --password 123456
-+-----------+----------------------------------+
-| Field     | Value                            |
-+-----------+----------------------------------+
-| domain_id | default                          |
-| enabled   | True                             |
-| id        | hello                            |
-| name      | hello                            |
-+-----------+----------------------------------+
-
-$ openstack project create test_project
-+-------------+----------------------------------+
-| Field       | Value                            |
-+-------------+----------------------------------+
-| description |                                  |
-| domain_id   | default                          |
-| enabled     | True                             |
-| id          | cbdf05b17cf54587b3b58a11f49252e7 |
-| name        | test_project                     |
-+-------------+----------------------------------+
-&lt;/code&gt;&lt;/pre&gt;
-</description>
-        <pubDate>Wed, 13 Jan 2016 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/openstack/2016/01/13/Keystone%E9%9B%86%E6%88%90LDAP.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/openstack/2016/01/13/Keystone%E9%9B%86%E6%88%90LDAP.html</guid>
-        
-        
-        <category>openstack</category>
-        
-      </item>
-    
-      <item>
-        <title>[行摄] 上海武康路</title>
-        <description>&lt;p&gt;&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E6%AD%A6%E5%BA%B7%E8%B7%AF_(%E4%B8%8A%E6%B5%B7)&quot;&gt;武康路&lt;/a&gt;原名福开森路(Route Ferguson)，北起华山路，南接淮海中路，由法租界公董局修筑于1907年，后于汪精卫政府时期更名为武康路。这里住过次吒风云政要陈立夫等、陈丕显等人，也被商业大亨严裕棠等所青睐，更留下昔日红颜秦怡、王文娟等往事，还有巴金深夜耕耘的佳作。&lt;/p&gt;
-
-&lt;p&gt;原以为上海除了高楼还是高楼，当看到两旁坐落着民国时期建造的花园洋房与历史公寓时，欣喜之情情不自禁流露而出。16年的元旦是个天朗气清的冬日，午后暖阳甚是令人心旷神怡。据说从 13 年起，武康路不在人为清扫落叶，深秋的法桐路下，值得再踏叶游览一次。&lt;/p&gt;
-
-&lt;p&gt; &lt;/p&gt;
-
-&lt;p&gt; &lt;br /&gt;
-P1. 饰品店&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/IMG_3024.JPG?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p1&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt; &lt;br /&gt;
- &lt;/p&gt;
-
-&lt;p&gt;P2. 丁香别墅&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/IMG_3074.JPG?imageView2/1/w/800/h/533/q/100&quot; alt=&quot;p2&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt; &lt;br /&gt;
- &lt;/p&gt;
-
-&lt;p&gt;P3. 武原路&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/IMG_2971.JPG?imageView2/1/w/533/h/800/q/100&quot; alt=&quot;p3&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt; &lt;br /&gt;
- &lt;/p&gt;
-
-&lt;p&gt;P4. 咖啡馆&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/IMG_2996.JPG?imageView2/1/w/533/h/800/q/100&quot; alt=&quot;p4&quot; /&gt;&lt;/p&gt;
-</description>
-        <pubDate>Sun, 03 Jan 2016 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/photos/2016/01/03/%E4%B8%8A%E6%B5%B7%E6%AD%A6%E5%BA%B7%E8%B7%AF.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/photos/2016/01/03/%E4%B8%8A%E6%B5%B7%E6%AD%A6%E5%BA%B7%E8%B7%AF.html</guid>
-        
-        
-        <category>photos</category>
-        
-      </item>
-    
-      <item>
-        <title>理解 Keystone 的四种 Token</title>
-        <description>&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-token-&quot;&gt;Token 是什么&lt;/h1&gt;
-
-&lt;p&gt;通俗的讲，token 是用户的一种凭证，需拿正确的用户名/密码向 Keystone 申请才能得到。如果用户每次都采用用户名/密码访问 OpenStack API，容易泄露用户信息，带来安全隐患。所以 OpenStack 要求用户访问其 API 前，必须先获取 token，然后用 token 作为用户凭据访问 OpenStack API。&lt;br /&gt;
-&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/uuid.png&quot; alt=&quot;P1&quot; /&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-token--1&quot;&gt;四种 Token 的由来&lt;/h1&gt;
-
-&lt;p&gt;D 版本时，仅有 UUID 类型的 Token，UUID token 简单易用，却容易给 Keystone 带来性能问题，从图一的步骤 4 可看出，每当 OpenStack API 收到用户请求，都需要向 Keystone 验证该 token 是否有效。随着集群规模的扩大，Keystone 需处理大量验证 token 的请求，在高并发下容易出现性能问题。&lt;/p&gt;
-
-&lt;p&gt;于是 PKI(&lt;a href=&quot;https://wiki.openstack.org/wiki/PKI&quot;&gt;Public Key Infrastructrue&lt;/a&gt;) token 在 G 版本运用而生，和 UUID 相比，PKI token 携带更多用户信息的同时还附上了数字签名，以支持本地认证，从而避免了步骤 4。因为 PKI token 携带了更多的信息，这些信息就包括 service catalog，随着 OpenStack 的 Region 数增多，service catalog 携带的 endpoint 数量越多，PKI token 也相应增大，很容易超出 HTTP Server 允许的最大 HTTP Header(默认为 8 KB)，导致 HTTP 请求失败。&lt;/p&gt;
-
-&lt;p&gt;顾名思义，&lt;a href=&quot;https://blueprints.launchpad.net/keystone/+spec/compress-tokens&quot;&gt;PKIZ token&lt;/a&gt; 就是 PKI token 的压缩版，但压缩效果有限，无法良好的处理 token size 过大问题。&lt;/p&gt;
-
-&lt;p&gt;前三种 token 都会持久性存于数据库，与日俱增积累的大量 token 引起数据库性能下降，所以用户需经常清理数据库的 token。为了避免该问题，社区提出了 Fernet token，它携带了少量的用户信息，大小约为 255 Byte，采用了对称加密，无需存于数据库中。&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-uuid&quot;&gt;UUID&lt;/h1&gt;
-
-&lt;p&gt;UUID token 是长度固定为 32 Byte 的随机字符串，由 uuid.uuid4().hex 生成。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def _get_token_id(self, token_data):
-    return uuid.uuid4().hex
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;但是因 UUID token 不携带其它信息，OpenStack API 收到该 token 后，既不能判断该 token 是否有效，更无法得知该 token 携带的用户信息，所以需经图一步骤 4 向 Keystone 校验 token，并获用户相关的信息。其样例如下：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;144d8a99a42447379ac37f78bf0ef608
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;UUID token 简单美观，不携带其它信息，因此 Keystone 必须实现 token 的存储和认证，随着集群的规模增大，Keystone 将成为性能瓶颈。&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-pki&quot;&gt;PKI&lt;/h1&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/pki.png&quot; alt=&quot;P2&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;在阐述 PKI（Public Key Infrastruction） token 前，让我们简单的回顾&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E5%85%AC%E5%BC%80%E5%AF%86%E9%92%A5%E5%8A%A0%E5%AF%86&quot;&gt;公开密钥加密(public-key cryptography)&lt;/a&gt;和&lt;a href=&quot;http://www.youdzone.com/signature.html&quot;&gt;数字签名&lt;/a&gt;。公开密钥加密，也称为非对称加密(asymmetric cryptography，加密密钥和解密密钥不相同)，在这种密码学方法中，需要一对密钥，分别为公钥(Public Key)和私钥(Private Key)，公钥是公开的，私钥是非公开的，需用户妥善保管。如果把加密和解密的流程当做函数 C(x) 和 D(x)，P 和 S 分别代表公钥和私钥，对明文 A 和密文 B 而言，数学的角度上有以下公式：&lt;/p&gt;
+        <title>赌书消得泼茶香</title>
+        <description>&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/book_home.jpeg&quot; alt=&quot;home book&quot; /&gt;&lt;br /&gt;
+                                                                               书房&lt;/p&gt;
 
 &lt;blockquote&gt;
-  &lt;p&gt;B = C(A, S)  &lt;br /&gt;
-A = D(B, P)&lt;/p&gt;
+  &lt;p&gt;我们一拿起一本这样的古书来，即使只读半小时，也会觉得无比的轻松、愉快、清净、超逸，仿佛汲饮清冽的泉水似的舒适。&lt;/p&gt;
+
+  &lt;p&gt;                                                                                                                                                      — 叔本华&lt;/p&gt;
 &lt;/blockquote&gt;
 
-&lt;p&gt;其中加密函数 C(x), 解密函数 D(x) 以及公钥 P 均是公开的。采用公钥加密的密文只能用私钥解密，采用私钥加密的密文只能用公钥解密。非对称加密广泛运用在安全领域，诸如常见的 HTTPS，SSH 登录等。&lt;/p&gt;
+&lt;p&gt;本文所记的，正是 IT 领域如叔本华所说的古书。&lt;/p&gt;
 
-&lt;p&gt;数字签名又称为公钥数字签名，首先采用 Hash 函数对消息生成摘要，摘要经私钥加密后称为数字签名。接收方用公钥解密该数字签名，并与接收消息生成的摘要做对比，如果二者一致，便可以确认该消息的完整性和真实性。&lt;/p&gt;
+&lt;h1 id=&quot;id-section&quot;&gt;技术类&lt;/h1&gt;
 
-&lt;p&gt;PKI 的本质就是基于数字签名，Keystone 用私钥对 token 进行数字签名，各个 API server 用公钥在本地验证该 token。相关代码简化如下：&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;《Operating System Concepts - 9th edition》&lt;/li&gt;
+&lt;/ul&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def _get_token_id(self, token_data):
-    try:
-        token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
-        token_id = str(cms.cms_sign_token(token_json,
-                                          CONF.signing.certfile,
-                                          CONF.signing.keyfile))
-        return token_id
-&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;曾尝试读过各类 Linux 书籍，无一以失败告终，究其原因，未知原理，先上代码，堆砌细节，难免一头雾水。此书高屋建瓴，提纲挈领的勾画操作系统的模型，从进程模型、进程调度、内存管理再到文件系统，每个部分由浅入深的介绍多种实现方式以及各自的优缺点，不仅知其然，而且知其所以然。理解此书后，再阅读 Linux/Unix 相关书籍，会轻松许多，若能结合伯克利的公开课 CS162，将事半功倍。&lt;/p&gt;
 
-&lt;p&gt;其中 cms.cms_sign_token 调用 openssl cms –sign 对 token_data 进行签名，token_data 的样式如下：&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;《Unix 环境高级编程（第三版）》&lt;/li&gt;
+&lt;/ul&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-json&quot;&gt;{
-  &quot;token&quot;: {
-    &quot;methods&quot;: [ &quot;password&quot; ],
-    &quot;roles&quot;: [{&quot;id&quot;: &quot;5642056d336b4c2a894882425ce22a86&quot;, &quot;name&quot;: &quot;admin&quot;}],
-    &quot;expires_at&quot;: &quot;2015-12-25T09:57:28.404275Z&quot;,
-    &quot;project&quot;: {
-      &quot;domain&quot;: { &quot;id&quot;: &quot;default&quot;, &quot;name&quot;: &quot;Default&quot;},
-      &quot;id&quot;: &quot;144d8a99a42447379ac37f78bf0ef608&quot;, &quot;name&quot;: &quot;admin&quot;},
-    &quot;catalog&quot;: [
-      {
-        &quot;endpoints&quot;: [
-          {
-            &quot;region_id&quot;: &quot;RegionOne&quot;,
-            &quot;url&quot;: &quot;http://controller:5000/v2.0&quot;,
-            &quot;region&quot;: &quot;RegionOne&quot;,
-            &quot;interface&quot;: &quot;public&quot;,
-            &quot;id&quot;: &quot;3837de623efd4af799e050d4d8d1f307&quot;
-          },
-          ......
-      ]}],
-    &quot;extras&quot;: {},
-    &quot;user&quot;: {
-      &quot;domain&quot;: {&quot;id&quot;: &quot;default&quot;, &quot;name&quot;: &quot;Default&quot;},
-      &quot;id&quot;: &quot;1552d60a042e4a2caa07ea7ae6aa2f09&quot;, &quot;name&quot;: &quot;admin&quot;},
-    &quot;audit_ids&quot;: [&quot;ZCvZW2TtTgiaAsVA8qmc3A&quot;],
-    &quot;issued_at&quot;: &quot;2015-12-25T08:57:28.404304Z&quot;
-  }
+&lt;p&gt;如今的内核源码已达千万行规模，大多数软件工程师没有必要去理解内核的具体的实现，但是应该知道内核能为我们提供什么功能，以及我们该如何使用这些功能。书中列举了数百个常用的系统调用，几乎覆盖了除网络编程外的方法面面，如：进程/线程、同步、信号和 IO 等。熟知此书，有利于迅速掌握一门语言，因为许多语言的内建和系统库正是基于这些系统调用。此书亦可做手册，用于工作查询，可闲暇翻阅，但中文翻阅很烂，最好阅读原版。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;《TCP/IP 协议，卷 1》&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;我的专业是通信工程，学习了《信号与系统》、《通信原理》等书籍，但工作之中，却远不如 《TCP/IP》实用。从 LAN/VLAN，路由，再到 TCP/UDP，尤其是 TCP 几章，循序渐进，深入浅出！理解常用协议的报文及原理，再掌握 Linux 平台常用的网络工具，分析抓包，即可定位和解决常见网络问题。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;《Unix 网络编程》&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;此书详细的介绍了 Unix 网络编程，从 90 年代起，网络经历了爆炸式的发展，作者把网络知识独立著成一书，可见对网络之重视。掌握了 TCP/IP 基础知识后，阅读此书，甚是通畅。本书主要讲解基于 UPD/TCP 的 socket 编程，IO 和并发模型是本书的精髓，如能结合 &lt;a href=&quot;http://www.kegel.com/c10k.html&quot;&gt;C10K&lt;/a&gt; 问题，将更有助于理解 IO 和并发模型。卷二的 RPC 也值得一读，因为许多分布式系统大量的使用了 RPC(高级) 解耦。&lt;/p&gt;
+
+&lt;h1 id=&quot;id-section-1&quot;&gt;思想类&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;《人月神话》&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;作者是 IBM OS/360 的负责人，此书写于 40 年前，但是许多关于大型项目开发的观点至今依旧深刻。如：人月不可替代，软件复杂度随代码指数增长，追求架构的一致性，大型项目下的人员组织架构等。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;《黑客与画家》&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;惊！奇！此书一气读完，仍不过瘾，再读一遍，越发深刻。如果说《人月神话》大型软件开发的圣经，《黑客与画家》则是互联网软件开发的圣经！作者对互联网软件的快速开发、迭代和发布，对编程语言的理解和剖析，是本书的最精彩之处。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;《硅谷之火》&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;《硅谷之火》介绍了 PC 的发展历史，从硬件、操作系统到上层的软件应用，诞生了多少公司和成就了多少人物，也谱写了多少故事。此外还有一部名为《硅谷海盗》的电影，值得一看。我想，此书应该是献给那些创业者，献给那些弄潮人。Good artist copy, Great artist steal。&lt;/p&gt;
+
+&lt;h1 id=&quot;id-section-2&quot;&gt;论文&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://static.googleusercontent.com/media/research.google.com/en//archive/mapreduce-osdi04.pdf&quot;&gt;MapReduce: Simplified Data Processing on Large Clusters&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.akamai.com/es/es/multimedia/documents/technical-publication/consistent-hashing-and-random-trees-distributed-caching-protocols-for-relieving-hot-spots-on-the-world-wide-web-technical-publication.pdf&quot;&gt;Consistent Hashing and Random Trees: Distributed Caching Protocols for Relieving Hot Spots on the World Wide Web&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Sun, 06 Nov 2016 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/%E7%BC%96%E7%A8%8B%E9%9A%8F%E6%83%B3/2016/11/06/book.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/%E7%BC%96%E7%A8%8B%E9%9A%8F%E6%83%B3/2016/11/06/book.html</guid>
+        
+        
+        <category>编程随想</category>
+        
+      </item>
+    
+      <item>
+        <title>理解浮点数</title>
+        <description>&lt;h1 id=&quot;id-example&quot;&gt;Example&lt;/h1&gt;
+
+&lt;p&gt;首先从两个例子开始。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;例 1，下例输出是？&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-c&quot;&gt;#include&amp;lt;stdio.h&amp;gt;
+
+void main(){
+    float p = 1000000.9;
+
+    printf(&quot;%f&quot;, p);
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;token_data 经 cms.cms_sign_token 签名生成的 token_id 如下，共 1932 Byte：&lt;/p&gt;
+&lt;p&gt;结果：&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;MIIKoZIhvcNAQcCoIIFljCCBZICAQExDTALBglghkgBZQMEAgEwggPzBgkqhkiG9w0B
-......
-rhr0acV3bMKzmqvViHf-fPVnLDMJajOWSuhimqfLZHRdr+ck0WVQosB6+M6iAvrEF7v
+&lt;pre&gt;&lt;code&gt;1000000.875000
 &lt;/code&gt;&lt;/pre&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-pkiz&quot;&gt;PKIZ&lt;/h1&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/pkiz.png&quot; alt=&quot;P3&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;PKIZ 在 PKI 的基础上做了压缩处理，但是压缩的效果极其有限，一般情况下，压缩后的大小为 PKI token 的 90 % 左右，所以 PKIZ 不能友好的解决 token size 太大问题。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def _get_token_id(self, token_data):
-    try:
-        token_json = jsonutils.dumps(token_data, cls=utils.PKIEncoder)
-        token_id = str(cms.pkiz_sign(token_json,
-                                     CONF.signing.certfile,
-                                     CONF.signing.keyfile))
-        return token_id
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;其中 cms.pkiz_sign() 中的以下代码调用 zlib 对签名后的消息进行压缩级别为 6 的压缩。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;compressed = zlib.compress(token_id, compression_level=6)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;PKIZ token 样例如下，共 1645 Byte，比 PKI token 减小 14.86 %：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;PKIZ_eJytVcuOozgU3fMVs49aTXhUN0vAQEHFJiRg8IVHgn5OnA149JVaunNS3NYjoSU
-......
-W4fRaxrbNtinojheVICXYrEk0oPX6TSnP71IYj2e3nm4MLy7S84PtIPDz4_03IsOb2Q=
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-fernet&quot;&gt;Fernet&lt;/h1&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://7xp2eu.com1.z0.glb.clouddn.com/fernet.png&quot; alt=&quot;P4&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;用户可能会碰上这么一个问题，当集群运行较长一段时间后，访问其 API 会变得奇慢无比，究其原因在于 Keystone 数据库存储了大量的 token 导致性能太差，解决的办法是经常清理 token。为了避免上述问题，社区提出了&lt;a href=&quot;https://github.com/openstack/keystone-specs/blob/master/specs/kilo/klwt.rst&quot;&gt;Fernet token&lt;/a&gt;，它采用 &lt;a href=&quot;http://cryptography.readthedocs.org/en/latest/fernet/&quot;&gt;cryptography&lt;/a&gt; 对称加密库(symmetric cryptography，加密密钥和解密密钥相同) 加密 token，具体由 AES-CBC 加密和散列函数 SHA256 签名。&lt;a href=&quot;http://cryptography.readthedocs.org/en/latest/fernet/&quot;&gt;Fernet&lt;/a&gt;&lt;br /&gt;
-是专为 API token 设计的一种轻量级安全消息格式，不需要存储于数据库，减少了磁盘的 IO，带来了一定的&lt;a href=&quot;http://dolphm.com/benchmarking-openstack-keystone-token-formats/&quot;&gt;性能提升&lt;/a&gt;。为了提高安全性，需要采用 &lt;a href=&quot;http://lbragstad.com/fernet-tokens-and-key-rotation/&quot;&gt;Key Rotation&lt;/a&gt; 更换密钥。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def create_token(self, user_id, expires_at, audit_ids, methods=None,
-                 domain_id=None, project_id=None, trust_id=None,
-                 federated_info=None):
-    &quot;&quot;&quot;Given a set of payload attributes, generate a Fernet token.&quot;&quot;&quot;
-
-    if trust_id:
-        version = TrustScopedPayload.version
-        payload = TrustScopedPayload.assemble(
-            user_id,
-            methods,
-            project_id,
-            expires_at,
-            audit_ids,
-            trust_id)
-
-    ...
-
-    versioned_payload = (version,) + payload
-    serialized_payload = msgpack.packb(versioned_payload)
-    token = self.pack(serialized_payload)
-
-    return token
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;以上代码表明，token 包含了 user_id，project_id，domain_id，methods，expires_at 等信息，重要的是，它没有 service_catalog，所以 region 的数量并不影响它的大小。self.pack() 最终调用如下代码对上述信息加密：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def crypto(self):
-    keys = utils.load_keys()
-
-    if not keys:
-        raise exception.KeysNotFound()
-
-    fernet_instances = [fernet.Fernet(key) for key in utils.load_keys()]
-    return fernet.MultiFernet(fernet_instances)
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;该 token 的大小一般在 200 多 Byte 左右，本例样式如下，大小为 186 Byte：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;gAAAAABWfX8riU57aj0tkWdoIL6UdbViV-632pv0rw4zk9igCZXgC-sKwhVuVb-wyMVC9e5TFc
-7uPfKwNlT6cnzLalb3Hj0K3bc1X9ZXhde9C2ghsSfVuudMhfR8rThNBnh55RzOB8YTyBnl9MoQ
-XBO5UIFvC7wLTh_2klihb6hKuUqB6Sj3i_8
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-token&quot;&gt;如何选择 Token&lt;/h1&gt;
-
-&lt;table&gt;
-  &lt;thead&gt;
-    &lt;tr&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Token 类型&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;UUID&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;PKI&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;PKIZ&lt;/th&gt;
-      &lt;th style=&quot;text-align: left&quot;&gt;Fernet&lt;/th&gt;
-    &lt;/tr&gt;
-  &lt;/thead&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;大小&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;32 Byte&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;KB 级别&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;KB 级别&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;约 255 Byte&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;支持本地认证&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;不支持&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;支持&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;支持&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;不支持&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;Keystone 负载&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;大&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;小&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;小&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;大&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;存储于数据库&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;是&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;是&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;是&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;否&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;携带信息&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;无&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;user, catalog 等&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;user, catalog 等&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;user 等&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;涉及加密方式&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;无&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;非对称加密&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;非对称加密&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;对称加密(AES)&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;是否压缩&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;否&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;否&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;是&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;否&lt;/td&gt;
-    &lt;/tr&gt;
-    &lt;tr&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;版本支持&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;D&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;G&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;J&lt;/td&gt;
-      &lt;td style=&quot;text-align: left&quot;&gt;K&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;p&gt;   &lt;br /&gt;
-Token 类型的选择涉及多个因素，包括 Keystone server 的负载、region 数量、安全因素、维护成本以及 token 本身的成熟度。region 的数量影响 PKI/PKIZ token 的大小，从安全的角度上看，UUID 无需维护密钥，PKI 需要妥善保管 Keystone server 上的私钥，Fernet 需要周期性的更换密钥，因此从安全、维护成本和成熟度上看，UUID &amp;gt; PKI/PKIZ &amp;gt; Fernet 如果：&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;Keystone server 负载低，region 少于 3 个，采用 UUID token。&lt;/li&gt;
-  &lt;li&gt;Keystone server 负载高，region 少于 3 个，采用 PKI/PKIZ token。&lt;/li&gt;
-  &lt;li&gt;Keystone server 负载低，region 大与或等于 3 个，采用 UUID token。&lt;/li&gt;
-  &lt;li&gt;Keystone server 负载高，region 大于或等于 3 个，K 版本及以上可考虑采用 Fernet token。&lt;/li&gt;
+  &lt;li&gt;例 2，下例输出是？&lt;/li&gt;
 &lt;/ul&gt;
-</description>
-        <pubDate>Sat, 26 Dec 2015 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/openstack/2015/12/26/%E7%90%86%E8%A7%A3Keystone%E7%9A%84%E5%9B%9B%E7%A7%8DToken.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/openstack/2015/12/26/%E7%90%86%E8%A7%A3Keystone%E7%9A%84%E5%9B%9B%E7%A7%8DToken.html</guid>
-        
-        
-        <category>openstack</category>
-        
-      </item>
-    
-      <item>
-        <title>一次批量重启引发的 Neutron 网络故障</title>
-        <description>&lt;hr /&gt;
 
-&lt;h1 id=&quot;id-section&quot;&gt;现场回顾&lt;/h1&gt;
-&lt;p&gt;故事发生于某个下午，采用 salt 更新某集群的 neutron.conf (log 相关配置项) 并批量重启 neutron-openvswitch-agent(以下简称 neutron-ovs-agent)，不久便有人反馈云主机宕机。&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-c&quot;&gt;#include&amp;lt;stdio.h&amp;gt;
 
-&lt;p&gt;立即排查发现云主机并没有宕机，只是网络不通，大部分计算节点的 ovs 流表空空如也。Nova 和 Neutron 打出 ERROR 级别的日志。&lt;/p&gt;
+void main(){
+    int i = 1;
+    float* p = &amp;amp;i;
 
-&lt;pre&gt;&lt;code&gt;$ ovs-ofctl dump-flows br-bond   
-NXST_FLOW repy (xid=0x4)
- cookies=0x0, duration=433.691s, table=0, n_packages=568733, n_bytes=113547542, idle_age=0, priority=1 actions=NORMAL
- cookies=0x0, duration=432.358s, table=0, n_packages=8418, n_bytes=356703, idle_age=0, priority=2, in_port=3 actions=drop
+    printf(&quot;%f&quot;, *p);
+}
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;neutron-ovs-agent Log:&lt;/p&gt;
+&lt;p&gt;结果：&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;DeviceListRetrievalError: Unable to retrieve port details for devices because of error: Remote error: TimeoutError QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout 10
+&lt;pre&gt;&lt;code&gt;0.000000
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;neutron-server Log：&lt;/p&gt;
+&lt;h1 id=&quot;id-section&quot;&gt;理解浮点数&lt;/h1&gt;
 
-&lt;pre&gt;&lt;code&gt;File &quot;/usr/lib64/python2.6/site-packages/sqlalchemy/pool.py&quot;, ... &#39;TimeoutError: QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout 10\n&#39;
+&lt;p&gt;从例 1 可知，&lt;a href=&quot;https://en.wikipedia.org/wiki/IEEE_floating_point&quot;&gt;浮点数&lt;/a&gt;表示的精度有限；由例 2 可知，同样为 4 Byte，float 和 int 的数据组织不一样。那么浮点数是如何组织的呢？首先回忆&lt;a href=&quot;https://zh.wikipedia.org/wiki/%E7%A7%91%E5%AD%A6%E8%AE%B0%E6%95%B0%E6%B3%95&quot;&gt;科学计数法&lt;/a&gt;。在科学记数法中，一个有限的实数可用如下表示：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;a * 10^n
+
+其中：
+1 &amp;lt;= |a| &amp;lt; 10
+n 为整数
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;nova Log：&lt;/p&gt;
+&lt;p&gt;以上式子亦可表达为如下：&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;NeutronClientException: Request Failed: internal server error while processing your request.
+&lt;pre&gt;&lt;code&gt;(-1)^s * a * 10^n
+
+其中：
+s = 0 或 1，s 为 0 表示正数，为 1 表示负数
+1 &amp;lt;= a &amp;lt; 10
+n 为整数
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;上述信息可得出以下结论：&lt;/p&gt;
+&lt;p&gt;计算机采用二进制，科学计数法的二进制表达如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;(−1)^s × a × 2^n
+
+其中
+s = 0 或 1，s 为 0 表示正数，为 1 表示负数
+1 &amp;lt;= a &amp;lt; 2
+n 为整数
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;以 4 Byte 的 float 为例，&lt;a href=&quot;https://en.wikipedia.org/wiki/IEEE_754-1985&quot;&gt;IEEE 754&lt;/a&gt; 对其的定义如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;|s|exponent(8 bit)|            fraction (23 bit)                |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/code&gt;&lt;/pre&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;Neutron 日志表明 neutron-ovs-agent 通过 rpc 向 neutron-server 请求虚拟机 port 相关信息失败，失败的原因是 neutron-server 和数据库的连接数超出连接池的上限。&lt;/li&gt;
-  &lt;li&gt;Nova 日志表明 neutron-server 无法响应 HTTP 请求。&lt;/li&gt;
-  &lt;li&gt;被清空的 ovs 流表导致虚拟机的网络瘫痪。&lt;/li&gt;
+  &lt;li&gt;s 表示符号位，共 1 bit，0 表示正数，1 表示负数&lt;/li&gt;
+  &lt;li&gt;e(exponent) 共 8 bit，它决定了 n 的值，即浮点数能表达的范围&lt;/li&gt;
+  &lt;li&gt;f(fraction) 共 23 bit，它决定了 a 的值，即浮点数的精度&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;hr /&gt;
+&lt;p&gt;e 和 n 的关系如下：&lt;/p&gt;
 
-&lt;h1 id=&quot;id-section-1&quot;&gt;导火索&lt;/h1&gt;
-&lt;p&gt;深入剖析之前，先了解该 Icehouse 集群的基本信息：该集群有 102 个计算节点，运行着 nova, neutron, glance，ceilometer 等服务，为了避免单点故障，我们去除了 neutron l3 等相关服务，采用大二层的网络，虚拟机通过物理路由与外界通信。理论上说，无论哪个服务异常，甚至任意节点宕机，最差的结果是 openstack 服务不可用或者少量虚拟机故障，但绝大部分虚拟机依旧能正常运行。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;n = e - 127
 
-&lt;p&gt;经验告知，采用以上网络模型的多个集群一年多以来从未发生如此规模的故障。由于 log 模块配置项不会影响流表，直觉上推测批量重启可能是触发 ovs 流表被清空的导火索。&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-neutron-&quot;&gt;Neutron 的一个坑&lt;/h1&gt;
-
-&lt;p&gt;由于流表被清空前仅仅重启了 neutron-openvs-agent，而计算节点，仅仅只有 neutron-ovs-agent 与 ovs 有交互，故按图索骥的浏览 neutron-ovs-agent 重启流程，梳理其逻辑如下：&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;清除所有流表&lt;/li&gt;
-  &lt;li&gt;通过 rpc 向 neutron-server 获取流表相关信息&lt;/li&gt;
-  &lt;li&gt;创建新流变&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;不难发现，如果步骤 2 异常，比如 neutron-server 繁忙，消息中间件异常和数据库异常等种种因素，都会影响流表的重建，重则导致虚拟机网络瘫痪。事实上，社区也意识到了类似的问题：重启 neutron-ovs-agent 会导致网络暂时中断。&lt;/p&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://bugs.launchpad.net/neutron/+bug/1383674&quot;&gt;Restarting neutron ovs agent causes network hiccup by throwing away all flows&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;社区的处理方式是增加配置项 drop_flows_on_start，默认其值为 False，从而避免上述问题。该 &lt;a href=&quot;https://review.openstack.org/#/c/182920&quot;&gt;Patch&lt;/a&gt; 已合入 Liberty，梳理其重启的逻辑流程如下：&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;用一个 cookie 标志当前流表&lt;/li&gt;
-  &lt;li&gt;获取新流变并更新至 ovs&lt;/li&gt;
-  &lt;li&gt;根据 cookie 清除旧流表&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;neutron-ovs-agent 在重启的过程中就流表的处理留下了一个隐患，直接的后果就是导致计算节点的流表被清理的干干净净，虚拟机成一个个孤立的点，而多种因素可触发该隐患。&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-section-2&quot;&gt;最大连接数&lt;/h1&gt;
-
-&lt;p&gt;现在解释为什么批量重启 neutron-ovs-agent 会触发上述隐患，重启过程中，neutron 日志报出如下错误：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;TimeoutError: QueuePool limit of size 10 overflow 20 reached, connection timed out, timeout。
+其中 0&amp;lt;= e &amp;lt;= 255
+所以 -127 &amp;lt;= n &amp;lt;= 128。(当 n = 128 时，表示浮点数无穷大)
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;这条日志意味着 neutron-server 和数据库的连接数超出客户端连接池的上限，当 neutron-ovs-agent 批量重启时，上百并发的通过 rpc 向 neutron-server 请求构建流表的相关信息，neutron-server 和数据库的连接数也就远远超过 30，造成大量的请求失败，计算节点获取不到流表相关信息无法重建流表，故计算节点的流表为空。&lt;/p&gt;
+&lt;p&gt;f 和 a 的关系如下：&lt;/p&gt;
 
-&lt;p&gt;要解决因 QueuePool 的限制而引起的 TimeoutError 问题也很简单，sqlalchemy 提供了两个配置项[1]，把下面两个参数适当调大即可。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;a = f/(2^23) + 1
 
-&lt;pre&gt;&lt;code&gt;[database]   
-max_overflow =   
-max_pool_size =
+其中 0 &amp;lt;= f &amp;lt;= 8388607
+所以 1 &amp;lt;= a &amp;lt;= 1.99999988
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;strong&gt;Note:&lt;/strong&gt; MySQL server 默认最大连接数为 100，当集群的规模上升时，需适当调整 MySQL server 最大连接数。&lt;/p&gt;
+&lt;p&gt;所以 float 类型的浮点数能表示的范围为：&lt;/p&gt;
 
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-section-3&quot;&gt;进程的性能问题&lt;/h1&gt;
-
-&lt;p&gt;然而问题并没有完全解决，请注意 nova 的错误日志：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;nova.compute.manager  NeutronClientException: Request Failed: internal server error while processing your request.
+&lt;pre&gt;&lt;code&gt;± 1.99999988 * 2^-127 至 ± 1.99999988 * 2^127
+即：± 1.18 × 10^-38 至 ± 3.4 × 10^38
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;这是nova 发给 neutron-server 的一条 HTTP 请求，neutron 返回了 internal server error。Internal server error 对应的 HTTP status code 为 500，意味着 neutron-server 无法响应 nova 请求。为什么会无法响应呢，批量重启的过程中，发现 neutron-server 进程的 CPU 使用率为 100 %，意味着 neutron-server 正忙于处理 neutron-ovs-agent 大量的请求，因而无暇处理 nova 的 HTTP 请求。&lt;/p&gt;
+&lt;p&gt;float 类型的浮点数精度为：&lt;/p&gt;
 
-&lt;p&gt;解决该问题的方法同样很简答，增加更多的 neutron-server 进程数即可。事实上，因 nova-conductor 要处理 nova-compute 大量的 rpc 请求(nova-compute 通过 nova-conductor 访问数据库)，自 Icehouse 起，nova-conductor 就默认启动了多个进程，进程的数目等同服务器 CPU 的逻辑核数。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ workers=\`cat /proc/cpuinfo |grep processor |wc | awk &#39;{print $1}&#39;\`   
-
-[DEFAULT]   
-api_workers = $workers   
-rpc_workers = $workers   
+&lt;pre&gt;&lt;code&gt;1/(2^23) = 1.19 * 10^-7，十进制下为 7 位。
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;hr /&gt;
+&lt;p&gt;同理，double 类型的浮点数能表示的范围和最大精度为：&lt;/p&gt;
 
-&lt;h1 id=&quot;id-python---io&quot;&gt;Python 的并发 &amp;amp; IO&lt;/h1&gt;
+&lt;pre&gt;&lt;code&gt;范围：± 2.23 × 10^-308 到 ± 1.80 × 10^308
+精度：十进制下为 16 位
+&lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;值得思考的是，对双路 12 核共 24 线程的服务器来说，数百并发请求真的算高么？neutron-server 进程的 CPU 最大使用率只能到达 100 %，意味着 neutron-server 仅仅利用了服务器的一个线程。这里不得不提协程(crontine)[2]，这种伪并发的“用户态线程” 意味着任意时刻只有一个协程在执行，即任意时刻只能利用服务器 CPU 的一个线程，而 openstack 所有组件的进程里满满都是协程(只有一个主线程)，因而单个进程下，neutron-server 不能充分利用多核的优势以提高处理并发的能力。&lt;/p&gt;
+&lt;p&gt;例 1 中，因为 1000000.9 长度为 8 位，超出 float 所能表示的最大精度，所以不能被精确表示。&lt;/p&gt;
 
-&lt;p&gt;传统的 web 服务器 apache 和 nginx 利用多进程多线程提高并发数(上下文切换的开销：进程 &amp;gt; 线程 &amp;gt; 协程)。那么问题来了，单进程条件下，是不是可以用线程替换协程从而提高 neutron 的并发能力呢？真实的答案是 No, 根本原因在于 python GIL[3]，俗称 python 全局锁。对于 python 的程序来说，单进程只能在任何时刻只能占用一个物理线程，所有只有多进程才能充分利用服务器的多核多线程。&lt;/p&gt;
+&lt;p&gt;例 2 中，对于 int i = 1，其在内存中的数据为：&lt;/p&gt;
 
-&lt;p&gt;让我们深入一点，假设的 CPU 足够强大，是不是可以解决 neutron-server 单进程的并发问题呢？我觉得未必，这又回到了 IO 问题。Monkey patch[4] 虽然把系统的 socket 库替换成自己提供的非阻塞 socket 库，从而避免某些阻塞 IO 阻塞了整个进程(主线程)。但是 OpenStack 访问 MySQL 使用的是 libmysqlclient 库，eventlet 并不能对这个使用了系统 socket 的 C 库使用 monky_patch，所以对 MySQL CRUD 的时候会阻塞主线程，意味着 neutron-server 在访问数据库也容易出现性能瓶颈。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;|s|exponent(8 bit)|            fraction (23 bit)                |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|0|1|
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+&lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;解决上述并发问题的方法之一就是启动更多的 api worker 和 rpc worker。在较新的版本，OpenStack 默认的 wokers 就是服务器的逻辑核数。另外一种办法是用 apache 替换 python http server，最近各个组件逐步提供了对 apache 的支持。&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;h1 id=&quot;id-reference&quot;&gt;Reference&lt;/h1&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;&lt;a href=&quot;http://docs.sqlalchemy.org/en/rel\_0\_9/core/pooling.html&quot;&gt;http://docs.sqlalchemy.org/en/rel_0_9/core/pooling.html&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://www.dabeaz.com/coroutines/Coroutines.pdf&quot;&gt;http://www.dabeaz.com/coroutines/Coroutines.pdf&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://stackoverflow.com/questions/1294382/what-is-a-global-interpreter-lock-gil&quot;&gt;http://stackoverflow.com/questions/1294382/what-is-a-global-interpreter-lock-gil&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it&quot;&gt;http://stackoverflow.com/questions/11977270/monkey-patching-in-python-when-we-need-it&lt;/a&gt;&lt;/li&gt;
-&lt;/ol&gt;
+&lt;p&gt;故有 s = 0, e = 0, f = 1，其值为 (-1)^0 * (1 + 2^-23) * 2^-127，即 5.88 * 10^-39，所以显示的结果为 0。&lt;/p&gt;
 </description>
-        <pubDate>Sat, 10 Oct 2015 00:00:00 +0800</pubDate>
-        <link>http://wsfdl.com/openstack/2015/10/10/%E4%B8%80%E6%AC%A1%E6%89%B9%E9%87%8F%E9%87%8D%E5%90%AF%E5%BC%95%E5%8F%91%E7%9A%84Neutron%E7%BD%91%E7%BB%9C%E6%95%85%E9%9A%9C.html</link>
-        <guid isPermaLink="true">http://wsfdl.com/openstack/2015/10/10/%E4%B8%80%E6%AC%A1%E6%89%B9%E9%87%8F%E9%87%8D%E5%90%AF%E5%BC%95%E5%8F%91%E7%9A%84Neutron%E7%BD%91%E7%BB%9C%E6%95%85%E9%9A%9C.html</guid>
+        <pubDate>Thu, 20 Oct 2016 00:00:00 +0800</pubDate>
+        <link>http://wsfdl.com/algorithm/2016/10/20/Floating_number.html</link>
+        <guid isPermaLink="true">http://wsfdl.com/algorithm/2016/10/20/Floating_number.html</guid>
         
         
-        <category>openstack</category>
+        <category>algorithm</category>
         
       </item>
     
