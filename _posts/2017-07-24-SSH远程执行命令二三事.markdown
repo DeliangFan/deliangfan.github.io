@@ -10,7 +10,7 @@ categories: Linux
 - 支持执行多个命令，执行 shell 脚本
 - 支持执行 sudo 的命令
 
-# 免手工输入密码
+## 免手工输入密码
 
 我们可以使用 ssh 互信，sshpass 和 expect 等工具来避免手工输密码。使用过程可能会碰到如下需要手工输入 yes 的繁琐场景：
 
@@ -27,7 +27,7 @@ Are you sure you want to continue connecting (yes/no)?
 $ ssh -o "StrictHostKeyChecking no" username@password
 ```
 
-## SSH 互信
+### SSH 互信
 
 SSH 互信的配置非常简单，首先生成 ssh key：
 
@@ -47,7 +47,7 @@ $ ssh-copy-id -i ~/.ssh/id_rsa.pub username@hostname
 $ ssh -o "StrictHostKeyChecking no" username@password cmd
 ```
 
-## sshpass
+### sshpass
 
 [sshpass](https://linux.die.net/man/1/sshpass) 是一个用于非交互的 ssh 密码验证工具，使用前先安装：
 
@@ -61,7 +61,7 @@ $ yum install sshpass
 $ sshpass -p password ssh -o "StrictHostKeyChecking no" username@hostname cmd
 ```
 
-## expect
+### expect
 
 [Expect](http://expect.sourceforge.net/) 是用来进行自动化控制和测试的软件工具。虽然学习成本较高，但是 expect 的功能强大，利用 expect 可以方便的执行远程命令。使用前先安装：
 
@@ -86,9 +86,9 @@ expect eof
 
 Expect 不仅支持 ssh，还支持 scp, ftp 等工具。
 
-# 支持多命令和脚本
+## 支持多命令和脚本
 
-## 执行多条命令
+### 执行多条命令
 
 sshpass 和 expect 在支持多条命令上非常类似，只需用 && 连接命令即可：
 
@@ -110,7 +110,7 @@ send "ls -a && mkdir test\n"
 ......
 ```
 
-## 执行本地脚本
+### 执行本地脚本
 
 对于执行本地脚本，ssh 和 sshpass 的用法类似。
 
