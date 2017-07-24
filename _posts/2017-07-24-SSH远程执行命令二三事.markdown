@@ -1,0 +1,195 @@
+---
+layout: post
+title:  "SSH 远程执行命令二三事"
+categories: Linux
+---
+
+有时侯，利用 ssh 在本地执行远程机器的命令可以便捷地处理某些重复工作。我们希望做到：
+
+- 免手工输入密码
+- 支持执行多个命令，执行 shell 脚本
+- 支持执行 sudo 的命令
+
+# 免手工输入密码
+
+我们可以使用 ssh 互信，sshpass 和 expect 等工具来避免手工输密码。使用过程可能会碰到如下需要手工输入 yes 的繁琐场景：
+
+```
+$ ssh username@hostname
+The authenticity of host ... can't be established.
+ECDSA key fingerprint is ...
+Are you sure you want to continue connecting (yes/no)?
+```
+
+为了避免出现上述场景，往 ssh 命令添加如下参数：
+
+```
+$ ssh -o "StrictHostKeyChecking no" username@password
+```
+
+## SSH 互信
+
+SSH 互信的配置非常简单，首先生成 ssh key：
+
+```
+$ ssh-keygen
+```
+
+把 public key 拷贝到信任方中：
+
+```
+$ ssh-copy-id -i ~/.ssh/id_rsa.pub username@hostname
+```
+
+之后免密执行命令：
+
+```
+$ ssh -o "StrictHostKeyChecking no" username@password cmd
+```
+
+## sshpass
+
+[sshpass](https://linux.die.net/man/1/sshpass) 是一个用于非交互的 ssh 密码验证工具，使用前先安装：
+
+``` shell
+$ yum install sshpass
+```
+
+使用如下：
+
+``` shell
+$ sshpass -p password ssh -o "StrictHostKeyChecking no" username@hostname cmd
+```
+
+## expect
+
+[Expect](http://expect.sourceforge.net/) 是用来进行自动化控制和测试的软件工具。虽然学习成本较高，但是 expect 的功能强大，利用 expect 可以方便的执行远程命令。使用前先安装：
+
+``` shell
+$ yum install expect
+```
+
+例如：
+
+``` shell
+#!/usr/bin/expect
+
+spawn ssh -o "StrictHostKeyChecking no" username@hostname
+expect "*assword*"
+send "password\n"
+expect "*$*"
+send "command\n"
+expect "*$*"
+send "exit\n"
+expect eof
+```
+
+Expect 不仅支持 ssh，还支持 scp, ftp 等工具。
+
+# 支持多命令和脚本
+
+## 执行多条命令
+
+sshpass 和 expect 在支持多条命令上非常类似，只需用 && 连接命令即可：
+
+``` shell
+# ssh trust
+$ ssh -o "StrictHostKeyChecking no" username@password "cmd1 && cmd2"
+```
+
+例如：
+
+``` shell
+# sshpass
+$ sshpass -p password ssh -o "StrictHostKeyChecking no" username@password "ls -a && mkdir test"
+
+# expect
+......
+expect "*$*"
+send "ls -a && mkdir test\n"
+......
+```
+
+## 执行本地脚本
+
+对于执行本地脚本，ssh 和 sshpass 的用法类似。
+
+``` shell
+# ssh trust
+$ ssh -o "StrictHostKeyChecking no" username@password bash -s < shell_script.sh
+
+# sshpass
+$ sshpass -p password ssh -o "StrictHostKeyChecking no" username@password bash -s < shell_script.sh
+```
+
+对于 expect，首先需要把脚本拷贝到远程主机，然后在远程主机执行该脚本，步骤如下：
+
+``` shell
+...
+# Copy script to remote host
+spawn scp -o "StrictHostKeyChecking no" shell_script.sh username@hostname:~/
+expect "*assword*"
+send "password\n"
+expect "*100%*"
+expect eof
+
+# Execute the shell script at remote host
+spawn ssh -o "StrictHostKeyChecking no" username@hostname
+expect "*assword*"
+send "password\n"
+expect "*$*"
+send "sh shell_script.sh\n"
+......
+```
+
+## 支持执行 sudo 命令
+
+有些命令需要 sudo 权限才能执行，但是我们不希望重复的输入密码，我们可以把每条命令修改为如下：
+
+``` shell
+cmd ---> 'echo password | sudo -S cmd'
+```
+
+例如：
+
+``` shell
+$ sshpass -p password ssh -o "StrictHostKeyChecking no" username@password "echo password | sudo -S mkdir /newdir"
+```
+
+对于如 echo, dd 等部分命令，有时会出现如下失败场景：
+
+``` shell
+$ sshpass -p password ssh -o "StrictHostKeyChecking no" username@password 'echo password | sudo -S echo hello > /newdir/newfile'
+bash: /newdir/newfile: 权限不够
+```
+
+解决办法如下：
+
+``` shell
+cmd ---> 'echo password | sudo -S sh -c "cmd"'
+
+# For example
+$ sshpass -p password ssh -o "StrictHostKeyChecking no" username@password 'echo WSfdl097018= | sudo -S sh -c "echo hello >  /newdir/newfile"'
+```
+如果采用 expect，需要把脚本拷贝到远程主机，然后在远程主机采用 sudo 执行该脚本，相对 sshpass 更简便和健壮：
+
+``` shell
+...
+# Copy script to remote host
+spawn scp -o "StrictHostKeyChecking no" shell_script.sh username@hostname:~/
+expect "*assword*"
+send "password\n"
+expect "*100%*"
+expect eof
+
+# Execute the shell script at remote host
+spawn ssh -o "StrictHostKeyChecking no" username@hostname
+expect "*assword*"
+send "password\n"
+expect "*$*"
+send "sudo sh shell_script.sh\n"
+expect "*assword*"
+send "password\n"
+......
+```
+
