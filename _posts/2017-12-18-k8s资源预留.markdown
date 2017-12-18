@@ -1,0 +1,79 @@
+---
+layout: post
+title:  "谈谈 K8S 资源预留"
+categories: Kubernetes
+---
+
+##为什么需要资源预留
+
+按照是否为 Pod，可以把计算节点的进程分为两类：
+
+- Pod 类进程：容器内部的进程，这些容器由 K8S 创建
+- 非 Pod 类进程：系统进程，如内核，systemd 等；K8S 管理进程，如 Docker, Kubelet 等
+
+如果没有资源预留，K8S 认为宿主机上所有的资源(RAM, CPU)都是可以分配给 Pod 类进程。因为非 Pod 类进程也需要占用一定的资源，当 Pod 创建很多时，就有可能出现资源不足的情况，以 RAM 为例：
+
+```
+Pod RAM + 非 Pod RAM > Total RAM
+```
+
+我们知道，当 Pod 里面内存不足时，会触发 Cgroup 把 Pod 里面的进程杀死；当系统内存不足时，就有可能触发系统 OOM，这时候根据 oom score 来确定优先杀死哪个进程，而 oom\_score\_adj 又是影响 oom score 的重要参数，其值越低，表示 oom 的优先级越低。在计算节点中，进程的 oom\_score\_adj 如下：
+
+ | sshd 等 | K8S 管理进程 | guarantee pod | 其它进程 | best effort pod
+---- | --- | ---- | --- | --- | --- 
+具体进程 | sshd／dmevented / systemd-udevd | kubelet / docker / journalctl | guarantee pod | 内核 init 进程等 | best effort pod
+oom\_score\_adj |  -1000 | -999 | -998 | 0 | >0
+
+
+
+所以，很大概率上，OOM 的优先级如下：
+
+```
+best effort pod > 其它进程 > guarantee pod > kubelet/docker 等 > sshd 等
+```
+
+那么问题来了，如果节点没有 best effort 类型的 pod，那么其它进程就有可能被 OOM，包括系统进程等，后果可想而知。所以，预留一定的资源给系统和 K8S 管理服务，非常有必要。
+
+## 预留多少资源
+
+K8S 1.5 支持 CPU 和 RAM 两种资源的预留，更高版本支持 Disk 资源的预留。
+
+- CPU：作为可压缩资源，超配的后果是运行变慢，影响较小，为了充分发挥节点性能，CPU 不预留
+- RAM：预留 4 GB，这是经验得出一个较为合理的值。
+
+## 如何预留
+
+K8S 把计算节点资源分为 4 个部分
+
+- kube-reserved：预留给 K8S 管理进程的资源，如 Kubelet，Docker Daemon 等
+- system-reserved：预留给系统资源
+- eviction-threshold：eviction 的阈值
+- allocatable(available for pods)：pods 可以使用的资源
+
+
+为了简化管理，建议不对 kube-reserved/system-reserved 做区分，预留给二者内存的总和为 4 GB。启动 kubelet 时，设置如下参数
+
+```
+$ kubelet --system-reserved=memory=4Gi
+```
+
+效果如下：
+
+```
+$ kubectl describe nodes node1
+Name:           node1
+......
+Capacity:
+ memory:                65759080Ki
+Allocatable:
+ memory:                61564776Ki
+```
+
+## 其它
+
+Kubelet 还支持使用 cgroup 从物理上限制预留资源，这需要给 K8S 管理进程和系统进程分别设置 cgroup，复杂度相对较高，个人认为意义不大。
+
+## 参考资料
+- [reserve-compute-resources](https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/)
+
+
