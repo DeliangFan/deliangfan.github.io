@@ -55,7 +55,7 @@ custom > host-model > host-passthrough
 - 如果 CPU 型号过多，且不便用 aggregate hosts 划分，建议使用 custom mode
 
 
-###稳定性
+### 稳定性
 
 OpenStack 早期默认的 mode 是 none，即由 hyperviosr 选择，基本上就是 custom。后面来 host-model 成为其默认的值。从使用经验来看，host-model 和 custom 模式下的虚拟机运行稳定，而  host-passthrough 则问题比较大，特别是在 centos6 内核下，常常出现宿主机 kernel panic 问题，如：
 
@@ -66,7 +66,7 @@ OpenStack 早期默认的 mode 是 none，即由 hyperviosr 选择，基本上�
 - 2.6 内核及更早内核版本避免使用 host-passthrough
 - custom／host-model 比较稳定
 
-###应用移植
+### 应用移植
 
 对应用的影响主要体现在编译型应用，如 C，C++，Golang。在物理机上编译好的二进制应用，直接移植到 custom mode 的虚拟机有可能出现 illegal instruction。其中最常见的 SSE4 类型指令集异常，因为 custom 模式下没有 SSE4 指令集，而在物理机或者其它 mode 的虚拟机是有该指令集的。从个人经验来看
 
