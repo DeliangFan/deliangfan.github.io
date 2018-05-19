@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "谈谈因 K8S 的 pod eviction"
+title:  "谈谈 K8S 的 pod eviction"
 categories: Kubernetes
 ---
 
@@ -78,7 +78,7 @@ Kubelet 周期性检查本节点的内存和磁盘资源，当可用资源低于
 
 除非满足如下需求，不然请尽量关闭 kube-controller-manager 的驱逐功能，即把驱逐的超时时间设置非常长，同时把一级／二级驱逐速度设置为 0。否则，非常容易就搞出大大小小的故障，血泪的教训。
 
-- 业务方要用正确的姿势使用容器，增强对异常处理
+- 业务方要用正确的姿势使用容器，如数据与逻辑分离，无状态化，增强对异常处理等
 - 分布式存储
 - 可靠的 Service／DNS 服务或者保持异地重建后的 IP 不变
 
