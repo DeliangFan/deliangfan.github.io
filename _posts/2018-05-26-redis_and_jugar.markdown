@@ -4,7 +4,7 @@ title:  "Redis 和 Jaguar 迁入 K8S 记"
 categories: Kubernetes
 ---
 
-近期 K8S 接入的业务中，Redis 和 Jaguar 两个业务方分别遇上了不同的性能问题。本文主要介绍接入过程中遇上的性能问题和解决办法。
+近期接入 K8S 的业务中，Redis 和 Jaguar 两个业务方分别遇上了不同的性能问题。本文主要介绍接入过程中遇上的性能问题和解决办法。
 
 ## Redis
 
