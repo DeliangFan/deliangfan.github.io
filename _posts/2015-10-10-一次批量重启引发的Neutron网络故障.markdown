@@ -1,7 +1,7 @@
 ---
 layout: post
-title:  "一次批量重启引发的 Neutron 网络故障"
-categories: OpenStack
+title:  "一次批量重启引发的 Neutron 大面积网络故障"
+categories: 踩坑杂记
 ---
 ------------------
 
