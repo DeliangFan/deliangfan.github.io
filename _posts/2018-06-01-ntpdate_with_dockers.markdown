@@ -59,7 +59,7 @@ func main() {
 
 > Time adjustments are made by ntpdate in one of two ways.  If ntpdate determines the clock is in error more than 0.5 second it will simply step the time by calling the system settimeofday(2) routine.  If the error is less than 0.5 seconds, it will slew the time by calling the system adjtime(2) routine.  The latter technique is less disruptive and more accurate when the error is small, and works quite well when ntpdate is run by cron(8) every hour or two.
 
-当时间误差在 0.5s 内，ntpdate 采用 adjtime() 校整时间；误差超过 0.5s 时，采用 settimeofday() 调整时间。adjtime 通过调整时钟频率来校准时间，效果和 ntpd 一样。而 settimeofday 则是直接调整系统时间，让时间跃变。
+当时间误差在 0.5s 内，ntpdate 采用 adjtime() 校整时间；误差超过 0.5s 时，采用 settimeofday() 调整时间。adjtime 通过调整时钟频率来校准时间，效果和 ntpd 一样。而 settimeofday 则是直接调整系统时间，让时间跃变。即使有多个容器采用 adjtime 校准时间，从数学的角度论证，offset 最终能够收敛。
 
 - adjtime(): If the adjustment in delta is positive, then the system clock is speeded up by some small percentage until the adjustment has been completed.  If the adjustment in delta is negative, then the clock is slowed down in a similar fashion.
 - settimeofday(): The time returned by gettimeofday() is affected by discontinuous jumps in the system time
