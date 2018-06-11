@@ -74,7 +74,7 @@ Kubelet 周期性检查本节点的内存和磁盘资源，当可用资源低于
 
 从实际情况看，真正因计算节点故障造成心跳超时概率很低，反而由原生 bug，基础设施异常造成心跳超时的概率更大，造成不必要的驱逐。
 
-理想的情况下，驱逐对无状态且设计良好的业务方影响很小。但是并非所有的业务方都是无状态的，也并非所有的业务方都针对 Kubernetes 优化其业务逻辑。例如，对于有状态的业务，如果没有共享存储，异地重建后的 pod 完全丢失原有数据；对于关心 IP 层的业务，异地重建后的 pod IP 往往会变化，虽然部分业务方可以利用 service 和 dns 来解决问题，但是引入了额外的模块和复杂性。
+理想的情况下，驱逐对无状态且设计良好的业务方影响很小。但是并非所有的业务方都是无状态的，也并非所有的业务方都针对 Kubernetes 优化其业务逻辑。例如，对于有状态的业务，如果没有共享存储，异地重建后的 pod 完全丢失原有数据；即使数据不丢失，对于 Mysql 类的应用，如果出现双写，重则破坏数据。对于关心 IP 层的业务，异地重建后的 pod IP 往往会变化，虽然部分业务方可以利用 service 和 dns 来解决问题，但是引入了额外的模块和复杂性。
 
 除非满足如下需求，不然请尽量关闭 kube-controller-manager 的驱逐功能，即把驱逐的超时时间设置非常长，同时把一级／二级驱逐速度设置为 0。否则，非常容易就搞出大大小小的故障，血泪的教训。
 
@@ -88,3 +88,4 @@ Kubelet 周期性检查本节点的内存和磁盘资源，当可用资源低于
 
 - [Configure Out Of Resource Handling](https://kubernetes.io/docs/tasks/administer-cluster/out-of-resource/)
 - [记一次 k8s 集群单点故障引发的血案](https://blog.csdn.net/YueDaoShengSi/article/details/54883039)
+- [容器化RDS——计算存储分离架构下的“Split-Brain”](https://mp.weixin.qq.com/s?__biz=MzA5OTAyNzQ2OA==&mid=2649696704&idx=1&sn=5714e324b212b0eb3b862f8600b345fa&chksm=889316a3bfe49fb5e8db58aa595e0e4a74556e050be1b8894c60ee7e00fe91abfdd28d97412d&scene=21#wechat_redirect)
