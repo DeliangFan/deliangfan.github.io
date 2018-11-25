@@ -31,7 +31,7 @@ Loop 1 的 CPU cache 命中率高，所以它比 Loop 2 约快八倍！
 
 维基百科定义为：在计算机系统中，[CPU cache（中文简称缓存）](https://zh.wikipedia.org/wiki/CPU%E7%BC%93%E5%AD%98)是用于减少处理器访问内存所需平均时间的部件。在金字塔式存储体系中它位于自顶向下的第二层，仅次于 CPU 寄存器。其容量远小于内存，但速度却可以接近处理器的频率。
 
-![hierarchy](http://7xp2eu.com1.z0.glb.clouddn.com/hierarchy%20cache.png)
+![hierarchy](http://wsfdl.oss-cn-qingdao.aliyuncs.com/hierarchy%20cache.png)
 
 *原图出处([CS162](cs162.eecs.berkeley.edu))。 Note: 早期的 L2 cache 位于主板，现在 L2 和 L3 cache 均封装于 CPU 芯片。*
 
@@ -66,7 +66,7 @@ machdep.cpu.tlb.shared: 1024
 
 如下图：
 
-![cpu cache](http://7xp2eu.com1.z0.glb.clouddn.com/mac_cpu_cache_info.png)
+![cpu cache](http://wsfdl.oss-cn-qingdao.aliyuncs.com/mac_cpu_cache_info.png)
 
 ---
 
@@ -80,7 +80,7 @@ machdep.cpu.tlb.shared: 1024
 
 CPU 和 RAM 主频的增长速率的巨大差距是 cache 引入的直接原因，下图展示了从 1980 年到 2010 年二者的发展状况，CPU 性能的年增长速度约为 60%，而 RAM 仅有约 9%，巨大的差异导致数十年后，CPU 的速度约比 RAM 快数百倍。 
 
-![history](http://7xp2eu.com1.z0.glb.clouddn.com/Part6-CPU-and-RAM-speeds.jpg)
+![history](http://wsfdl.oss-cn-qingdao.aliyuncs.com/Part6-CPU-and-RAM-speeds.jpg)
 
 *原图出处: Computer Architecture, A quantitative Approach by Hennessy and Patterson*
 
@@ -126,7 +126,7 @@ for(int t = 0; t < TIMES; t++)   //loop for many times
 
 经归一化处理后，本人所测 array[i] ++ 的平均时间与 stride 的关系如下(如果关闭 hardware prefetch，效果可能会更好)：
 
-![cpu cache line size](http://7xp2eu.com1.z0.glb.clouddn.com/cache_line_size.png)
+![cpu cache line size](http://wsfdl.oss-cn-qingdao.aliyuncs.com/cache_line_size.png)
 
 ## L1、L2 and L3 cache size
 
@@ -144,7 +144,7 @@ for (int i = 0; i < steps; i += 64)
 
 所得结果为：
 
-![cpu l cache](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_l_size.png)
+![cpu l cache](http://wsfdl.oss-cn-qingdao.aliyuncs.com/cpu_cache_l_size.png)
 
 原图出处 [Gallery of Processor Cache Effects](http://igoro.com/archive/gallery-of-processor-cache-effects/) 注：本例在本人 Mac 的效果远远差于原著的效果，故采用原图。
 
@@ -181,13 +181,13 @@ Loop 2 的速度比 Loop 1 接近快一倍。
 
 Loop 1
 
-![cpu cache loop1](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_para_1.png)
+![cpu cache loop1](http://wsfdl.oss-cn-qingdao.aliyuncs.com/cpu_cache_para_1.png)
 
 原图出处 [Gallery of Processor Cache Effects](http://igoro.com/archive/gallery-of-processor-cache-effects/)
 
 Loop 2
 
-![cpu cache loop1](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_para_2.png)
+![cpu cache loop1](http://wsfdl.oss-cn-qingdao.aliyuncs.com/cpu_cache_para_2.png)
 
 原图出处 [Gallery of Processor Cache Effects](http://igoro.com/archive/gallery-of-processor-cache-effects/)
 
@@ -206,15 +206,15 @@ Loop 2
 
 Direct mapped cache
 
-![direct mapping](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_direct_mapping.png)
+![direct mapping](http://wsfdl.oss-cn-qingdao.aliyuncs.com/cpu_cache_direct_mapping.png)
 
 2-way set associative
 
-![two way associative](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_2_way_mapping.png)
+![two way associative](http://wsfdl.oss-cn-qingdao.aliyuncs.com/cpu_cache_2_way_mapping.png)
 
 Full associative cache
 
-![full associative](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_cache_full_associative.png)
+![full associative](http://wsfdl.oss-cn-qingdao.aliyuncs.com/cpu_cache_full_associative.png)
 
 本人的 L2 cache 大小为 256 KB，8-way set associative，cache line 为 64 Byte，所以共有 512 个 set (256 K / 64 / 8)，所以地址间隔 32768  (512 * 64) 个 Byte 的数据都会落在 cache 的同一个 set 中。 
 

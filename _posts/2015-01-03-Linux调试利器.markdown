@@ -8,7 +8,7 @@ categories: Linux
 
 Brendan D. Gregg 专注 Linux performance & tuning 许多年，其博客 [brendangregg.com](http://www.brendangregg.com/index.html) 里关于分析和调优的干货琳琅满目。一篇名为 [Linux Performance](http://www.brendangregg.com/linuxperf.html) 文章全面而详细的整理了常用工具，覆盖了硬件、存储、网络乃至应用，如下图：
 
-![Linux performance](http://7xp2eu.com1.z0.glb.clouddn.com/linux_observability_tools.png)
+![Linux performance](http://wsfdl.oss-cn-qingdao.aliyuncs.com/linux_observability_tools.png)
 
 能掌握上图的十八般武艺固然最好，从定位分析的角度来说，我认为三个高级而常用的命令是 strace, lsof 和 tcpdump。
 

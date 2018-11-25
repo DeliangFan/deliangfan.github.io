@@ -28,10 +28,10 @@ Keystone federation identity 涉及很多概念，安装配置复杂，官网的
 
 以 SAML 协议为例，典型的[认证流程](http://www.searchsoa.com.cn/showcontent_1604.htm)分为 [Redirect Bindings](https://en.wikipedia.org/wiki/SAML_2.0#HTTP_Redirect_Binding) 和 [Artifact/POST Bindings](https://en.wikipedia.org/wiki/SAML_2.0#HTTP_Artifact_Binding) 两种。
 
-![Redirect Bindings](http://7xp2eu.com1.z0.glb.clouddn.com/Redirect%20Binding.png?imageView2/1/w/600/h/400/q/100)
+![Redirect Bindings](http://wsfdl.oss-cn-qingdao.aliyuncs.com/Redirect%20Binding.png?imageView2/1/w/600/h/400/q/100)
 
        
-![Artifact Bindings](http://7xp2eu.com1.z0.glb.clouddn.com/artifact%20binding.png?imageView2/1/w/600/h/400/q/100)
+![Artifact Bindings](http://wsfdl.oss-cn-qingdao.aliyuncs.com/artifact%20binding.png?imageView2/1/w/600/h/400/q/100)
 
 Federation identity 具有以下优点：
 
@@ -52,7 +52,7 @@ Federation identity 为 hybrid cloud 在用户管理层面提供了良好的解�
 - Mapping API: /OS-FEDERATION/mappings    
   管理 Identity Provider 里的用户和 Keystone 里的用户之间的映射规则，通过该 API，管理员可以管理 IDP 中用户访问 Service 的权限。比如 IDP 有用户 A，B，通过配置 mapping rule，可以允许 A 有权限而 B 无权限访问。
 
-    ![Keystone Federation](http://7xp2eu.com1.z0.glb.clouddn.com/federation%20service%20provider.png?imageView2/1/w/500/h/400/q/100)
+    ![Keystone Federation](http://wsfdl.oss-cn-qingdao.aliyuncs.com/federation%20service%20provider.png?imageView2/1/w/500/h/400/q/100)
 
 为了支持 Service Provider，Keystone 必须运行在 Apache HTTPD 上，mod-shibboleth 作为 apache plugin 支持 SAML 认证协议，完成了 Keystone 和 IDP 之间用户的身份认证，[流程](http://shop.oreilly.com/product/0636920045960.do)如下。
 

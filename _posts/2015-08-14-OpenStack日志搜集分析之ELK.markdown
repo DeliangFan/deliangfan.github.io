@@ -37,7 +37,7 @@ ELK 是一套优秀的日志搜集、存储和查询的开源软件，广泛用�
 
 控制节点作为日志服务器，存储所有 OpenStack 及其相关日志。Logstash 部署于所有节点，收集本节点下所需收集的日志，然后以网络(node/http)方式输送给控制节点的 Elasticsearch，Kibana 作为 web portal 提供展示日志信息：
 
-![ELK](http://7xp2eu.com1.z0.glb.clouddn.com/ELK.png?imageView2/1/w/600/h/300/q/100)
+![ELK](http://wsfdl.oss-cn-qingdao.aliyuncs.com/ELK.png?imageView2/1/w/600/h/300/q/100)
 
 ## 日志格式
 

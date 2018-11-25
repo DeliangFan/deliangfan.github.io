@@ -17,7 +17,7 @@ M = D(Pr, C)
 
 下图(摘自维基百科)形象的表述了加密和解密流程：
 
-![P1](http://7xp2eu.com1.z0.glb.clouddn.com/500px-Public-key-crypto-1.svg.png?imageView2/1/w/300/h/300/q/100) &nbsp;&nbsp;&nbsp;&nbsp;![P2](http://7xp2eu.com1.z0.glb.clouddn.com/500px-Public_key_encryption.svg.png?imageView2/1/w/300/h/300/q/100)
+![P1](http://wsfdl.oss-cn-qingdao.aliyuncs.com/500px-Public-key-crypto-1.svg.png?imageView2/1/w/300/h/300/q/100) &nbsp;&nbsp;&nbsp;&nbsp;![P2](http://wsfdl.oss-cn-qingdao.aliyuncs.com/500px-Public_key_encryption.svg.png?imageView2/1/w/300/h/300/q/100)
 
 传统的对称加密需双方共享相同的密钥，通信安全很大程度依赖双方是否能妥善的管理密钥。公开密钥加密发明是密码学最为重要的里程碑之一，它从数学的角度保证了通信安全。公开密钥加密体系有三大范畴：
 

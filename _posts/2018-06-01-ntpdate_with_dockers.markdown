@@ -26,7 +26,7 @@ Linux 常用同步时间的方式有两种(请注意如下“校准”和“调�
 
 K8S 计算节点运行多个容器，同一节点上的容器(N 个)在相同时间点执行调时脚本，倘若此前 ntp 服务器时间跳变，这些容器都有可能发现时钟出现 offset 偏差(和脚本实际执行顺序有关)，由于每个容器都调整 offset 偏差，那么节点实际上有可能被调整了 N+1 个(N 容器 + 1 物理机) offset，结果将误差放大了 N 倍；然后下次调时，进一步将误差放大到 N * N offset，最终造成恶性循环。大致如下图：
 
-![NTP time change](http://7xp2eu.com1.z0.glb.clouddn.com/ntpdate-time-change.png)
+![NTP time change](http://wsfdl.oss-cn-qingdao.aliyuncs.com/ntpdate-time-change.png)
 
 可用如下脚本模拟多个 docker 共同调时场景，每当修改 ntp 服务器时钟，客户端有很大概率出现时间大幅度跳变。其中容器越多，跳变的概率和幅度越大。
 

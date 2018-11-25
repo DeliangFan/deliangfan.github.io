@@ -10,7 +10,7 @@ categories: OpenStack
 - Assignment：包括 role 和 role assignment，用于描述某个 identity 对某个 resource 下的资源拥有的访问权限。
 - Policy：定义 OpenStack API 基于 role 的访问权限规则。
 
-![Role](http://7xp2eu.com1.z0.glb.clouddn.com/roleandpolicyRBAC.png)
+![Role](http://wsfdl.oss-cn-qingdao.aliyuncs.com/roleandpolicyRBAC.png)
 
 
 ----------
@@ -43,7 +43,7 @@ $ keysone user-role-add --user Acme --tenant Bob --role admin
 
 其中 user, group, project 和 domain 具有以下关系。 
 
-![role assignment](http://7xp2eu.com1.z0.glb.clouddn.com/roleassignment.png)
+![role assignment](http://wsfdl.oss-cn-qingdao.aliyuncs.com/roleassignment.png)
 
 - Project 和 domain 均可以赋予 user 或者 group 某种角色(role)。
 - 如果在 Project A 赋予 Group A 角色 admin，那么 Group A 下的 User B 和 User C 在 Project A 下均为 admin 角色。

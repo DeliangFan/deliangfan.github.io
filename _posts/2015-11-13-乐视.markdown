@@ -5,7 +5,7 @@ categories: 编程随想
 ---
 &nbsp;&nbsp;&nbsp;
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![huaweilogo](http://7xp2eu.com1.z0.glb.clouddn.com/letv_log.jpg?imageView2/1/w/400/h/200/q/100)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![huaweilogo](http://wsfdl.oss-cn-qingdao.aliyuncs.com/letv_log.jpg?imageView2/1/w/400/h/200/q/100)
 
 &nbsp;&nbsp;&nbsp;
 
@@ -25,7 +25,7 @@ categories: 编程随想
 
 > 我有一种预感，最优秀的那些大型程序就是这样发展起来的，而不是像胡佛水坝那样从一开始就作为大型工裎来设计。   ------ Paul Graham
 
-![roadmap](http://7xp2eu.com1.z0.glb.clouddn.com/letv%20roadmap.png)
+![roadmap](http://wsfdl.oss-cn-qingdao.aliyuncs.com/letv%20roadmap.png)
 
 和多数做 OpenStack 发行版的方式不同，乐视云平台是逐步迭代演化起来的，从 Havana 起，仅采用 Keystone, Glance, Nova, Horizon 提供功能最基础的服务，之后逐步添加特性，灰度上线，运行稳定再升级全部节点。得益于小步快跑的模式，在保证稳定的前提下逐步试水深，走出一条适合自己的路，比如采用 RabbitMQ 替换最初的 Qpid，采用 Mysql Cluster 替换乐视自己维护的 DB，Neutron 采用 L2 大二层的网络模型等等，私有特性代码多达上万行。支撑的业务也从开发、测试，逐步覆盖到电商等线上业务；部署的地域从国内遍布到五湖四海(服务 CDN)，节点也在一年多的时间里达到 900 个物理节点，并且还在快速增长中，平台的稳定性超乎想象。而这一切，研发和运维的有效总成员未超 8 人。
 
@@ -35,7 +35,7 @@ categories: 编程随想
 
 ## QA? NO，DevOps
 
-![workflow](http://7xp2eu.com1.z0.glb.clouddn.com/workflow.png)
+![workflow](http://wsfdl.oss-cn-qingdao.aliyuncs.com/workflow.png)
 
 开源社区优秀的项目管理和团队合作非常值得学习，严格的开发测试流程保证不同国界、不同能力的贡献者代码的健壮性。得益 OpenStack 单元测试的、集成测试的高覆盖率，所有新增的代码都必须添加单元测试，必须保证通过单元测试和集成测试，对于访问频率很高的 API，如 Keystone 的 authentication token，还必须由 Rally 测试并发性能。
 

@@ -10,7 +10,7 @@ categories: OpenStack
 
 Rally 集成了部署、API测试、压力测试功能(如下图)，但我们一般用 devstack 部署，tempest 做 API 测试，因此 Rally 常用于模拟高并发场景的压力测试。Rally 测试 openstack 在并发下 API 的相应时间和请求成功率，从而测试出 openstack 集群的性能。
 
-![rally](http://7xp2eu.com1.z0.glb.clouddn.com/rally.jpg)
+![rally](http://wsfdl.oss-cn-qingdao.aliyuncs.com/rally.jpg)
 
 ----------------
 

@@ -47,7 +47,7 @@ AMQP 是应用层协议，它在 client 和 server 端引入了消息中间件�
         +----------+           + -------+           +----------+
 ~~~
 
-![AMQP Overview](http://7xp2eu.com1.z0.glb.clouddn.com/amqp_fanout.png)
+![AMQP Overview](http://wsfdl.oss-cn-qingdao.aliyuncs.com/amqp_fanout.png)
 
 在 AMQP 的术语中，我们把 client 端称为 producer，server 端称为 consumer。除此以外，还有以下概念：
 
@@ -60,15 +60,15 @@ AMQP 支持三种调用：
 
 - Call: 同步调用，但过程稍微复杂，producer 发送消息后立刻创建一个 direct consumer, 该  direct consumer 阻塞于接收返回值。对端的 consumer 接收并处理 producer 的消息后，创建一个 direct producer，它负责把处理结果发送给 direct consumer，如下图。  
 
-![AMQP Overview](http://7xp2eu.com1.z0.glb.clouddn.com/amqp_call.png)
+![AMQP Overview](http://wsfdl.oss-cn-qingdao.aliyuncs.com/amqp_call.png)
 
 - Cast: 异步调用，producer 发送消息后继续执行后续步骤，consumer 接收处理消息，如下图。
 
-![AMQP Overview](http://7xp2eu.com1.z0.glb.clouddn.com/amqp_cast.png)
+![AMQP Overview](http://wsfdl.oss-cn-qingdao.aliyuncs.com/amqp_cast.png)
 
 - Fanout: 相当于广播，producer 可把消息发送给多个 consumer，属于异步调用范畴，如下图。
 
-![AMQP Overview](http://7xp2eu.com1.z0.glb.clouddn.com/amqp_fanout.png)
+![AMQP Overview](http://wsfdl.oss-cn-qingdao.aliyuncs.com/amqp_fanout.png)
 
 -------------------
 

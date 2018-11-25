@@ -18,7 +18,7 @@ categories: OpenStack
 - Token：token 是用户身份的一种凭据
 - Policy：即授权机制，采用基于角色的权限控制(Role Based Access Control)
 
-![Service](http://7xp2eu.com1.z0.glb.clouddn.com/keystone%20service%20and%20backend%20catalog.png)
+![Service](http://wsfdl.oss-cn-qingdao.aliyuncs.com/keystone%20service%20and%20backend%20catalog.png)
 
 [此文](http://www.openstack.org.cn/bbs/forum.php?mod=viewthread&tid=534&extra=page%3D1)用生动的例子阐述上述概念，如果把宾馆比作为 project，住宿的客人就是 user，宾馆提供诸如住宿、娱乐、饮食等多种服务(service)，不同服务可能设在不同的地方，它们都有访问的入口(endpoint)。入住前，我们需要拿身份证(identity)开房，前台认证(autenticate)身份证的真实性后，会给你一个房卡(token)，然后你拿着房卡，即可享受宾馆的各类服务，但是不同的服务权限(policy)要求不同，如果你的等级(role)高，就能享用更多的服务。
 
@@ -35,7 +35,7 @@ categories: OpenStack
 
 随着版本不断的迭代，越来越多的功能加入到 Keystone 中。
 
-![keystone history](http://7xp2eu.com1.z0.glb.clouddn.com/keystone%20history.png)
+![keystone history](http://wsfdl.oss-cn-qingdao.aliyuncs.com/keystone%20history.png)
 
 ----------
 
@@ -43,11 +43,11 @@ categories: OpenStack
 
 既然 Keystone 为各个模块提供认证服务，所以它和各个模块都有交互。
 
-![Keystone](http://7xp2eu.com1.z0.glb.clouddn.com/openstack-conceptual-arch-folsom.jpg)
+![Keystone](http://wsfdl.oss-cn-qingdao.aliyuncs.com/openstack-conceptual-arch-folsom.jpg)
 
 其中 token 的认证体现在用户访问各个组件的 API 时，WSGI 框架的 middleware 调用了 authtoken filter，该 filter 调用 keystoneclient，最终向 Keystone 验证 token 的有效性，如果认证失败，用户将不能访问该 API，即为下图的步骤 3-5：
 
-![Auth token](http://7xp2eu.com1.z0.glb.clouddn.com/uuid.png)
+![Auth token](http://wsfdl.oss-cn-qingdao.aliyuncs.com/uuid.png)
 
 以 nova 为例，authtoken filter 在 /etc/paste.ini 中
 
@@ -70,4 +70,4 @@ paste.filter_factory = keystoneclient.middleware.auth_token:filter_factory
 - Alice 选择一个租户并申请 token，Keystone认证用户名、密码和 project 后，返回 scope token2。（其实 1、2 步是为了查询所拥有的 project，如果已知道 project，可以忽略1、2步）
 - Alice 携带 token2 向 nova 请求创建 server，nova-api 收到请求后，先向 Keystone 验证 token2 的真实性，验证成功后再创建虚拟机。
 
-![workflow](http://7xp2eu.com1.z0.glb.clouddn.com/SCH_5002_V00_NUAC-Keystone.png)
+![workflow](http://wsfdl.oss-cn-qingdao.aliyuncs.com/SCH_5002_V00_NUAC-Keystone.png)

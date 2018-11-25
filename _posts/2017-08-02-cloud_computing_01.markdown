@@ -60,8 +60,8 @@ categories: 编程随想
 
 在资本市场，如果一只股票既没有亮点，又没有好看的财报，还没有可观的预期，就会被判死刑，反之则能得到资本的青睐。亚马逊上市以来，虽然营业额持续增长，但绝大多数年份却处于亏损状态，从来没有高额的利润回报，但它的股价却年年攀升(见下图)。特别从 2008 年起，更是飞速增长；而那一年，亚马逊发布了 AWS。
 
-![亚马逊股价](http://7xp2eu.com1.z0.glb.clouddn.com/amazon_stock.png)
+![亚马逊股价](http://wsfdl.oss-cn-qingdao.aliyuncs.com/amazon_stock.png)
 
 AWS 却满足了资本市场所有的期望和幻想：首先，云计算本身就是一个充满故事和期望的亮点；其次，公有云市场规模高达千亿美金，其中预计 2017 年为 2468 亿美金，并且每年高速增长([详情见 Gartner](http://www.gartner.com/newsroom/id/3616417))。AWS 2015 年 Q1 财报首度公开旗下云计算服务 AWS 的营收状况，该季度营收 15.6 亿美元，同比增长 49%，运营利润 2.65 亿美元，运营利润率约 17%，从 15 年到 17 年，AWS 始终保持高速的增长率和运营利润，它被资本市场看好，为年年攀升的股价作出重要的贡献。
 
-![AWS](http://7xp2eu.com1.z0.glb.clouddn.com/aws_benefit.png)
+![AWS](http://wsfdl.oss-cn-qingdao.aliyuncs.com/aws_benefit.png)

@@ -4,7 +4,7 @@ title:  "深入理解 Python 的 == 和 is"
 categories: Python
 ---
 
-![python is](http://7xp2eu.com1.z0.glb.clouddn.com/pythonis%3D%3D.png)
+![python is](http://wsfdl.oss-cn-qingdao.aliyuncs.com/pythonis%3D%3D.png)
 
 # Case 1
 

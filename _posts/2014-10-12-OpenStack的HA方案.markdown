@@ -15,7 +15,7 @@ categories: OpenStack
 
 # OpenStack HA 实现
 
-![OpenStack HA](http://7xp2eu.com1.z0.glb.clouddn.com/HA.png?imageView2/1/w/600/q/100)
+![OpenStack HA](http://wsfdl.oss-cn-qingdao.aliyuncs.com/HA.png?imageView2/1/w/600/q/100)
 
 ## Database(Active/Active):
 官方推荐：[MySQL with Galera](http://docs.OpenStack.org/high-availability-guide/content/ha-aa-db.html)

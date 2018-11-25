@@ -12,7 +12,7 @@ categories: OpenStack
 
 Region 者，区域也，表示该区域中云资源或服务的集合，源于 AWS。事实上，AWS 按国家、地区或者城市定义 region，每个 region 的各个服务均有独自的 endpoint，对外提供访问入口。
 
-![aws](http://7xp2eu.com1.z0.glb.clouddn.com/aws_region.png)
+![aws](http://wsfdl.oss-cn-qingdao.aliyuncs.com/aws_region.png)
 
 为了兼容 AWS，OpenStack 同样支持 region 概念，所谓的 multi-region 就是将多个 region 统一管理，具有以下特点：
 
@@ -20,7 +20,7 @@ Region 者，区域也，表示该区域中云资源或服务的集合，源于 
 - 各个 region 之间的资源相互独立，比如: region A 的卷无法挂载给 B 的虚拟机；私有网络无法跨 region 等。
 - Region 里的每个服务都有对应的 endpoint。
 
-![region](http://7xp2eu.com1.z0.glb.clouddn.com/region.jpg)
+![region](http://wsfdl.oss-cn-qingdao.aliyuncs.com/region.jpg)
 
 --------------------------
 
@@ -133,7 +133,7 @@ provider = keystone.token.providers.uuid.Provider
 - Keystone 部署于 Apache，提高并发性能。
 - Keystone 以 Active-Active 的形式部署，由 haproxy 复杂均衡复杂，提高可靠性。
 
-![performance](http://7xp2eu.com1.z0.glb.clouddn.com/keystone_performace.png)
+![performance](http://wsfdl.oss-cn-qingdao.aliyuncs.com/keystone_performace.png)
 
 ## OpenStack Version Tips
 

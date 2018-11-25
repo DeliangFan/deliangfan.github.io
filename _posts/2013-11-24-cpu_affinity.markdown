@@ -4,7 +4,7 @@ title:  "CPU Pinning 简介"
 categories: OpenStack
 ---
 
-![pinning](http://7xp2eu.com1.z0.glb.clouddn.com/ping_cpu_twi.png)
+![pinning](http://wsfdl.oss-cn-qingdao.aliyuncs.com/ping_cpu_twi.png)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[原图出处](http://www.adweek.com/socialtimes/the-one-thing-missing-from-your-twitter-profile-strategy-pinned-tweets/625869)
 
@@ -87,8 +87,8 @@ CPU time:       14.2s
 CPU Affinity:   -------y
 ~~~
 
-![cpu_pinning](http://7xp2eu.com1.z0.glb.clouddn.com/kvm_cpu_pinning.png)
+![cpu_pinning](http://wsfdl.oss-cn-qingdao.aliyuncs.com/kvm_cpu_pinning.png)
 
 Canoical 工程师测试了 CPU Pinning 给 KVM 虚拟机带来的性能提升，结果如下，详情请见[kvm-performance-optimization-for-ubuntu](http://www.slideshare.net/janghoonsim/kvm-performance-optimization-for-ubuntu)。
 
-![cpu_pinning_performance](http://7xp2eu.com1.z0.glb.clouddn.com/kvm-performance-optimization-for-ubuntu.jpg)
+![cpu_pinning_performance](http://wsfdl.oss-cn-qingdao.aliyuncs.com/kvm-performance-optimization-for-ubuntu.jpg)

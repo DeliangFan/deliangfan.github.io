@@ -14,7 +14,7 @@ categories: OpenStack
 
 OpenStack 社区在 [High Availability](http://docs.openstack.org/ha-guide/intro-ha-arch-keepalived.html) (高可靠) 推荐 Controller 端部署 Haproxy 和 Keepalived，前者负责转发外部 http 请求到正常的 OpenStack API 节点，后者通过 VRRP 协议管理 VIP 的漂移，如下图：
 
-![Controller HA](http://7xp2eu.com1.z0.glb.clouddn.com/Controller%20HA.png?imageView2/1/w/800/q/100)
+![Controller HA](http://wsfdl.oss-cn-qingdao.aliyuncs.com/Controller%20HA.png?imageView2/1/w/800/q/100)
 
 本文重点关注其安全特性，首先，它作为服务的唯一入口，对外隐藏了 OpenStack API 服务器的细节；其次，支持 HTTPS，保证客户端和服务端通信的安全性；再次，它配合内核 IP/TCP 协议栈，能够较好的抵抗 DDOS 攻击，还能限制单个 IP 的连接数和请求速率等，防止用户的恶意行为。
 
@@ -32,7 +32,7 @@ Haproxy 配置参数多的一塌糊涂，功能丰富，灵活多样，本文抛
 
 	Update [2012/09/11] : native SSL support was implemented in 1.5-dev12.
 
-![https-http](http://7xp2eu.com1.z0.glb.clouddn.com/https-http.png?imageView2/1/w/800/q/100)
+![https-http](http://wsfdl.oss-cn-qingdao.aliyuncs.com/https-http.png?imageView2/1/w/800/q/100)
 
 [how-to-implement-ssl-termination-with-haproxy](https://www.digitalocean.com/community/tutorials/how-to-implement-ssl-termination-with-haproxy-on-ubuntu-14-04) 详细的说明如何配置 HTTPS，主要包括证书 和 SSL 相关配置项。证书可以到 CA 机构购买，也可用 openssl 自制证书，甚至可用 [keystone 生成证书](http://docs.openstack.org/developer/keystone/configuration.html# ssl)。
 

@@ -9,7 +9,7 @@ categories: OpenStack
 
 Keystone 于 E 版支持 LDAP，为 OpenStack 进军企业迈出一大步，[《Keystone 集成 LDAP》](http://wsfdl.com/openstack/2016/01/13/Keystone%E9%9B%86%E6%88%90LDAP.html) 介绍了如何配置 Keystone 和 LDAP。从 H 版本起，domain 的概念被引入，它为用户提供了 user namespace 功能，即不同的 domain 之间的 user(group) 完全隔离，允许不同的 domain 下的用户重名。一个通常的做法是，云服务提供商为每家客户分配各一个 domain，客户之间的用户信息完全隔离。绝大多数企业客户都有自身的用户管理系统，这些用户管理系统通常是 LDAP 或者 Microsoft 的 AD，出于安全等因素的考虑，企业客户希望云服务提供商能够接入已有的认证系统，Multi-Domain Config 为这种场景提供了优良的解决方案。Multi-Domain Config 是 J 版本中一个振奋人心的特性，它支持每个 domain 对接客户已有的 LDAP、AD 或者 SQL。
 
-![multi-domain](http://7xp2eu.com1.z0.glb.clouddn.com/multi-domain-overview.png)
+![multi-domain](http://wsfdl.oss-cn-qingdao.aliyuncs.com/multi-domain-overview.png)
 
 如上图，以认证为例，当 Keystone 收到 authentication 的请求时，对于 domain A 下的用户，它最终发请求到 LDAP A 做认证，同理，对于 domain B 下的用户，Keystone 依赖 LDAP B 完成认证。要实现此类功能，Keystone 需要维护不同 domain 的 LDAP 的信息，方式有两种：
 

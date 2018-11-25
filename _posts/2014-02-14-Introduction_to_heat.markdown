@@ -4,7 +4,7 @@ title:  "An Introduction to Heat"
 categories: OpenStack
 ---
 
-![heat_log](http://7xp2eu.com1.z0.glb.clouddn.com/heat_logo.png)
+![heat_log](http://wsfdl.oss-cn-qingdao.aliyuncs.com/heat_logo.png)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[原图出处](http://www.slideshare.net/openstackindia/introduction-to-openstack-heat)
 
@@ -30,7 +30,7 @@ Heat 的架构如下，它由 4 部分组成：
 - heat-api: 提供原生的 Restful API- heat-api-cfn: 兼容 AWS CloudFormation API
 - heat-api-cloudwatch: 兼容 AWS CloudWatch API，可用于接收 ceilometer 的告警- heat-engine: 最核心部分，解析 template，处理逻辑业务，完成资源的创建和部署
 
-![Heat work flow](http://7xp2eu.com1.z0.glb.clouddn.com/heat_work_flow.png)
+![Heat work flow](http://wsfdl.oss-cn-qingdao.aliyuncs.com/heat_work_flow.png)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[原图出处](http://gigaroom.blogspot.com/2014/12/cloud-orchestrator-between-it-and-telco.html?view=magazine)
 
@@ -75,7 +75,7 @@ resources:
       mountpoint: /dev/vdb
 ~~~
 
-![volume_instance_attachment](http://7xp2eu.com1.z0.glb.clouddn.com/volume_instance_attachment_heat.png)
+![volume_instance_attachment](http://wsfdl.oss-cn-qingdao.aliyuncs.com/volume_instance_attachment_heat.png)
 
 Heat 支持多种类型的 resource，用户也可以加入自己定义的 resource：
 
@@ -107,7 +107,7 @@ OS::Nova::Server
 
 [Autoscaling](https://wiki.openstack.org/wiki/Heat/AutoScaling) 是 Heat 的另外一大特性，它通过 ceilometer 监控伸缩组(scaling group)的虚拟机的负载，当虚拟机的负载超过阈值时，ceilometer 发送告警给 heat，heat 收到告警后，根据伸缩策略(scaling policy)增加虚拟机，并将虚拟机加入到 load balancer 的 backends 中；反之，当虚拟机的负载很低时，heat 收到告警后删除虚拟机。
 
-![heat asg](http://7xp2eu.com1.z0.glb.clouddn.com/asg_heat.png)
+![heat asg](http://wsfdl.oss-cn-qingdao.aliyuncs.com/asg_heat.png)
 
 官方推荐的 [autoscaling template](https://github.com/openstack/heat-templates/blob/master/hot/autoscaling.yaml) 如下：
     
@@ -280,7 +280,7 @@ resources:
 
 这些 resource 的依赖关系如下：
 
-![resource dependency](http://7xp2eu.com1.z0.glb.clouddn.com/resource%20dependency.png)
+![resource dependency](http://wsfdl.oss-cn-qingdao.aliyuncs.com/resource%20dependency.png)
 
 ------------
 

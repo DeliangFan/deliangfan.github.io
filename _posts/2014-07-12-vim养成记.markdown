@@ -11,7 +11,7 @@ categories: DevOps
 学习 vim 犹如攀登高峰，过程曲折，登顶舒爽。
 
 
-![learning ied](http://7xp2eu.com1.z0.glb.clouddn.com/horrorstories.jpg)
+![learning ied](http://wsfdl.oss-cn-qingdao.aliyuncs.com/horrorstories.jpg)
 
 
 --------------
@@ -69,7 +69,7 @@ set background=dark/light    #设置背景颜色与syntax对应
 
 Vim 的 plugin 非常之多，[vim awesome](http://vimawesome.com/) 列出各个 plugin 的功能和受欢迎程度。
 
-![vim plugin](http://7xp2eu.com1.z0.glb.clouddn.com/vimplugins.png)
+![vim plugin](http://wsfdl.oss-cn-qingdao.aliyuncs.com/vimplugins.png)
 
 --------------
 

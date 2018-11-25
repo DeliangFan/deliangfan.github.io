@@ -43,7 +43,7 @@ OpenID Connect = OAuth + Identity + Authentication
 
 Keystone server 的 IP 为 209.9.108.221，设置如下 DNS 解析：
 
-![dns](http://7xp2eu.com1.z0.glb.clouddn.com/keystonegoogledns.png?imageView2/1/w/360/h/80/q/100)
+![dns](http://wsfdl.oss-cn-qingdao.aliyuncs.com/keystonegoogledns.png?imageView2/1/w/360/h/80/q/100)
 
 参考[此文](https://www.youtube.com/watch?v=Rfxy0FKOfgw)在 [console.developers.google.com](https://console.developers.google.com/) 注册一个 application，获取 application 的 Client ID 和 Client Secret 信息，并在 Authorized redirect URIs 中填入重定向 URI，以本文为例：
 
@@ -51,7 +51,7 @@ Keystone server 的 IP 为 209.9.108.221，设置如下 DNS 解析：
 - Client secret：2CnpJ5mm8mfqfoN_6aqd-72A
 - Authorized redirect URIs：www.keystonegoogle.com:5000/v3/auth/OS-FEDERATION/websso/oidc/redirect
 
-![google-openid-client](http://7xp2eu.com1.z0.glb.clouddn.com/googleclientsetup.png)
+![google-openid-client](http://wsfdl.oss-cn-qingdao.aliyuncs.com/googleclientsetup.png)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -201,8 +201,8 @@ $ openstack federation protocol create oidc --identity-provider google_idp --map
 
 登录 keystonegoogle.com，进入 Login 页面。
 
-![login](http://7xp2eu.com1.z0.glb.clouddn.com/Login.png)
+![login](http://wsfdl.oss-cn-qingdao.aliyuncs.com/Login.png)
 
 选择 Google Login，输入 Google 账户密码即可登录。
 
-![dashboard](http://7xp2eu.com1.z0.glb.clouddn.com/keystonegooglegoogleinstance.png)
+![dashboard](http://wsfdl.oss-cn-qingdao.aliyuncs.com/keystonegooglegoogleinstance.png)

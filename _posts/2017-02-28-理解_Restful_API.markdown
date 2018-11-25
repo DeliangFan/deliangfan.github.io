@@ -27,11 +27,11 @@ categories: Architecture
 
 一图蔽之，REST 风格的 web 架构抽象如下：
 
-![Restful instance](http://7xp2eu.com1.z0.glb.clouddn.com/Restful%20insance.png)
+![Restful instance](http://wsfdl.oss-cn-qingdao.aliyuncs.com/Restful%20insance.png)
 
 下图是一个基于 REST 风格具体的 web 架构，不难发现，当今很多 web 架构都如下图所示。
 
-![Restful](http://7xp2eu.com1.z0.glb.clouddn.com/RESTful.png)
+![Restful](http://wsfdl.oss-cn-qingdao.aliyuncs.com/RESTful.png)
 
 # Resource & Representation & RESTful API
 

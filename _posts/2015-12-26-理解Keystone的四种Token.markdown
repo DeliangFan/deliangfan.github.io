@@ -9,7 +9,7 @@ categories: OpenStack
 # Token 是什么
 
 通俗的讲，token 是用户的一种凭证，需拿正确的用户名/密码向 Keystone 申请才能得到。如果用户每次都采用用户名/密码访问 OpenStack API，容易泄露用户信息，带来安全隐患。所以 OpenStack 要求用户访问其 API 前，必须先获取 token，然后用 token 作为用户凭据访问 OpenStack API。
-![P1](http://7xp2eu.com1.z0.glb.clouddn.com/uuid.png)
+![P1](http://wsfdl.oss-cn-qingdao.aliyuncs.com/uuid.png)
 
 ---------------------
 
@@ -44,7 +44,7 @@ UUID token 简单美观，不携带其它信息，因此 Keystone 必须实现 t
 
 # PKI
 
-![P2](http://7xp2eu.com1.z0.glb.clouddn.com/pki.png)
+![P2](http://wsfdl.oss-cn-qingdao.aliyuncs.com/pki.png)
 
 在阐述 PKI（Public Key Infrastruction） token 前，让我们简单的回顾[公开密钥加密(public-key cryptography)](https://zh.wikipedia.org/wiki/%E5%85%AC%E5%BC%80%E5%AF%86%E9%92%A5%E5%8A%A0%E5%AF%86)和[数字签名](http://www.youdzone.com/signature.html)。公开密钥加密，也称为非对称加密(asymmetric cryptography，加密密钥和解密密钥不相同)，在这种密码学方法中，需要一对密钥，分别为公钥(Public Key)和私钥(Private Key)，公钥是公开的，私钥是非公开的，需用户妥善保管。如果把加密和解密的流程当做函数 C(x) 和 D(x)，P 和 S 分别代表公钥和私钥，对明文 A 和密文 B 而言，数学的角度上有以下公式：
 
@@ -110,7 +110,7 @@ token\_data 经 cms.cms\_sign\_token 签名生成的 token\_id 如下，共 1932
 
 # PKIZ
 
-![P3](http://7xp2eu.com1.z0.glb.clouddn.com/pkiz.png)
+![P3](http://wsfdl.oss-cn-qingdao.aliyuncs.com/pkiz.png)
 
 PKIZ 在 PKI 的基础上做了压缩处理，但是压缩的效果极其有限，一般情况下，压缩后的大小为 PKI token 的 90 % 左右，所以 PKIZ 不能友好的解决 token size 太大问题。
 
@@ -140,7 +140,7 @@ PKIZ token 样例如下，共 1645 Byte，比 PKI token 减小 14.86 %：
 
 # Fernet
 
-![P4](http://7xp2eu.com1.z0.glb.clouddn.com/fernet.png)
+![P4](http://wsfdl.oss-cn-qingdao.aliyuncs.com/fernet.png)
 
 用户可能会碰上这么一个问题，当集群运行较长一段时间后，访问其 API 会变得奇慢无比，究其原因在于 Keystone 数据库存储了大量的 token 导致性能太差，解决的办法是经常清理 token。为了避免上述问题，社区提出了[Fernet token](https://github.com/openstack/keystone-specs/blob/master/specs/kilo/klwt.rst)，它采用 [cryptography](http://cryptography.readthedocs.org/en/latest/fernet/) 对称加密库(symmetric cryptography，加密密钥和解密密钥相同) 加密 token，具体由 AES-CBC 加密和散列函数 SHA256 签名。[Fernet](http://cryptography.readthedocs.org/en/latest/fernet/)
 是专为 API token 设计的一种轻量级安全消息格式，不需要存储于数据库，减少了磁盘的 IO，带来了一定的[性能提升](http://dolphm.com/benchmarking-openstack-keystone-token-formats/)。为了提高安全性，需要采用 [Key Rotation](http://lbragstad.com/fernet-tokens-and-key-rotation/) 更换密钥。

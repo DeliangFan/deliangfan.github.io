@@ -61,25 +61,25 @@ hash(object) mod (N + 1)
 - 将每个 object 映射到数值空间 [0, 2^32 - 1]。
 - 对于某个 object，对于所有满足 hash(node) <= hash(object) 的节点，选择 hash(node) 最大的节点存放 object。如果没有满足上述条件的节点，选择 hash(node) 最小的节点存放该 object，如下图。
 
-![hash ring](http://7xp2eu.com1.z0.glb.clouddn.com/hashring.png)
+![hash ring](http://wsfdl.oss-cn-qingdao.aliyuncs.com/hashring.png)
 
 当某个节点宕机时，仅有该节点的对象被重哈希到相邻节点上。
 
-![hash ring delete](http://7xp2eu.com1.z0.glb.clouddn.com/hashringdelete.png)
+![hash ring delete](http://wsfdl.oss-cn-qingdao.aliyuncs.com/hashringdelete.png)
 
 与此类似，当新增一个节点时，仅有一个节点的部分 object 需要重哈希。
 
-![hash ring add](http://7xp2eu.com1.z0.glb.clouddn.com/hashringadd.png)
+![hash ring add](http://wsfdl.oss-cn-qingdao.aliyuncs.com/hashringadd.png)
 
 ## 虚节点与平衡性
 
 节点的位置是由自身哈希值决定的，它们的分布并非均匀，特别当节点数目很少时，容易造成 object 的分布不均匀，即平衡性低，例如：
 
-![unbalance](http://7xp2eu.com1.z0.glb.clouddn.com/hashringubalance.png)
+![unbalance](http://wsfdl.oss-cn-qingdao.aliyuncs.com/hashringubalance.png)
 
 为了解决这个问题，我们引入虚拟节点，虚拟节点实际上是物理节点的复制品，一个物理节点包含多个虚拟节点，我们将这些虚拟节点映射到数值空间 [0, 2^32 - 1]，对于某个 object，我们根据上节步骤计算该 object 存放的虚拟节点，进而得出物理节点。如下图共有 2 个物理节点，每个物理节点有三个虚拟机节点。当虚拟节点越多，虚拟节点的位置分布越均匀，相应的，映射到物理节点的 object 数目也越均匀，提高了平衡性。
 
-![virtual node](http://7xp2eu.com1.z0.glb.clouddn.com/hashringvn.png)
+![virtual node](http://wsfdl.oss-cn-qingdao.aliyuncs.com/hashringvn.png)
 
 
 

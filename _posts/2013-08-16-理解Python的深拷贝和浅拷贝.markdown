@@ -4,7 +4,7 @@ title:  "理解 Python 引用、浅拷贝和深拷贝"
 categories: Python
 ---
 
-![object](http://7xp2eu.com1.z0.glb.clouddn.com/pythonobjectmutable.png)
+![object](http://wsfdl.oss-cn-qingdao.aliyuncs.com/pythonobjectmutable.png)
 
 在阐述引用、浅拷贝和深拷贝前，首先需要要了解 Python 的世界里，一切皆对象，每个对象各包含一个 idendity、type 和 value。
 
@@ -16,7 +16,7 @@ categories: Python
 
 # Reference
 
-![reference](http://7xp2eu.com1.z0.glb.clouddn.com/copy_reference.png)
+![reference](http://wsfdl.oss-cn-qingdao.aliyuncs.com/copy_reference.png)
 
 ~~~ bash
 >>> b = [1 , 2]
@@ -37,7 +37,7 @@ c = a 表示 c 和 a 指向相同的地址空间，并没有创建新的对象�
 
 # Shallow Copy
 
-![shadow copy](http://7xp2eu.com1.z0.glb.clouddn.com/copy_shallow_copy.png)
+![shadow copy](http://wsfdl.oss-cn-qingdao.aliyuncs.com/copy_shallow_copy.png)
 
 ~~~ bash
 >>> import copy
@@ -66,7 +66,7 @@ d = copy.copy(a) 创建了一个新对象，复制了原有对象的引用。
 
 # Deepcopy
 
-![deepcopy](http://7xp2eu.com1.z0.glb.clouddn.com/copy_deepcopy.png)
+![deepcopy](http://wsfdl.oss-cn-qingdao.aliyuncs.com/copy_deepcopy.png)
 
 ~~~ bash
 >>> e = copy.deepcopy(a)

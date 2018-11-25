@@ -9,7 +9,7 @@ categories: Python
 >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\------PEP 0333
 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![wsgi](http://7xp2eu.com1.z0.glb.clouddn.com/Python-Visual.jpg)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![wsgi](http://wsfdl.oss-cn-qingdao.aliyuncs.com/Python-Visual.jpg)
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;图片源自 [A Primer On WSGI](http://www.opensourceforu.efytimes.com/wp-content/uploads/2013/12/Python-Visual.jpg)
 
 ------------------
@@ -23,7 +23,7 @@ categories: Python
 - Web server/gateway: 即 HTTP Server，处理 HTTP 协议，接受用户 HTTP 请求和提供并发，调用 web application 处理业务逻辑。通常采用 C/C++ 编写，代表：apache, nginx 和 IIS。
 - Python Web application/framework: 专注业务逻辑的 python 应用或者框架。
 
-![wsgi framework](http://7xp2eu.com1.z0.glb.clouddn.com/wsgiframework.png)
+![wsgi framework](http://wsfdl.oss-cn-qingdao.aliyuncs.com/wsgiframework.png)
 
 ---------------------
 
@@ -102,7 +102,7 @@ This is a python application!
 
 > Unix philosophy: do one thing and do it well.
 
-![wsgi framework middleware](http://7xp2eu.com1.z0.glb.clouddn.com/wsgiframeworkmiddleware.png)
+![wsgi framework middleware](http://wsfdl.oss-cn-qingdao.aliyuncs.com/wsgiframeworkmiddleware.png)
 
 Middleware 处于 server/gateway 和 application/framework 之间，对 server/gateway 来说，它相当于 application/framework；对 application/framework 来说，它相当于 server/gateway。每个 middleware 实现不同的功能，我们通常根据需求选择相应的 middleware 并组合起来，实现所需的功能。比如，可在 middleware 中实现以下功能：
 
@@ -111,7 +111,7 @@ Middleware 处于 server/gateway 和 application/framework 之间，对 server/g
 - 预处理 XSL 等相关数据
 - 限制请求速率，设置白名单
 
-![middleware](http://7xp2eu.com1.z0.glb.clouddn.com/wsgi-middleware.png)
+![middleware](http://wsfdl.oss-cn-qingdao.aliyuncs.com/wsgi-middleware.png)
 
 WSGI 的 middleware 体现了 unix 的哲学之一：do one thing and do it well。事实上，在定义 WSGI 框架的时候，设计者就要求 server/gateway 和 application/framework 双方尽可能的简单，同时也要求 middleware 设计的简单而专一，PEP 333 提到：
 

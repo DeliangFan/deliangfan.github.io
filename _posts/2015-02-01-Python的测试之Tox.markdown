@@ -6,7 +6,7 @@ categories: Python
 
 &nbsp;&nbsp;&nbsp;
 
-![testtools](http://7xp2eu.com1.z0.glb.clouddn.com/pythontesttools.png)
+![testtools](http://wsfdl.oss-cn-qingdao.aliyuncs.com/pythontesttools.png)
 
 &nbsp;&nbsp;&nbsp;
 
@@ -20,7 +20,7 @@ categories: Python
 - 在不同的 Python 版本环境下运行测试用例，检查编码规范，测试覆盖率等
 - 和 Jenkins 等 CI server 集成，支持多个 Pypi Server
 
-![pypitoxjenkins](http://7xp2eu.com1.z0.glb.clouddn.com/toxwithjenkins.png)
+![pypitoxjenkins](http://wsfdl.oss-cn-qingdao.aliyuncs.com/toxwithjenkins.png)
 
 
 ---------------------

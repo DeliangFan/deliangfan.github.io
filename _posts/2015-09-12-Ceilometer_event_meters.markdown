@@ -9,7 +9,7 @@ categories: OpenStack
 - [Sample](http://docs.openstack.org/admin-guide/telemetry-measurements.html): 资源的使用量，比如虚拟机 CPU 的使用率、网卡速率等，它们由 ceilometer\-central\-agent 和 ceilometer\-compute\-agent 采集。
 - [Event](http://docs.openstack.org/admin-guide/telemetry-events.html): 资源的状态变更信息，比如虚拟机创建、关机等信息，它们由 ceilometer\-notification\-agent 采集。 
 
-![event and sample](http://7xp2eu.com1.z0.glb.clouddn.com/ceilometer_sample_event.png)
+![event and sample](http://wsfdl.oss-cn-qingdao.aliyuncs.com/ceilometer_sample_event.png)
 
 -------------
 
@@ -70,7 +70,7 @@ categories: OpenStack
 
 总体来说，sample 是云资源使用量的采样值，即资源使用量随时间的变化，侧重量的是变化。下图是根据多个 sample 生成的 cpu 使用量图表。
 
-![cpu usage](http://7xp2eu.com1.z0.glb.clouddn.com/cpu_usage_sample.png)
+![cpu usage](http://wsfdl.oss-cn-qingdao.aliyuncs.com/cpu_usage_sample.png)
 
 ----
 
@@ -86,6 +86,6 @@ categories: OpenStack
 
 下图为一个创建虚拟机的 event：
 
-![event instance](http://7xp2eu.com1.z0.glb.clouddn.com/instance_event.png)
+![event instance](http://wsfdl.oss-cn-qingdao.aliyuncs.com/instance_event.png)
 
 由上可知，event 描述的是资源状态的变化，比如创建、更新、删除等，只有在资源状态有变化时，event 事件才会发出(*.exits 类型的事件除外)，和 sample 相比，它侧重质的变化。

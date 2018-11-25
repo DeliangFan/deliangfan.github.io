@@ -5,7 +5,7 @@ categories: Python
 ---
 
 
-![weatherimage](http://7xp2eu.com1.z0.glb.clouddn.com/weatherimage.png)
+![weatherimage](http://wsfdl.oss-cn-qingdao.aliyuncs.com/weatherimage.png)
 
 &nbsp;&nbsp;&nbsp;
 
@@ -17,7 +17,7 @@ Github 有位叫 [schachmat](https://github.com/schachmat) 的用户用 go 写�
 
 &nbsp;&nbsp;&nbsp;
 
-![shanghai](http://7xp2eu.com1.z0.glb.clouddn.com/weathershanghai.png)
+![shanghai](http://wsfdl.oss-cn-qingdao.aliyuncs.com/weathershanghai.png)
 
 &nbsp;&nbsp;&nbsp;
 

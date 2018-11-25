@@ -8,7 +8,7 @@ categories: Algorithm
 
 # 格林威治天文台与格林威治时间（GMT）
 
-![Royal_Observatory_Greenwich_London.jpg](http://7xp2eu.com1.z0.glb.clouddn.com/Royal_Observatory_Greenwich_London.jpg)
+![Royal_Observatory_Greenwich_London.jpg](http://wsfdl.oss-cn-qingdao.aliyuncs.com/Royal_Observatory_Greenwich_London.jpg)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[原图出处](https://commons.wikimedia.org/wiki/File:Royal_Observatory_Greenwich_London.jpg)
 
@@ -33,7 +33,7 @@ Mon Nov 20 09:15:20 UTC 2016
 
 # Localtime 与夏令时
 
-![Time Zones](http://7xp2eu.com1.z0.glb.clouddn.com/Standard_World_Time_Zones.png)
+![Time Zones](http://wsfdl.oss-cn-qingdao.aliyuncs.com/Standard_World_Time_Zones.png)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[原图](https://zh.wikipedia.org/wiki/%E6%97%B6%E5%8C%BA#/media/File:Standard_World_Time_Zones.png)
 

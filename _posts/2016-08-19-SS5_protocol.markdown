@@ -5,7 +5,7 @@ categories: Python
 ---
 
 
-![twitter](http://7xp2eu.com1.z0.glb.clouddn.com/twitter_ss5.png)
+![twitter](http://wsfdl.oss-cn-qingdao.aliyuncs.com/twitter_ss5.png)
 
 
 [SOCK](https://zh.wikipedia.org/wiki/SOCKS) 基于 TCP 之上，属于会话层协议，最初由 David Koblas 提出，第一个成熟通用的版本是 NEC 开发的 [SOCK V4](http://www.openssh.com/txt/socks4.protocol)，但是它不支持认证，不支持代理 UDP 协议，所以功能更为强大的 [SOCK V5(RFC 1928)](https://www.ietf.org/rfc/rfc1928.txt) 运用而生。 

@@ -182,7 +182,7 @@ $ rbd snap unprotect nova-pool/vm@nova_vm_snap
 $ rbd snap rm nova-pool/vm@nova_vm_snap
 ~~~ 
 
-![Ceph RBD flow](http://7xp2eu.com1.z0.glb.clouddn.com/cephrbdsnapshotflow.png)
+![Ceph RBD flow](http://wsfdl.oss-cn-qingdao.aliyuncs.com/cephrbdsnapshotflow.png)
 
 ------------
 

@@ -6,7 +6,7 @@ categories: DevOps
 
 &nbsp;&nbsp;&nbsp;
 
-![gitlab](http://7xp2eu.com1.z0.glb.clouddn.com/gitlab.png)
+![gitlab](http://wsfdl.oss-cn-qingdao.aliyuncs.com/gitlab.png)
 
 [Github](http:\\github.com) 一个非常优秀的代码托管平台，但是私有的项目是收费的。出于安全等因素考虑，企业很有必要搭建属于自己的代码托管平台，[GitLab](https://about.gitlab.com/) 就是一款优秀的构建私有代码托管平台的软件，和 github 非常相像。
 
@@ -74,4 +74,4 @@ $ gitlab-ctl reconfigure
 - Username: root 
 - Password: 5iveL!fe
 
-![example](http://7xp2eu.com1.z0.glb.clouddn.com/gitlab_example.png)
+![example](http://wsfdl.oss-cn-qingdao.aliyuncs.com/gitlab_example.png)

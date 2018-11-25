@@ -4,7 +4,7 @@ title:  "理解 Python object 的 mutable 和 immutable"
 categories: Python
 ---
 
-![object](http://7xp2eu.com1.z0.glb.clouddn.com/pythonobjectmutable.png)
+![object](http://wsfdl.oss-cn-qingdao.aliyuncs.com/pythonobjectmutable.png)
 
 在 Python 的世界里，一切皆对象，每个对象各包含一个 idendity、type 和 value。
 

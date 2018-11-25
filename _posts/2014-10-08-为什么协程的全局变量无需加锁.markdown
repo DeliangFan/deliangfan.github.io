@@ -56,7 +56,7 @@ print count
 
 一个 Python 进程内，任何时刻只有一个协程在运行，所以协程本质上是伪并发的。有人会问，由于 Python [全局解释锁(Global Interpreter Lock)](https://wiki.python.org/moin/GlobalInterpreterLock)的存在，一个 Python 进程内任何时刻同样仅有一个线程在运行，为什么多线程下就会出现 [race condition](https://en.wikipedia.org/wiki/Race_condition) 呢？
 
-![python gil lock](http://7xp2eu.com1.z0.glb.clouddn.com/python_gil_lock.png)
+![python gil lock](http://wsfdl.oss-cn-qingdao.aliyuncs.com/python_gil_lock.png)
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_原图出处_ [UnderstandingGIL](http://www.dabeaz.com/python/UnderstandingGIL.pdf)
 
 
@@ -73,7 +73,7 @@ print count
 
 由于线程的切换是随机的，不能保证 count += 1 的原子性，所以就有可能出现如下的 race condiction：
 
-![race condition](http://7xp2eu.com1.z0.glb.clouddn.com/python_global_race_condiction.png)
+![race condition](http://wsfdl.oss-cn-qingdao.aliyuncs.com/python_global_race_condiction.png)
 
 因此多线程下 count 的值不确定，但是介于 1 到 50000 之间。
 

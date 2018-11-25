@@ -17,70 +17,70 @@ categories: Photos
 
 P1. 日出
 
-![p1](http://7xp2eu.com1.z0.glb.clouddn.com/3.pic_3hd.jpg?imageView2/1/w/800/h/533/q/100)
+![p1](http://wsfdl.oss-cn-qingdao.aliyuncs.com/3.pic_3hd.jpg?imageView2/1/w/800/h/533/q/100)
 
 &nbsp;
 &nbsp;
 
 P2. 鸟岛
 
-![p2](http://7xp2eu.com1.z0.glb.clouddn.com/6.pic_3hd.jpg?imageView2/1/w/800/h/533/q/100)
+![p2](http://wsfdl.oss-cn-qingdao.aliyuncs.com/6.pic_3hd.jpg?imageView2/1/w/800/h/533/q/100)
 
 &nbsp;
 &nbsp;
 
 P3. 鸟岛
 
-![p3](http://7xp2eu.com1.z0.glb.clouddn.com/8.pic3_hd.jpg?imageView2/1/w/800/h/533/q/100)
+![p3](http://wsfdl.oss-cn-qingdao.aliyuncs.com/8.pic3_hd.jpg?imageView2/1/w/800/h/533/q/100)
 
 &nbsp;
 &nbsp;
 
 P4. 海鸥
 
-![p4](http://7xp2eu.com1.z0.glb.clouddn.com/7.pic_3hd.jpg?imageView2/1/w/800/h/533/q/100)
+![p4](http://wsfdl.oss-cn-qingdao.aliyuncs.com/7.pic_3hd.jpg?imageView2/1/w/800/h/533/q/100)
 
 &nbsp;
 &nbsp;
 
 P5. 茶卡  
 
-![p5](http://7xp2eu.com1.z0.glb.clouddn.com/2.pi2_hd.jpg?imageView2/1/w/800/h/533/q/100)
+![p5](http://wsfdl.oss-cn-qingdao.aliyuncs.com/2.pi2_hd.jpg?imageView2/1/w/800/h/533/q/100)
 
 &nbsp;
 &nbsp;
 
 P6. 茶卡  
 
-![p6](http://7xp2eu.com1.z0.glb.clouddn.com/5.pic_3hd.jpg?imageView2/1/w/800/h/533/q/100)
+![p6](http://wsfdl.oss-cn-qingdao.aliyuncs.com/5.pic_3hd.jpg?imageView2/1/w/800/h/533/q/100)
 
 &nbsp;
 &nbsp;
 
 P7. 茶卡  
 
-![p7](http://7xp2eu.com1.z0.glb.clouddn.com/6.pic2_hd.jpg?imageView2/1/w/800/h/533/q/100)
+![p7](http://wsfdl.oss-cn-qingdao.aliyuncs.com/6.pic2_hd.jpg?imageView2/1/w/800/h/533/q/100)
 
 &nbsp;
 &nbsp;
 
 P8. 雪山  
 
-![p8](http://7xp2eu.com1.z0.glb.clouddn.com/8.pic1_hd.jpg?imageView2/1/w/800/h/533/q/100)
+![p8](http://wsfdl.oss-cn-qingdao.aliyuncs.com/8.pic1_hd.jpg?imageView2/1/w/800/h/533/q/100)
 
 &nbsp;
 &nbsp;
 
 P9. 雪山  
 
-![p9](http://7xp2eu.com1.z0.glb.clouddn.com/1.pic2_hd.jpg?imageView2/1/w/800/h/533/q/100)
+![p9](http://wsfdl.oss-cn-qingdao.aliyuncs.com/1.pic2_hd.jpg?imageView2/1/w/800/h/533/q/100)
 
 &nbsp;
 &nbsp;
 
 P10. 经幡  
 
-![p10](http://7xp2eu.com1.z0.glb.clouddn.com/1.pic_3hd.jpg?imageView2/1/w/800/h/533/q/100)
+![p10](http://wsfdl.oss-cn-qingdao.aliyuncs.com/1.pic_3hd.jpg?imageView2/1/w/800/h/533/q/100)
 
 
 

@@ -11,7 +11,7 @@ categories: OpenStack
 - Resource: Project and Domain
 - Assigment: Role and Role Assigment
 
-![Services and Backends](http://7xp2eu.com1.z0.glb.clouddn.com/keystone%20service%20and%20backend.png?imageView2/1/w/1300/q/100) 
+![Services and Backends](http://wsfdl.oss-cn-qingdao.aliyuncs.com/keystone%20service%20and%20backend.png?imageView2/1/w/1300/q/100) 
 
 基本配置如下：
 

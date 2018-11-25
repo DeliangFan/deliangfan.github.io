@@ -49,7 +49,7 @@ kvm 支持多种虚拟机多种 IO Cache 方式：writeback, none, writethrough 
 - 性能上： writeback > none > writethrough
 - 安全上 writeback < none < writethrough。
 
-![Disk IO cache](http://7xp2eu.com1.z0.glb.clouddn.com/disk%20io%20cache.png)
+![Disk IO cache](http://wsfdl.oss-cn-qingdao.aliyuncs.com/disk%20io%20cache.png)
 
 权衡安全性和性能，Kvm 推荐使用 none，Nova 也是默认选用 none cache mode。
 
@@ -148,7 +148,7 @@ modprobe vhost-net
 
 对虚拟机而言，virtio-net 不能并行的处理网络包，当网络流量很大时，单个 vCPU 有限的处理能力将直接影响虚拟机的网络流量，所以可以通过[多队列的 virtio-net](http://www.linux-kvm.org/page/Multiqueue) 提高虚拟机网络吞吐量，[该特性](https://blueprints.launchpad.net/nova/+spec/libvirt-virtio-net-multiqueue)已合入 L 版本。
 
-![Multi-queue](http://7xp2eu.com1.z0.glb.clouddn.com/virt-net%20mutil-queue.jpg)
+![Multi-queue](http://wsfdl.oss-cn-qingdao.aliyuncs.com/virt-net%20mutil-queue.jpg)
 
 ~~~ xml
   <devices>

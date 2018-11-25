@@ -12,7 +12,7 @@ categories: OpenStack
 
 >Region > Cell > Availabiliy Zone > Host Aggregates
 
-![az-region-cell](http://7xp2eu.com1.z0.glb.clouddn.com/az_cell_region.jpg)
+![az-region-cell](http://wsfdl.oss-cn-qingdao.aliyuncs.com/az_cell_region.jpg)
 
 -----------------------
 
@@ -20,7 +20,7 @@ categories: OpenStack
 
 顾名思义，Region 直译过来就是区域，地域的概念，而事实上，AWS 按地域(国家或者城市)设置一个 Region，每个 Region 下有多个 Availability Zone。Openstack 同样支持 Region 的概念，支持全球化部署，比如为了降低网络延时，用户可以选择特定的 Region 来部署服务。各个 Region 之间的计算资源、网络资源、存储资源都是独立的，但所有 Region 共享账户用户信息，因为 Keystone 是实现 openstack 租户用户管理和认证的功能的组件，所以 Keystone 全局唯一，所有 Region 共享一个 Keystone，Keystone endpoint 中存储了访问各个 Region 的 URL。
 
-![region](http://7xp2eu.com1.z0.glb.clouddn.com/region.jpg)
+![region](http://wsfdl.oss-cn-qingdao.aliyuncs.com/region.jpg)
 
 
 -----------------------
@@ -31,7 +31,7 @@ Cell 概念的引入，是为了扩充单个 Region 下的集群规模，主要�
  
 官网手册提到 Cell 不成熟（Considered experimental），巴黎峰会也提到 Cell 的痛点，虽然现在已进入 K 版本迭代开发中了，但是本人还未听说业界成熟使用 Cell 的案例。关于 Cell [此文](http://www.ibm.com/developerworks/cn/cloud/library/1409_zhaojian_openstacknovacell/index.html)有更详细的介绍。
 
-![cell](http://7xp2eu.com1.z0.glb.clouddn.com/cell.jpg)
+![cell](http://wsfdl.oss-cn-qingdao.aliyuncs.com/cell.jpg)
 
 
 -----------------------
@@ -42,7 +42,7 @@ Cell 概念的引入，是为了扩充单个 Region 下的集群规模，主要�
 
 HAZ 也是把一批具有共同属性的计算节点划分到同一个 Zone 中，HAZ 可以对 AZ 进一步细分，一个 AZ 可以有多个 HAZ。 同一个 HAZ 下的机器都具有某种共同的属性，比如高性能计算，高性能存储(SSD)，高性能网络(支持SRIOV等)。HAZ 和 AZ 另一个不同之处在于 HAZ 对用户不是明确可见的，用户在创建虚拟机时不能像指定 AZ 一样直接指定 HAZ，但是可以通过在 Instance Flavor 中设置相关属性，由 nova-scheduler 调度根据该调度策略调度到满足该属性的的 Host Aggregates Zones 中。
 
-![az](http://7xp2eu.com1.z0.glb.clouddn.com/az-haz.jpg)
+![az](http://wsfdl.oss-cn-qingdao.aliyuncs.com/az-haz.jpg)
 
 -----------------------
 

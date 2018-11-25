@@ -14,11 +14,11 @@ categories: OpenStack
 
 什么是 [USB device](http://www.gentoo.org/doc/zh_cn/usb-guide.xml), 下图机智的小萌狗就是 USB device，你的鼠标是 USB device，键盘是 USB device，U 盘更是典型的 USB device。说了这么多例子，还是得用一个专业的名词一语概之，所谓 USB，即是 Universal Serial Bus(通用串行总线)，它是用来连接 USB device 和计算机，从而实现 USB device 和计算机之间的通讯。
 
-![USB Device](http://7xp2eu.com1.z0.glb.clouddn.com/USB%20device.jpg)
+![USB Device](http://wsfdl.oss-cn-qingdao.aliyuncs.com/USB%20device.jpg)
 
 当把 U 盘插入到计算机的 USB 口时，我们便能在操作系统中找到该 USB device 并使用之。下图解释了 USB device 如何与计算机系统交互，USB device 不能直接和操作系统通信，它需要 USB controller interface 这座桥梁才能在硬件上接入到计算机上。HCD(Host Controller Device)则是则是硬件商向程序员提供的开发接口。
 
-![Usb passthrough](http://7xp2eu.com1.z0.glb.clouddn.com/usb_passthrough.jpg)
+![Usb passthrough](http://wsfdl.oss-cn-qingdao.aliyuncs.com/usb_passthrough.jpg)
 
 USB device 通过 USB controller 和计算机交互得遵守一套标准，这套标准我们称之为 USB 协议。常用的协议为 USB 1.1 和 USB 2.0，比如 U 盘一般为 USB 2.0，由于 USB 2.0 是向下兼容的，所以 USB 2.0 的设备也支持 USB 1.1。
 

@@ -4,7 +4,7 @@ title:  "调试 OpenStack"
 categories: OpenStack
 ---
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![ruishijundao](http://7xp2eu.com1.z0.glb.clouddn.com/ruishijundao.jpg)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![ruishijundao](http://wsfdl.oss-cn-qingdao.aliyuncs.com/ruishijundao.jpg)
 
 由于 OpenStack 的所有项目都是采用 Python 开发，所以调试 OpenStack 的本质就是调试 Python，Python 的调试通常有以下两种。
 

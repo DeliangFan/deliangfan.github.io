@@ -107,7 +107,7 @@ mysql> select id,name,owner_id where deleted_at is Null;
 
 4 个 stack 的关系如下图所示：
 
-![Image](http://7xp2eu.com1.z0.glb.clouddn.com/Nested_stack.png?imageView2/1/w/450/h/400/q/100)
+![Image](http://wsfdl.oss-cn-qingdao.aliyuncs.com/Nested_stack.png?imageView2/1/w/450/h/400/q/100)
 
 继续查询 asg_stack-asg-ll5qfhea47g2-4s...cr 这个 stack 包含的资源：
  

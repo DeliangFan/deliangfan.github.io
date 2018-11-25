@@ -4,7 +4,7 @@ title:  "Nova 中的协程 -- 同步 (二)"
 categories: OpenStack
 ---
 
-![synchronize](http://7xp2eu.com1.z0.glb.clouddn.com/synchronize.png)
+![synchronize](http://wsfdl.oss-cn-qingdao.aliyuncs.com/synchronize.png)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[图片来源请见](http://blog.takipi.com/5-things-you-didnt-know-about-synchronization-in-java-and-scala/)
 

@@ -28,7 +28,7 @@ Steps to Reproduce:
 
 折腾不久找出[原因](https://bugs.launchpad.net/heat/+bug/1356084/comments/15)，简单的说就是 stack.stack\_user\_project\_id 参数未被赋值，于是简单暴力的直接赋值，由于对 mox/mock 掌握不深，故没有编写单元测试，第一个 patch 共 5 行代码，review 结果可想而知。
 
-![patch1](http://7xp2eu.com1.z0.glb.clouddn.com/heat-patch-1.png)
+![patch1](http://wsfdl.oss-cn-qingdao.aliyuncs.com/heat-patch-1.png)
 
 从上图可知：
 
@@ -36,11 +36,11 @@ Steps to Reproduce:
 - Steve Baker 细心的教我如何编写测试用例
 - Angus Salkeld 考虑更为全面，于是他把 patch 邮件给我，如下图。
 
-![patch2](http://7xp2eu.com1.z0.glb.clouddn.com/heat-patch-2.png)
+![patch2](http://wsfdl.oss-cn-qingdao.aliyuncs.com/heat-patch-2.png)
 
 粗心的我直接提交 Angus Salkeld 给的 patch，踩了他特意埋的坑后(主要在注释)，羞愧的难以自容，立刻学习 mox/mock 的用法。
 
-![patch3](http://7xp2eu.com1.z0.glb.clouddn.com/heat-patch-3.png)
+![patch3](http://wsfdl.oss-cn-qingdao.aliyuncs.com/heat-patch-3.png)
 
 之后根据 Angus Salkeld 的建议再次提交 patch，他又鼓励我添加一个用例，覆盖另一种场景。
 
@@ -51,6 +51,6 @@ the functional test, otherwise it's going to be confusing what this test is
 really doing.
 ~~~
 
-![patch4](http://7xp2eu.com1.z0.glb.clouddn.com/heat-patch-4.png)
+![patch4](http://wsfdl.oss-cn-qingdao.aliyuncs.com/heat-patch-4.png)
 
 Angus Salkeld 是 Heat 的 PTL，他愿如此不愿其烦的教导一个小菜鸟，令我感触颇深。

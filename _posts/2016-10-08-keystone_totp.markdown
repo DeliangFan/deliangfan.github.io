@@ -77,11 +77,11 @@ img = qrcode.make(uri)
 img.save('totp.png')
 ~~~
 
-![totp image](http://7xp2eu.com1.z0.glb.clouddn.com/totp.png)
+![totp image](http://wsfdl.oss-cn-qingdao.aliyuncs.com/totp.png)
 
 扫描后如下：
 
-![totp passcode](http://7xp2eu.com1.z0.glb.clouddn.com/totp_passcode.png)
+![totp passcode](http://wsfdl.oss-cn-qingdao.aliyuncs.com/totp_passcode.png)
 
 验证如下：
 

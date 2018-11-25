@@ -14,13 +14,13 @@ categories: Python
 
 效果如下：
 
-![](http://7xp2eu.com1.z0.glb.clouddn.com/weichat_xinwen.jpeg)
+![](http://wsfdl.oss-cn-qingdao.aliyuncs.com/weichat_xinwen.jpeg)
 
-![](http://7xp2eu.com1.z0.glb.clouddn.com/weichat_tianqi.jpeg)
+![](http://wsfdl.oss-cn-qingdao.aliyuncs.com/weichat_tianqi.jpeg)
 
-![](http://7xp2eu.com1.z0.glb.clouddn.com/weichat_tangshi.jpeg)
+![](http://wsfdl.oss-cn-qingdao.aliyuncs.com/weichat_tangshi.jpeg)
 
-![](http://7xp2eu.com1.z0.glb.clouddn.com/weichat_funny.jpeg)
+![](http://wsfdl.oss-cn-qingdao.aliyuncs.com/weichat_funny.jpeg)
 
 
 代码如下：

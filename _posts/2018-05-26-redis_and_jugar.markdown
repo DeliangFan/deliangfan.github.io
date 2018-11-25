@@ -18,7 +18,7 @@ categories: Kubernetes
 
 当 redis 接入 K8S 后，部分 redis 客户端请求的超时概率[超过 10ms]明显上升，接近 0.1 %。例如下图：
 
-![rtt](http://7xp2eu.com1.z0.glb.clouddn.com/rtttimeout.png)
+![rtt](http://wsfdl.oss-cn-qingdao.aliyuncs.com/rtttimeout.png)
 
 从基础监控数据来看，容器实例的 CPU，内存，IO，TCP 重传率等都在合理的范围内。在全链路同时抓包发现，对于超时的请求，redis 容器内部网卡 response 和 request 报文的时间间隔达到数十 ms，进一步怀疑是由 redis 服务端导致的。
 
@@ -32,7 +32,7 @@ Redis 是内存型数据库，CPU 和内存是影响其性能的最主要因素�
 
 当增加一倍 CPU limits 后，某个业务 RTT 的超时率如下：
 
-![RTT better](http://7xp2eu.com1.z0.glb.clouddn.com/rttbetter.png)
+![RTT better](http://wsfdl.oss-cn-qingdao.aliyuncs.com/rttbetter.png)
 
 
 ## Jaguar
@@ -41,7 +41,7 @@ Redis 是内存型数据库，CPU 和内存是影响其性能的最主要因素�
 
 Jaguar 是蘑菇街自研的静态化服务器，提供一套静态化解决方案，用于替代 Apache Traffic Server，采用 golang 编写。主要出于复用 nginx gzip 需求，jaguar 前端部署了一个七层代理 nginx。
 
-![jaguar](http://7xp2eu.com1.z0.glb.clouddn.com/jaguar%20deployment.png)
+![jaguar](http://wsfdl.oss-cn-qingdao.aliyuncs.com/jaguar%20deployment.png)
 
 接入 K8S 前，jaguar 和 nginx 部署在同一台 4C8G 的虚拟机上，最高性能可达 3w qps。
 
@@ -49,7 +49,7 @@ Jaguar 是蘑菇街自研的静态化服务器，提供一套静态化解决方�
 
 采用相同的规格接入 K8S 后，压测得出其最高性能只能达到 1.5w qps。压测期间，CPU 使用率达到 100%，其中 nginx 占用了大部分 CPU 资源。我们采用 iperf 发现大量的 CPU 耗费在 nginx 向 jaguar 建立 TCP 连接过程中，主要被 raw\_spin\_lock 函数占用。
 
-![iperf](http://7xp2eu.com1.z0.glb.clouddn.com/nginx_iperf.png) 
+![iperf](http://wsfdl.oss-cn-qingdao.aliyuncs.com/nginx_iperf.png) 
 
 根据上述现象，怀疑有可能是 tcp 相关参数造成的，其中一个小伙伴对比虚拟机和容器的参数后有重大发现：
 

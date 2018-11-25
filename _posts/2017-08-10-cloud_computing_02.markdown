@@ -32,7 +32,7 @@ categories: 编程随想
 
 在一切皆服务（Everyting As A Service，XaaS）的理念下，早期的公有云诞生出了云主机／私有网络 VPC／块存储／文件存储／对象存储／数据库／中间件等基础服务，这些基础设施背后的技术栈，就是虚拟化。在这片红海中，公有云厂商为了提升竞争力和价值，又逐步提供视频处理／图像处理／物联网／移动应用等服务。下图是领头羊 AWS 的部分服务类型：
 
-![](http://7xp2eu.com1.z0.glb.clouddn.com/aws_product.png)
+![](http://wsfdl.oss-cn-qingdao.aliyuncs.com/aws_product.png)
 
 鉴于篇幅，本文仅简要阐述部分服务：
 
@@ -47,7 +47,7 @@ AWS 服务之丰富，涵盖范围之广，下至 IaaS，上至 SaaS，无论移
 
 从 2016 年 Gartner 发布的公有云魔力象限图可以看出，AWS／Google／Microsoft 是最重要的三大玩家。
 
-![](http://7xp2eu.com1.z0.glb.clouddn.com/garnter_2016.png)
+![](http://wsfdl.oss-cn-qingdao.aliyuncs.com/garnter_2016.png)
 
 AWS 开拓了公有云的商业模式，并取得辉煌的成就，前文已用大幅篇章介绍之。
 
@@ -71,7 +71,7 @@ AWS 开拓了公有云的商业模式，并取得辉煌的成就，前文已用�
 
 时至今日，阿里云在国内一枝独秀，40% 的市场份额超越第二、三、四名之和，并将逐步走向盈利。反观国内其它同行企业，因为公有云前期投入巨大，短期内难以盈利，所以今后会是大鱼吃小鱼，更趋同质化的竞争。这也是为什么中小型的公有云厂商，像青云、UCloud、迅达云等厂商近期纷纷融资，因为粮草是打赢这场消耗战最基本的前提。
 
-![](http://7xp2eu.com1.z0.glb.clouddn.com/aliyun_revenue.png)
+![](http://wsfdl.oss-cn-qingdao.aliyuncs.com/aliyun_revenue.png)
 
 8 年已去，阿里云的工程师换了 5 代(长期 996，多次 3.25)，岁月见证了它现在的成就和曾经的艰难。让我们做个事后诸葛亮，分析阿里云的成功之道：
 

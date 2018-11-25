@@ -7,7 +7,7 @@ categories: OpenStack
 
 # Ecosystem VS Product
 
-![](http://7xp2eu.com1.z0.glb.clouddn.com/EcosystemandProduct.png)
+![](http://wsfdl.oss-cn-qingdao.aliyuncs.com/EcosystemandProduct.png)
 
 ## OpenStack
 
@@ -36,7 +36,7 @@ Helion OpenStack 基于 OpenStack 并对其修枝裁叶，为企业提供自助�
 
 下图从 Security, High availability, Extend service, Operation 和 HPE 的角度分析 Helion 在产品化 OpenStack 所做的工作。
 
-![Helion1](http://7xp2eu.com1.z0.glb.clouddn.com/Helion1.png)
+![Helion1](http://wsfdl.oss-cn-qingdao.aliyuncs.com/Helion1.png)
 
 ## Security
 
@@ -77,4 +77,4 @@ Helion OpenStack 基于 OpenStack 并对其修枝裁叶，为企业提供自助�
 - Deployment：提供自动化快速部署功能
 - Automation：简化运维工作
 
-![Helion2](http://7xp2eu.com1.z0.glb.clouddn.com/Helion2.png)
+![Helion2](http://wsfdl.oss-cn-qingdao.aliyuncs.com/Helion2.png)
