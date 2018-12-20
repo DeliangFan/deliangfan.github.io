@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "K8S 的调度(一) —— 抽象优雅的 Affinity"
+title:  "K8S 的调度 (一) 抽象优雅的 Affinity"
 categories: Kubernetes
 ---
 

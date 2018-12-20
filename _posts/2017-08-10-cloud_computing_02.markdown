@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "漫话云计算（二） —— 百舸争流的公有云"
+title:  "漫话云计算 (二) 百舸争流的公有云"
 categories: 编程随想
 ---
 

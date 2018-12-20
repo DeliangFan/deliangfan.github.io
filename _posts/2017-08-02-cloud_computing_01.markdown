@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "漫话云计算（一） —— 简介与起源"
+title:  "漫话云计算 (一) 简介与起源"
 categories: 编程随想
 ---
 

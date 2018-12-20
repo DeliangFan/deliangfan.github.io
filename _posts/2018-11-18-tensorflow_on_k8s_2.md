@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "奔跑在 K8S 上的 Tensorflow (二) ———— 冉冉升起的 kubeflow"
+title:  "奔跑在 K8S 上的 Tensorflow (二) 冉冉升起的 kubeflow"
 categories: Kubernetes
 ---
 

@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "谈谈业务容器化 ———— 选对业务方"
+title:  "谈谈业务容器化 (一) 选对业务方"
 categories: Kubernetes
 ---
 
