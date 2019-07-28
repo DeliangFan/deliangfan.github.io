@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "PaaS 建设反思 (一) ———— 一言难尽的胖容器"
+title:  "PaaS 建设反思 (一) —— 一言难尽的胖容器"
 categories: Kubernetes
 ---
 
