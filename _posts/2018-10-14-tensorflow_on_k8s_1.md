@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "奔跑在 K8S 上的 Tensorflow (一) 起源"
+title:  "[首发于 InfoQ]奔跑在 K8S 上的 Tensorflow (一) 起源"
 categories: Kubernetes
 ---
 

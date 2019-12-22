@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "蘑菇街机器学习标注平台实践"
+title:  "[首发于 InfoQ]蘑菇街机器学习标注平台实践"
 categories: 算法工程
 ---
 
