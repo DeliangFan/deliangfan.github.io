@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "话说 TCP 参数 net.ipv4.tcp\_window\_scaling"
+title:  "话说 TCP 参数 net.ipv4.tcp_window_scaling"
 categories: Linux
 ---
 
