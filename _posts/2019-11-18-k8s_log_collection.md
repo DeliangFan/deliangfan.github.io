@@ -15,13 +15,13 @@ categories: Kubernetes
 
 - 从功能和灵活性的角度：agent 的部署方式选择，daemonset VS sidecar?
 - 从功能和成本的角度：如何选择合适的 agent，filebeat VS logstash ......？
-- 从效率的角度：K8S 的 yaml 通常比较复杂，如何保障用户体验？
+- 从效率的角度：K8S 的 yaml 通常比较复杂，如何保障用户体验，如何保障用户的日志排查效率？
 
 ## 容器环境下的日志搜集简介
 
 针对容器化应用，虽然 Docker 推荐的记录方式是将日志写入标准输出和标准错误流，但是从实际的场景和业内普遍的状况来看，文件日志依然是主流的日志形态，特别在多份日志场景下，统一写到标准输出容易混淆日志，增加整理日志的工作量。因此 K8S 的日志平台应当充分考虑文件日志的搜集。
 
-容器频繁的动态变化给问题定位带来了更大的挑战，因此所收集的日志应当尽量的详细和准确：
+容器频繁的动态变化给问题定位带来了更大的挑战，因此所收集的日志应当尽量的详细和准确，从而提升用户的排查效率：
 
 - IP 信息：日志应当包含 IP 信息。
 - Pod 信息：日志应当包含 Pod 名字信息。
@@ -45,7 +45,7 @@ Sidecar 是容器中常见的模式，service mesh 就是以这种部署方式�
 
 在日志搜集领域，喜欢造轮子的工程师们毫无例外地造出大大小小的轮子，从功能强大的老牌 logstash，再到小而轻的 filebeat，还有 fluentd，logagent，flume，graylog.....。这些工具的基本功能都是收集日志并发送到下游的消息队列或者 Elasticsearch，主要差异体现在日志的解析能力、插件的丰富程度、协议的丰富程度和资源要求。
 
-关于这些工具，网上有非常丰富的介绍，例如 [filebeat vs logstash](https://logz.io/blog/filebeat-vs-logstash/)，[fluentd vs logstash](https://logz.io/blog/fluentd-logstash/) 等等，本文不再累述。从基于 sidecar 部署角度来看，日志收集工具首先要轻，占用很少的内存和 CPU 资源；从实际业务角度来看，绝大部分应用采用主流的日志库，保证了日志格式比较标准，因而在收集时无需复杂的解析；从用户体验的角度而言，搜集工具的配置应该简单明了，上手成本低，故综合考虑下选择 filebeat 作为日志收集工具。Filebeat 采用 golang 编写，安装和配置非常简单，经过合理的配置后，其运行时通常占用几十兆的内存，非常符合实际需求。
+关于这些工具，网上有非常丰富的介绍，例如 [filebeat vs logstash](https://logz.io/blog/filebeat-vs-logstash/)，[fluentd vs logstash](https://logz.io/blog/fluentd-logstash/) 等等，本文不再累述。从基于 sidecar 部署角度来看，日志收集工具首先要轻，占用很少的内存和 CPU 资源；从实际业务角度来看，绝大部分应用采用主流的日志库，保证了日志格式比较标准，因而在收集时无需复杂的解析；从用户体验的角度而言，搜集工具的配置应该简单明了，上手成本低，故综合考虑下选择 filebeat 作为日志收集工具。Filebeat 采用 golang 编写，安装和配置非常简单，在给定模板下，用户只需要配置收集的路径即可。经过优化配置，其运行时通常占用几十兆的内存，非常符合实际需求。
 
 ## Filebeat 的配置
 
@@ -77,7 +77,7 @@ fields:
   app: ${APP}
 ```
 
-为了确保 filebeat 不会占用太多资源， 
+通过把上述的配置模板化，用户只需要关心挂载的日志路径，从而提升用户的体验和效率，[具体的 yml 样例建议参考 app-log-collection](https://jimmysong.io/kubernetes-handbook/practice/app-log-collection.html)，本文不再累述。为了确保 filebeat 不会占用太多资源，可优化如下配置：
 
 - GOMAXPROCS：filbeat 容器的 GOMAXPROCS 设置为 1。
 - queue.mem.events：消息队列大小，调整为 256，避免日志带来内存爆增。
