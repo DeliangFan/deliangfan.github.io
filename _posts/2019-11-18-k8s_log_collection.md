@@ -65,6 +65,8 @@ env:
     valueFrom:
       fieldRef:
         fieldPath: status.podIP
+  - name: APP
+    value: {your_app_name}
 ```
 
 filebeat flields 模块支持读取环境变量：
@@ -79,7 +81,7 @@ fields:
 
 通过把上述的配置模板化，用户只需要关心挂载的日志路径，从而提升用户的体验和效率，[具体的 yml 样例建议参考 app-log-collection](https://jimmysong.io/kubernetes-handbook/practice/app-log-collection.html)，本文不再累述。为了确保 filebeat 不会占用太多资源，可优化如下配置：
 
-- GOMAXPROCS：filbeat 容器的 GOMAXPROCS 设置为 1。
+- GOMAXPROCS：filebeat 容器的 GOMAXPROCS 设置为 1。
 - queue.mem.events：消息队列大小，调整为 256，避免日志带来内存爆增。
 - max\_message\_bytes：单条消息大小，调整为 100000，避免日志带来内存爆增。
 
