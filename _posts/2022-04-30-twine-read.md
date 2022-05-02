@@ -98,7 +98,7 @@ Task Controller 更像是 Kubernetes 的 Operator，允许用户定义符合业�
   - Turbo Boost improved 2%.
   - Autoscaling improved 2%.
 
-事实上 30% 的资源利用率并非很出色，相比 Google / 字节均有很大的提升空间。但是值得一提的是 Host Profile 的切换还是很迅速的，绝大部分在 4min 以内，相比之下贵司的装机运维流程的效率和成功率还有很大的提升空间。
+事实上 30% 的资源利用率并非很出色，相比 Borg 等有很大的提升空间。但是值得一提的是 Host Profile 的切换还是很迅速的，绝大部分在 4min 以内，相比之下不少公司的装机运维流程的效率和成功率还有很大的提升空间。
 
 # Experience
 
